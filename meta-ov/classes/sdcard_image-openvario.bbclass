@@ -1,4 +1,5 @@
 inherit image_types
+require VERSION.inc
 
 #
 # Create an image that can by written onto a SD card using dd.
@@ -20,7 +21,7 @@ SDIMG_ROOTFS_TYPE ?= "ext4"
 IMAGE_TYPEDEP:openvario-sdimg = "${SDIMG_ROOTFS_TYPE}"
 
 # Boot partition sdcard volume id (not longer then 11 characters!)
-BOOTDD_VOLUME_ID ?= "OV-${SHORT_OV_MACHINE}"
+BOOTDD_VOLUME_ID = "OV-${SHORT_OV_MACHINE}"
 
 # Boot partition size [in KiB]
 BOOT_SPACE ?= "40960"
@@ -39,8 +40,8 @@ do_image_openvario_sdimg[depends] += " \
 			"
 
 # SD card image name
-SDIMG = "${IMGDEPLOYDIR}/${IMAGE_NAME}.rootfs.img"
-SDIMG_LINK = "${IMAGE_NAME_LINK}.rootfs.img"
+SDIMG_LINK = "OV-${OV-VERSION}-CB2-${SHORT_OV_MACHINE}.img"
+SDIMG = "${IMGDEPLOYDIR}/${SDIMG_LINK}"
 
 IMAGE_CMD:openvario-sdimg () {
 
@@ -132,6 +133,9 @@ IMAGE_CMD:openvario-sdimg () {
 
 	# create a relative link to new created image
 	ln -sfr ${SDIMG}.gz ${SDIMG_LINK}.gz
+
+	# create a relative link to last created image directly for a sd card writer
+	ln -sfr ${SDIMG}.gz last-ov.gz
 
 	# write output filename to file for upload
 	echo ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME} > ${DEPLOY_DIR_IMAGE}/image_name	

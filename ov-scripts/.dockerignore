@@ -1,0 +1,5 @@
+# comments:
+*/build*
+*/.git*
+poky/*
+.repo/*
