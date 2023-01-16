@@ -1,0 +1,16 @@
+require openvario-base-image.bb
+
+#IMAGE_ROOTFS_SIZE ?= "3768320"
+IMAGE_ROOTFS_SIZE ?= "1048576"
+
+IMAGE_INSTALL += "\
+    xcsoar-larus \
+    xcsoar-menu \
+    xcsoar-profiles \
+    xcsoar-maps-default \
+    sensord-testing\
+    variod-testing \
+    ovmenu-ng \
+"
+
+export IMAGE_BASENAME = "openvario-larus"
