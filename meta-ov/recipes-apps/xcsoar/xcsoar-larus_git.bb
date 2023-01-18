@@ -4,9 +4,9 @@
 PR="r0"
 RCONFLICTS:${PN}="xcsoar-testing"
 
-SRC_URI = "git://github.com/larus_breeze/XCSoar-Larus.git;protocol=https;branch=larus \"
-
-SRCREV = "6ce0396567f1aaea98619dca77db93276dd2382e"
+SRC_URI = "git://github.com/larus-breeze/XCSoar-Larus.git;protocol=https;branch=larus "
+SRCREV:pn-xcsoar-larus = "${AUTOREV}" 
+# SRCREV = "???"
 
 EXTRA_CXXFLAGS = "-Wno-empty-body"
 export EXTRA_CXXFLAGS
