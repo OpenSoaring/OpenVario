@@ -33,7 +33,8 @@ IMAGE_NAME="OpenVario-linux-openvario-image-glibc-ipk-current-openvario-57-lvds.
 # IMAGE_NAME="OpenVario-linux-openvario-image-testing-glibc-ipk-current-openvario-57-lvds.rootfs.img"
 # IMAGE_NAME="2022-01-05_OpenVario-linux-openvario-image-glibc-ipk-22005-openvario-57-lvds.rootfs.img"
 
-# IMAGE_NAME="OV-3.0.1-4-CB2-AM70_2.img"
+IMAGE_NAME="OV-3.0.1-6-CB2-AM70_2.img"
+# IMAGE_NAME="OV-3.0.1-6-CB2-CH70.img"
 
 # python:
 #if len(sys.argv) > 1:
@@ -102,7 +103,8 @@ WRITE_CMD="gzip -cfd $IMAGE_DIR$IMAGE_NAME.gz | sudo dd of=${WRITE_TARGET} bs=4M
 
 echo "$WRITE_CMD"
 # ??? "$WRITE_CMD"
-gzip -cfd $IMAGE_DIR$IMAGE_NAME.gz | sudo dd of=${WRITE_TARGET} bs=4M status=progress conv=fdatasync
+# gzip -cfd $IMAGE_DIR$IMAGE_NAME.gz | sudo dd of=${WRITE_TARGET} bs=4M status=progress conv=fdatasync
+sudo dd if=$IMAGE_DIR$IMAGE_NAME of=${WRITE_TARGET} bs=4M status=progress conv=fdatasync
 
 # gzip -cd $IMAGE_DIR$IMAGE_NAME | sudo dd of=${WRITE_TARGET} bs=4M status=progress conv=fdatasync
 # sudo dd if= of=${WRITE_TARGET} bs=4M status=progress conv=fdatasync

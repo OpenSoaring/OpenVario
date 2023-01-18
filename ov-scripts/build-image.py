@@ -61,8 +61,9 @@ for machine in machines:
     target = 'xcsoar-maps-alps'
     target = 'linux-mainline'
     target = 'openvario-image'
+    target = 'openvario-larus'
     # target = 'openvario-image-testing'
-    target = 'ov-august'
+    # target = 'ov-august'
     
     myprocess = subprocess.Popen([cwd+'/ov-scripts/build-ov.sh', target ], env = my_env, cwd=cwd, shell = False)   
     myprocess.wait()
