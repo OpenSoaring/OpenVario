@@ -15,6 +15,7 @@ do
 	--title "[ M A I N - M E N U ]" \
 	--begin 3 4 \
 	--menu "You can use the UP/DOWN arrow keys" 15 50 6 \
+	OpenSoar   "Start OpenSoar" \
 	XCSoar   "Start XCSoar" \
 	File   "Copys file to and from OpenVario" \
 	System   "Update, Settings, ..." \
@@ -26,6 +27,7 @@ do
 
 	# make decsion
 case $menuitem in
+	OpenSoar) start_opensoar;;
 	XCSoar) start_xcsoar;;
 	File) submenu_file;;
 	System) submenu_system;;
@@ -367,6 +369,11 @@ function upload_files(){
 	echo "Uploading files ..." > /tmp/tail.$$
 	/usr/bin/upload-xcsoar.sh >> /tmp/tail.$$ &
 	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
+}
+
+function start_opensoar() {
+	/usr/bin/OpenSoar -fly
+	sync
 }
 
 function start_xcsoar() {
