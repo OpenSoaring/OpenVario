@@ -3,8 +3,6 @@ HOMEPAGE = "www.xcsoar.org"
 LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://COPYING;md5=393a5ca445f6965873eca0259a17f833"
 SECTION = "base/app"
-BOOST_VERSION = "1.81.0"
-BOOST_SHA256HASH = "71feeed900fbccca04a3b4f2f84a7c217186f28a940ed8b7ed4725986baf99fa"
 
 DEPENDS = "	\
 		curl \

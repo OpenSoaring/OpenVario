@@ -11,4 +11,7 @@ SRCREV:pn-xcsoar-larus = "${AUTOREV}"
 EXTRA_CXXFLAGS = "-Wno-empty-body"
 export EXTRA_CXXFLAGS
 
+BOOST_VERSION = "1.81.0"
+BOOST_SHA256HASH = "71feeed900fbccca04a3b4f2f84a7c217186f28a940ed8b7ed4725986baf99fa"
+
 require xcsoar.inc
