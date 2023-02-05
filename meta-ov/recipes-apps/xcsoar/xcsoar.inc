@@ -40,11 +40,6 @@ SRC_URI += " \
 	https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/${BOOST_FILE};sha256sum=${BOOST_SHA256HASH};unpack=0 \
 "
 
-BOOST_VERSION = "1.80.0"
-BOOST_SHA256HASH = "1e19565d82e43bc59209a168f5ac899d3ba471d55c7610c677d4ccf2c9c500c0"
-
-#	https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.bz2;sha256sum=1e19565d82e43bc59209a168f5ac899d3ba471d55c7610c677d4ccf2c9c500c0;unpack=0
-
 inherit pkgconfig
 
 addtask do_package_write_ipk after do_package

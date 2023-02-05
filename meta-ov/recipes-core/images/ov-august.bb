@@ -5,7 +5,7 @@ IMAGE_ROOTFS_SIZE ?= "3768320"
 # IMAGE_ROOTFS_SIZE ?= "1048576"
 
 IMAGE_INSTALL += "\
-    xcsoar-august \
+    xcsoar \
     opensoar \
     xcsoar-menu \
     xcsoar-profiles \

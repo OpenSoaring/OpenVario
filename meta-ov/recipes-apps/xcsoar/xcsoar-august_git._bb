@@ -2,7 +2,7 @@
 # Released under the MIT license (see COPYING.MIT for the terms)
 
 PR = "r0"
-RCONFLICTS:${PN}="xcsoar xcsoar-testing"
+RCONFLICTS:${PN}="xcsoar-testing"
 
 SRCREV:pn-xcsoar-august = "${AUTOREV}" 
 # SRCREV = "db71cad5aa2c037be12a099c671195c3ec1f34c6"
