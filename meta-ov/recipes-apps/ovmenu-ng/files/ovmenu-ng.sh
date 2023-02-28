@@ -432,10 +432,10 @@ function yesno_power_off(){
 	esac
 }
 
-DIALOG_CANCEL=1 dialog --nook --nocancel --pause "Starting XCSoar ... \\n Press [ESC] for menu" 10 30 $TIMEOUT 2>&1
+DIALOG_CANCEL=1 dialog --nook --nocancel --pause "Starting OpenSoar ... \\n Press [ESC] for menu" 10 30 $TIMEOUT 2>&1
 
 case $? in
-	0) start_xcsoar;;
+	0) start_opensoar;;
 	*) main_menu;;
 esac
 main_menu
