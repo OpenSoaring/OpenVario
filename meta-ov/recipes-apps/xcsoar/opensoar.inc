@@ -38,8 +38,10 @@ BOOST_FILE = "boost_${@'${BOOST_VERSION}'.replace('.','_')}.tar.bz2"
 SRC_URI += " \
 	file://0007-Disable-touch-screen-auto-detection.patch \
 	https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/${BOOST_FILE};sha256sum=${BOOST_SHA256HASH};unpack=0 \
+	file://ovmenu-x.service \
 "
 inherit pkgconfig
+inherit systemd
 
 addtask do_package_write_ipk after do_package
 
@@ -59,6 +61,15 @@ EXTRA_OEMAKE = " \
 	ENABLE_MESA_KMS=y GLES2=y \
 	GEOTIFF=n \
 "
+PACKAGES += "ovmenu-x"
+RDEPENDS:ovmenu-x += " \
+	${PN} \
+	ovmenu-ng-skripts \
+	autofs-config \
+"
+RCONFLICTS:ovmenu-x += "ovmenu-ng-autostart"
+SYSTEMD_PACKAGES = "ovmenu-x"
+SYSTEMD_SERVICE:ovmenu-x = "ovmenu-x.service"
 
 do_configure() {
 	install -d ${B}/output/download
@@ -71,14 +82,24 @@ do_compile() {
 	ln -sf convert.im7 ${STAGING_DIR_NATIVE}/usr/bin/convert
 	export FONTCONFIG_PATH=/etc/fonts
 	oe_runmake
+    oe_runmake output/UNIX/bin/OpenVarioMenu
+
 }
 
 do_install() {
 	oe_runmake install-bin install-mo DESTDIR=${D}
+	install -m755 ${S}/output/UNIX/bin/OpenVarioMenu ${D}${bindir}
+
+	install -d ${D}${systemd_unitdir}/system
+	install -m644 ${WORKDIR}/ovmenu-x.service ${D}${systemd_unitdir}/system
 }
 
 FILES:${PN} = " \
 	${bindir}/OpenSoar \
 	${LC_LOCALE_PATH}/*/LC_MESSAGES/opensoar.mo \
+	${bindir}/vali-xcs \
 "
 # this is in xcsoar-package:	${bindir}/vali-xcs 
+
+FILES:ovmenu-x += "${bindir}/OpenVarioMenu"
+
