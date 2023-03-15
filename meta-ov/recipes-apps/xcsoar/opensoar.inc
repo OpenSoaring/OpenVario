@@ -97,7 +97,6 @@ do_install() {
 FILES:${PN} = " \
 	${bindir}/OpenSoar \
 	${LC_LOCALE_PATH}/*/LC_MESSAGES/opensoar.mo \
-	${bindir}/vali-xcs \
 "
 # this is in xcsoar-package:	${bindir}/vali-xcs 
 
