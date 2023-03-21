@@ -23,7 +23,7 @@ do_compile[deptask] = "do_rm_work"
 
 do_configure () {
 	cp ${WORKDIR}/openvario-recovery.its ${S}
-	cp -v ${DEPLOY_DIR_IMAGE}/uImage ${S}
+	# cp -v ${DEPLOY_DIR_IMAGE}/uImage ${S}
 	cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
 	cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
 	#cp -v ${DEPLOY_DIR_IMAGE}/fex.bin ${S}/script.bin
@@ -32,6 +32,7 @@ do_configure () {
 	#if [ ! -e "${S}/magna-initramfs-${MACHINE}.cpio.gz" ]; then bbfatal "missing magna-initramfs-${MACHINE}.cpio.gz !"; fi
 	
 	#dd if=${S}/uImage-${MACHINE}.bin of=${S}/zImage skip=64 iflag=skip_bytes
+	dd if=${S}/uImage-${MACHINE}.bin of=${S}/uImage skip=64 iflag=skip_bytes
 }
 
 do_compile () {

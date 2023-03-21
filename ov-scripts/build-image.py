@@ -64,7 +64,7 @@ for machine in machines:
     target = 'openvario-larus'
     # target = 'openvario-image-testing'
     target = 'openvario-recovery-initramfs'
-    # target = 'openvario-recovery-image'
+    target = 'openvario-recovery-image'
     # target = 'ov-august'
     # target = 'ov-opensoar'
     
