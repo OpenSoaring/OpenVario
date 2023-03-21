@@ -2,7 +2,7 @@
 
 git fetch --all
 
-git reset --hard origin/dev-branch
+git reset --hard august-d/dev-branch
 
 chmod 757 -R ./ov-scripts
 
