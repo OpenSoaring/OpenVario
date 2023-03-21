@@ -42,7 +42,10 @@ else:
     # only one!
     machines = ['openvario-7-CH070']
 
-my_env['TEMPLATECONF'] = 'meta-openvario/conf'
+# my_env['TEMPLATECONF'] = 'meta-openvario/conf'
+# my_env['TEMPLATECONF'] = '../meta-ov/conf'
+my_env['TEMPLATECONF'] = 'meta-ov/conf'
+# my_env['TOPDIR'] = cwd
 
 #myprocess = subprocess.Popen([
 #    'TEMPLATECONF=meta-openvario/conf source',

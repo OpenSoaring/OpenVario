@@ -20,7 +20,7 @@ INHERIT += "ccache"
 # of emulated machines available which can boot and run in the QEMU emulator:
 #
 
-MACHINE ??= "openvario-7-PQ070"
+MACHINE ??= "openvario-7-CH070"
 
 #
 # Where to place downloads

@@ -2,6 +2,8 @@
 
 # cd poky
 #TEMPLATECONF=meta-openvario/conf source oe-init-build-env build
+# source openembedded-core/oe-init-build-env ~/OpenVario/build
+# source openembedded-core/oe-init-build-env ./_build
 source openembedded-core/oe-init-build-env .
 
 ## 

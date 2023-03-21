@@ -6,5 +6,9 @@ You can now run 'bitbake <target>'
 Common targets are:
     openvario-image
     openvario-image-testing
-    openvario-larus
+
+    ov-opensoar
+    openvario-recovery-image
+    openvario-initramfs
+
 
