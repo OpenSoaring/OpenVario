@@ -1,3 +1,5 @@
+Version v3.0.1-10 - not yet released 
+
 Version v3.0.1-9 - 2023/03/24
 * autostart OpenSoar in ovshell
 * OpenSoar v7.28.05 (with Becker driver inside!)
