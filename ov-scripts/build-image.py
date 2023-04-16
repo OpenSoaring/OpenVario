@@ -66,11 +66,29 @@ for machine in machines:
     target = 'openvario-image'
     target = 'openvario-larus'
     # target = 'openvario-image-testing'
-    target = 'openvario-recovery-initramfs'
-    target = 'openvario-recovery-image'
     # target = 'ov-august'
-    target = 'ov-opensoar'
     
+    target = 'ov-opensoar'
+    print('=== Start ', target,' with machine: ', machine)
+    myprocess = subprocess.Popen([cwd+'/ov-scripts/build-ov.sh', target ], env = my_env, cwd=cwd, shell = False)   
+    myprocess.wait()
+    
+    print('=== OV with machine: ', machine, ' is ready ===')
+    print('===============================================')
+    print('===============================================')
+
+
+    target = 'openvario-recovery-initramfs'
+    print('=== Start ', target,' with machine: ', machine)
+    myprocess = subprocess.Popen([cwd+'/ov-scripts/build-ov.sh', target ], env = my_env, cwd=cwd, shell = False)   
+    myprocess.wait()
+
+    print('=== OV with machine: ', machine, ' is ready ===')
+    print('===============================================')
+    print('===============================================')
+
+    target = 'openvario-recovery-image'
+    print('=== Start ', target,' with machine: ', machine)
     myprocess = subprocess.Popen([cwd+'/ov-scripts/build-ov.sh', target ], env = my_env, cwd=cwd, shell = False)   
     myprocess.wait()
 
