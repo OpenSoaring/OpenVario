@@ -10,6 +10,16 @@ trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 main_menu () {
 while true
 do
+  if [ -e ~/.xcsoar/GliderClub_Std.prf ]
+  then
+    club_menu
+  else
+    normal_menu
+  fi
+done
+}
+
+function normal_menu() {
 	### display main menu ###
 	dialog --clear --nocancel --backtitle "OpenVario" \
 	--title "[ M A I N - M E N U ]" \
@@ -26,18 +36,47 @@ do
 	menuitem=$(<"${INPUT}")
 
 	# make decsion
-case $menuitem in
-	OpenSoar) start_opensoar;;
-	XCSoar) start_xcsoar;;
-	File) submenu_file;;
-	System) submenu_system;;
-	Exit) yesno_exit;;
-	Restart) yesno_restart;;
-	Power_OFF) yesno_power_off;;
-esac
-
-done
+    case $menuitem in
+        OpenSoar) start_opensoar;;
+        XCSoar) start_xcsoar;;
+        File) submenu_file;;
+        System) submenu_system;;
+        Exit) yesno_exit;;
+        Restart) yesno_restart;;
+        Power_OFF) yesno_power_off;;
+    esac
 }
+
+function club_menu() {
+	### display main menu  with club version###
+	dialog --clear --nocancel --backtitle "OpenVario" \
+	--title "[ M A I N - M E N U - C L U B]" \
+	--begin 3 4 \
+	--menu "You can use the UP/DOWN arrow keys" 15 50 6 \
+	OpenSoarClub   "Start OpenSoarClub" \
+	OpenSoar   "Start OpenSoar" \
+	XCSoar   "Start XCSoar" \
+	File   "Copys file to and from OpenVario" \
+	System   "Update, Settings, ..." \
+	Exit   "Exit to the shell" \
+	Restart "Restart" \
+	Power_OFF "Power OFF" 2>"${INPUT}"
+
+	menuitem=$(<"${INPUT}")
+
+	# make decsion
+    case $menuitem in
+        OpenSoarClub) start_opensoar_club;;
+        OpenSoar) start_opensoar;;
+        XCSoar) start_xcsoar;;
+        File) submenu_file;;
+        System) submenu_system;;
+        Exit) yesno_exit;;
+        Restart) yesno_restart;;
+        Power_OFF) yesno_power_off;;
+    esac
+}
+
 
 function submenu_file() {
 
@@ -371,6 +410,15 @@ function upload_files(){
 	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
+function start_opensoar_club() {
+	# reset the profile to standard profile
+	cp /home/root/.xcsoar/GliderClub_Std.prf /home/root/.xcsoar/GliderClub.prf
+	# start the GliderClub version of opensoar
+	/usr/bin/OpenSoar -fly -profile=GliderClub.prf
+	sync
+}
+
+
 function start_opensoar() {
 	/usr/bin/OpenSoar -fly
 	sync
@@ -432,10 +480,19 @@ function yesno_power_off(){
 	esac
 }
 
+
+if [ -e ~/.xcsoar/GliderClub_Std.prf ]
+then
+    START_PROGRAM = start_opensoar_club
+else
+    START_PROGRAM = start_opensoar
+fi
+
 DIALOG_CANCEL=1 dialog --nook --nocancel --pause "Starting OpenSoar ... \\n Press [ESC] for menu" 10 30 $TIMEOUT 2>&1
 
 case $? in
-	0) start_opensoar;;
-	*) main_menu;;
+    0) $(START_PROGRAM);;
+    *) main_menu;;
 esac
+
 main_menu
