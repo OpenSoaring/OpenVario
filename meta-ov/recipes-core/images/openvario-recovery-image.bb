@@ -27,7 +27,7 @@ do_configure () {
 	cp ${WORKDIR}/openvario-recovery.its ${S}
 
 	# cp -v ${DEPLOY_DIR_IMAGE}/uImage ${S}
-	cp -v ${WORKDIR}/zImage.bin ${S}/Image
+	# cp -v ${WORKDIR}/zImage.bin ${S}/Image
 	# dd if=${S}/uImage-${MACHINE}.bin of=${S}/zImage skip=64 iflag=skip_bytes
 	# dd if=${S}/uImage-${MACHINE}.bin of=${S}/uImage skip=64 iflag=skip_bytes
 
@@ -42,13 +42,14 @@ do_configure () {
 
 do_compile () {
     # Extract kernel from uImage
-    dd if=uImage of=Image bs=64 skip=1
+    # dd if=uImage of=Image bs=64 skip=1
+	cp -v ${WORKDIR}/zImage.bin ${S}/Image
     #dumpimage -i uImage -T kernel Image
 }
 
 do_mkimage () {
     # Build ITB with provided config
-    pwd
+    # pwd
     mkimage -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
 }
 
