@@ -3,6 +3,8 @@ require openvario-base-image.bb
 #IMAGE_ROOTFS_SIZE ?= "3768320"
 IMAGE_ROOTFS_SIZE ?= "1048576"
 
+PR = "r1"
+
 IMAGE_INSTALL += "\
     xcsoar-testing \
     xcsoar-menu \
