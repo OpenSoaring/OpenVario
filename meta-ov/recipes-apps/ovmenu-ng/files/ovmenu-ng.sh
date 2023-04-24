@@ -4,13 +4,20 @@
 TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 
+if [ -e ~/.glider_club/GliderClub_Std.prf ]
+then
+  MENU_VERSION="club"
+else
+  MENU_VERSION="normal"
+
+fi
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 
 main_menu () {
 while true
 do
-  if [ -e ~/.xcsoar/GliderClub_Std.prf ]
+  if [[ "$MENU_VERSION" == "club" ]]
   then
     club_menu
   else
@@ -412,7 +419,7 @@ function upload_files(){
 
 function start_opensoar_club() {
 	# reset the profile to standard profile
-	cp /home/root/.xcsoar/GliderClub_Std.prf /home/root/.xcsoar/GliderClub.prf
+	cp /home/root/.glider_club/GliderClub_Std.prf /home/root/.xcsoar/GliderClub.prf
 	# start the GliderClub version of opensoar
 	/usr/bin/OpenSoar -fly -profile=GliderClub.prf
 	sync
@@ -459,7 +466,7 @@ function yesno_power_off(){
 }
 
 
-if [ -e ~/.xcsoar/GliderClub_Std.prf ]
+if [[ "$MENU_VERSION" == "club" ]]
 then
     START_PROGRAM = start_opensoar_club
 else
