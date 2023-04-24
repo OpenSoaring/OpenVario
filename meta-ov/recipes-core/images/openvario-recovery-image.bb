@@ -48,8 +48,11 @@ do_compile () {
 }
 
 do_mkimage () {
+    # show mkimage version:
+    echo "========================================="
+    mkimage -V
+    echo "========================================="
     # Build ITB with provided config
-    # pwd
     mkimage -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
 }
 
