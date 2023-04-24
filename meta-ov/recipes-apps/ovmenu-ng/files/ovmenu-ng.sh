@@ -41,8 +41,8 @@ function normal_menu() {
         XCSoar) start_xcsoar;;
         File) submenu_file;;
         System) submenu_system;;
-        Exit) yesno_exit;;
-        Restart) yesno_restart;;
+        Exit) exit;;
+        Restart) reboot;; 
         Power_OFF) yesno_power_off;;
     esac
 }
@@ -71,8 +71,8 @@ function club_menu() {
         XCSoar) start_xcsoar;;
         File) submenu_file;;
         System) submenu_system;;
-        Exit) yesno_exit;;
-        Restart) yesno_restart;;
+        Exit) exit;;
+        Restart) reboot;; 
         Power_OFF) yesno_power_off;;
     esac
 }
@@ -429,43 +429,21 @@ function start_xcsoar() {
 	sync
 }
 
-function yesno_exit(){
-	dialog --backtitle "Openvario" \
-	--begin 3 4 \
-	--defaultno \
-	--title "Really exit ?" --yesno "Really want to go to console ??" 5 40
-
-	response=$?
-	case $response in
-		0)
-			clear
-			cd
-
-			# Redirecting stderr to stdout (= the console)
-			# because stderr is currently connected to
-			# systemd-journald, which breaks interactive
-			# shells.
-			if test -x /bin/bash; then
-				/bin/bash --login 2>&1
-			elif test -x /bin/ash; then
-				/bin/ash -i 2>&1
-			else
-				/bin/sh 2>&1
-			fi
-			;;
-	esac
-}
-
-function yesno_restart(){
-	dialog --backtitle "Openvario" \
-	--begin 3 4 \
-	--defaultno \
-	--title "Really restart ?" --yesno "Really want to restart ??" 5 40
-
-	response=$?
-	case $response in
-		0) reboot;;
-	esac
+function exit_menu(){
+    clear
+    cd
+    
+    # Redirecting stderr to stdout (= the console)
+    # because stderr is currently connected to
+    # systemd-journald, which breaks interactive
+    # shells.
+    if test -x /bin/bash; then
+        /bin/bash --login 2>&1
+    elif test -x /bin/ash; then
+        /bin/ash -i 2>&1
+    else
+        /bin/sh 2>&1
+    fi
 }
 
 function yesno_power_off(){
