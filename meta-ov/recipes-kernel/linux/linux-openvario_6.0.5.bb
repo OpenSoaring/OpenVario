@@ -5,6 +5,8 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=6bc538ed5bd9a7fc9398086aedcd7e46"
 
 inherit kernel kernel-yocto siteinfo
 
+PR = "r1"
+
 S = "${WORKDIR}/git"
 
 KBRANCH = "linux-6.0.y"
