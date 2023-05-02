@@ -18,9 +18,7 @@ DEPENDS += " \
 		ovmenu-recovery \
 		bash \
 		udev \
-		vim \
 		"
-#		cfgmgr 
 
 PACKAGE_INSTALL = " \
 		busybox \
@@ -31,9 +29,7 @@ PACKAGE_INSTALL = " \
 		ovmenu-recovery \
 		bash \
 		udev \
-		vim \
 		"
-#		cfgmgr 
 
 IMAGE_DEV_MANAGER   = "udev"
 IMAGE_INIT_MANAGER  = "systemd"
