@@ -3,6 +3,8 @@ inherit core-image
 
 LICENSE = "MIT"
 
+PR = "r1"
+
 IMAGE_FEATURES += " package-management"
 
 INITRAMFS_FILES:prepend := "${THISDIR}/initramfs/"
