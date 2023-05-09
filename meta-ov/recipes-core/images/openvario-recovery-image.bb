@@ -27,16 +27,17 @@ do_configure () {
 	cp ${WORKDIR}/openvario-recovery.its ${S}
 
 	# cp -v ${DEPLOY_DIR_IMAGE}/uImage ${S}
-	### dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
 	###
-	cp -v ${WORKDIR}/zImage.bin ${S}/Image
+	dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
+	### cp -v ${WORKDIR}/zImage.bin ${S}/Image
 	# dd if=${S}/uImage-${MACHINE}.bin of=${S}/zImage skip=64 iflag=skip_bytes
 	# dd if=${S}/uImage-${MACHINE}.bin of=${S}/uImage skip=64 iflag=skip_bytes
 
 	cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
 	
-	cp -v ${WORKDIR}/sun7i-a20-cubieboard2.dtb ${S}/openvario.dtb
-	###	cp -v ${DEPLOY_DIR_IMAGE}/${MACHINE}.dtb ${S}/openvario.dtb
+	#cp -v ${WORKDIR}/sun7i-a20-cubieboard2.dtb ${S}/openvario.dtb
+	###
+	cp -v ${DEPLOY_DIR_IMAGE}/${MACHINE}.dtb ${S}/openvario.dtb
 	# cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
 	# cp -v ${DEPLOY_DIR_IMAGE}/fex.bin ${S}/script.bin
 	
