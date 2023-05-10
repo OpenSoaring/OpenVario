@@ -11,6 +11,7 @@ SRC_URI = "\
         file://openvario-recovery.its \
         file://sun7i-a20-cubieboard2.dtb \
         file://zImage.bin \
+        file://openvario-initramfs.cpio.gz \
         "
 
 DEPENDS = "\
@@ -27,17 +28,18 @@ do_configure () {
 	cp ${WORKDIR}/openvario-recovery.its ${S}
 
 	# cp -v ${DEPLOY_DIR_IMAGE}/uImage ${S}
+	###	dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
 	###
-	dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
-	### cp -v ${WORKDIR}/zImage.bin ${S}/Image
+    cp -v ${WORKDIR}/zImage.bin ${S}/Image
 	# dd if=${S}/uImage-${MACHINE}.bin of=${S}/zImage skip=64 iflag=skip_bytes
 	# dd if=${S}/uImage-${MACHINE}.bin of=${S}/uImage skip=64 iflag=skip_bytes
 
-	cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
+	# cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
+    cp -v ${WORKDIR}/openvario-initramfs.cpio.gz ${S}/initramfs.cpio.gz
 	
-	#cp -v ${WORKDIR}/sun7i-a20-cubieboard2.dtb ${S}/openvario.dtb
-	###
-	cp -v ${DEPLOY_DIR_IMAGE}/${MACHINE}.dtb ${S}/openvario.dtb
+	#
+    cp -v ${WORKDIR}/sun7i-a20-cubieboard2.dtb ${S}/openvario.dtb
+	###	cp -v ${DEPLOY_DIR_IMAGE}/${MACHINE}.dtb ${S}/openvario.dtb
 	# cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
 	# cp -v ${DEPLOY_DIR_IMAGE}/fex.bin ${S}/script.bin
 	
@@ -46,7 +48,8 @@ do_configure () {
 	# ${WORKDIR}/recipe-sysroot-native/
 	# Attention:this is a wrong binary from the Linux system, not the builded
 	# mkimage with version 2022.01
-	cp -v /usr/bin/mkimage ${S}/mkimage_x
+	# 
+    cp -v /usr/bin/mkimage ${S}/mkimage_x
 	# sudo chmod 757 ${S}/mkimage_x
 }
 
