@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r3"
+PR="r2"
 RCONFLICTS:${PN}="xcsoar xcsoar-testing"
 
 SRC_URI = "https://github.com/August2111/OpenSoar.git;protocol=https;branch=dev-branch "
