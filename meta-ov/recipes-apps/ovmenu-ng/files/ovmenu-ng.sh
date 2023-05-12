@@ -7,9 +7,13 @@ INPUT=/tmp/menu.sh.$$
 if [ -e ~/.glider_club/GliderClub_Std.prf ]
 then
   MENU_VERSION="club"
+  MENU_ITEM="club_menu"
+  START_PROGRAM="start_opensoar_club"
 else
   MENU_VERSION="normal"
-
+  MENU_ITEM="normal_menu"
+  START_PROGRAM="start_opensoar"
+  START_PROGRAM="start_xcsoar"
 fi
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
@@ -37,7 +41,7 @@ function normal_menu() {
 	File   "Copys file to and from OpenVario" \
 	System   "Update, Settings, ..." \
 	Exit   "Exit to the shell" \
-	Restart "Restart" \
+	Reboot "Reboot" \
 	Power_OFF "Power OFF" 2>"${INPUT}"
 
 	menuitem=$(<"${INPUT}")
@@ -48,9 +52,9 @@ function normal_menu() {
         XCSoar) start_xcsoar;;
         File) submenu_file;;
         System) submenu_system;;
-        Exit) exit;;
-        Restart) reboot;; 
-        Power_OFF) yesno_power_off;;
+        Exit) do_shell;;
+        Reboot) do_reboot;; 
+        Power_OFF) do_power_off;;
     esac
 }
 
@@ -66,7 +70,7 @@ function club_menu() {
 	File   "Copys file to and from OpenVario" \
 	System   "Update, Settings, ..." \
 	Exit   "Exit to the shell" \
-	Restart "Restart" \
+	Reboot "Reboot" \
 	Power_OFF "Power OFF" 2>"${INPUT}"
 
 	menuitem=$(<"${INPUT}")
@@ -78,9 +82,9 @@ function club_menu() {
         XCSoar) start_xcsoar;;
         File) submenu_file;;
         System) submenu_system;;
-        Exit) exit;;
-        Restart) reboot;; 
-        Power_OFF) yesno_power_off;;
+        Exit) do_shell;;
+        Reboot) do_reboot;; 
+        Power_OFF) do_power_off;;
     esac
 }
 
@@ -436,24 +440,18 @@ function start_xcsoar() {
 	sync
 }
 
-function exit_menu(){
-    clear
-    cd
-    
-    # Redirecting stderr to stdout (= the console)
-    # because stderr is currently connected to
-    # systemd-journald, which breaks interactive
-    # shells.
-    if test -x /bin/bash; then
-        /bin/bash --login 2>&1
-    elif test -x /bin/ash; then
-        /bin/ash -i 2>&1
-    else
-        /bin/sh 2>&1
-    fi
+function do_reboot(){
+	DIALOG_CANCEL=1 
+	dialog --backtitle "Openvario" \
+	--nook --nocancel --pause \
+	"Reboot OpenVario ... \\n Press [ESC] for interrupt" 10 30 2 2>&1
+
+	case $? in
+		0) reboot;;
+	esac
 }
 
-function yesno_power_off(){
+function do_power_off(){
 	dialog --backtitle "Openvario" \
 	--begin 3 4 \
 	--defaultno \
@@ -465,18 +463,28 @@ function yesno_power_off(){
 	esac
 }
 
+function do_shell(){
+	clear
+	cd
 
-if [[ "$MENU_VERSION" == "club" ]]
-then
-    START_PROGRAM = start_opensoar_club
-else
-    START_PROGRAM = start_opensoar
-fi
+	# Redirecting stderr to stdout (= the console)
+	# because stderr is currently connected to
+	# systemd-journald, which breaks interactive
+	# shells.
+	if test -x /bin/bash; then
+		/bin/bash --login 2>&1
+	elif test -x /bin/ash; then
+		/bin/ash -i 2>&1
+	else
+		/bin/sh 2>&1
+	fi
+}
 
-DIALOG_CANCEL=1 dialog --nook --nocancel --pause "Starting OpenSoar ... \\n Press [ESC] for menu" 10 30 $TIMEOUT 2>&1
+DIALOG_CANCEL=1 dialog --nook --nocancel --pause "Starting OpenSoar (!)... \\n Press [ESC] for menu" 10 30 $TIMEOUT 2>&1
 
 case $? in
-    0) $(START_PROGRAM);;
+    # 10) start_opensoar;;
+    0) $START_PROGRAM;;
     *) main_menu;;
 esac
 
