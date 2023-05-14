@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=c79ff39f19dfec6d
 SECTION = "base/app"
 
 S = "${WORKDIR}"
-PR = "r10"
+PR = "r11"
 
 inherit allarch
 
@@ -25,6 +25,7 @@ SRC_URI = "\
 	file://transfer-xcsoar.sh \
 	file://logbook.sh \
 	file://ov-calibrate-ts.sh \
+	file://reset-xcsoar-data.sh \
 "
 
 
@@ -44,6 +45,7 @@ do_install() {
 		${S}/transfer-xcsoar.sh \
 		${S}/logbook.sh \
 		${S}/ov-calibrate-ts.sh \
+		${S}/reset-xcsoar-data.sh \
 		${D}${bindir}/
 	cd ${D}${bindir}
 	ln -s -r transfer-xcsoar.sh upload-all.sh

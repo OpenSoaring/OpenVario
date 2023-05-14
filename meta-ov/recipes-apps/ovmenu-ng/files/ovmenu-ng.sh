@@ -3,6 +3,7 @@
 #Config
 TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
+DIALOG_CANCEL=1
 
 if [ -e ~/.glider_club/GliderClub_Std.prf ]
 then
@@ -13,7 +14,6 @@ else
   MENU_VERSION="normal"
   MENU_ITEM="normal_menu"
   START_PROGRAM="start_opensoar"
-  START_PROGRAM="start_xcsoar"
 fi
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
@@ -99,6 +99,7 @@ function submenu_file() {
 	Download_IGC   "Download XCSoar IGC files to USB" \
 	Download   "Download XCSoar to USB" \
 	Upload   "Upload files from USB to XCSoar" \
+	Reset_Data   "Reset complete data files from USB" \
 	Back   "Back to Main" 2>"${INPUT}"
 
 	menuitem=$(<"${INPUT}")
@@ -108,6 +109,7 @@ function submenu_file() {
 		Download_IGC) download_igc_files;;
 		Download) download_files;;
 		Upload) upload_files;;
+		Reset_Data) reset_data;;
 		Exit) ;;
 esac
 }
@@ -421,6 +423,13 @@ function upload_files(){
 	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
+# Reset /usb/usbstick/openvario/upload to /home/root/.xcsoar
+function reset_data(){
+	echo "Uploading data files ..." > /tmp/tail.$$
+	/usr/bin/reset-xcsoar-data.sh >> /tmp/tail.$$ &
+	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
+}
+
 function start_opensoar_club() {
 	# reset the profile to standard profile
 	cp /home/root/.glider_club/GliderClub_Std.prf /home/root/.xcsoar/GliderClub.prf
@@ -441,7 +450,6 @@ function start_xcsoar() {
 }
 
 function do_reboot(){
-	DIALOG_CANCEL=1 
 	dialog --backtitle "Openvario" \
 	--nook --nocancel --pause \
 	"Reboot OpenVario ... \\n Press [ESC] for interrupt" 10 30 2 2>&1
@@ -480,10 +488,11 @@ function do_shell(){
 	fi
 }
 
-DIALOG_CANCEL=1 dialog --nook --nocancel --pause "Starting OpenSoar (!)... \\n Press [ESC] for menu" 10 30 $TIMEOUT 2>&1
+dialog --nook --nocancel --pause \
+"Starting OpenSoar (!)... \\n Press [ESC] for menu" \
+10 30 $TIMEOUT 2>&1
 
 case $? in
-    # 10) start_opensoar;;
     0) $START_PROGRAM;;
     *) main_menu;;
 esac
