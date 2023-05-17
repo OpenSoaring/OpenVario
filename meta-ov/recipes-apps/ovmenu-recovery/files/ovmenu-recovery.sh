@@ -133,94 +133,11 @@ function updateall(){
 }
 
 
-#function submenu_file() {#
-#
-#	### display file menu ###
-#	dialog --nocancel --backtitle "OpenVario" \
-#	--title "[ F I L E ]" \
-#	--begin 3 4 \
-#	--menu "You can use the UP/DOWN arrow keys" 15 50 4 \
-#	Download   "Download IGC File to USB" \
-#	Upload   "Upload files from USB to FC" \
-#	Back   "Back to Main" 2>"${INPUT}"
-#	
-#	menuitem=$(<"${INPUT}")
-#	
-#	# make decsion 
-#	case $menuitem in
-#		Download) download_files;;
-#		Upload) upload_files;;
-#		Exit) ;;
-#esac
-#}
-
-#function submenu_system() {
-#	### display system menu ###
-#	dialog --nocancel --backtitle "OpenVario" \
-#	--title "[ S Y S T E M ]" \
-#	--begin 3 4 \
-#	--menu "You can use the UP/DOWN arrow keys" 15 50 4 \
-#	Update_System   "Update system software" \
-#	Update_Maps   "Update Maps files" \
-#	Calibrate_Sensors   "Calibrate Sensors" \
-#	Back   "Back to Main" 2>"${INPUT}"
-#	
-#	menuitem=$(<"${INPUT}")
-	
-#	# make decsion 
-#	case $menuitem in
-#		Update_System) 
-#			update_system
-#			;;
-#		Update_Maps) 
-#			update_maps
-#			;;
-#		Calibrate_Sensors) 
-#			calibrate_sensors
-#		;;
-#		Exit) ;;
-#	esac		
-#}
-
 function update_system() {
 	echo "Updating System ..." > /tmp/tail.$$
 	/usr/bin/update-system.sh >> /tmp/tail.$$ &
 	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
-
-#function calibrate_sensors() {
-#	echo "Calibrating Sensors ..." >> /tmp/tail.$$
-#	systemctl stop sensord
-#	/opt/bin/sensorcal -c > /tmp/tail.$$ &
-#	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
-#	systemctl start sensord
-#}
-
-#function update_maps() {
-#	echo "Updating Maps ..." > /tmp/tail.$$
-#	/usr/bin/update-maps.sh >> /tmp/tail.$$ &
-#	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
-#}
-
-#function download_files() {
-#	echo "Downloading files ..." > /tmp/tail.$$
-#	/usr/bin/download-igc.sh >> /tmp/tail.$$ &
-#	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
-#}
-
-#function upload_files(){
-#	echo "Uploading files ..." > /tmp/tail.$$
-#	/usr/bin/upload-all.sh >> /tmp/tail.$$ &
-#	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
-#}
-
-#function start_xcsoar() {
-#	/usr/bin/xcsoar -fly
-#}
-
-#function power_off() {
-#shutdown -h now
-#}
 
 setfont cp866-8x14.psf.gz
 
