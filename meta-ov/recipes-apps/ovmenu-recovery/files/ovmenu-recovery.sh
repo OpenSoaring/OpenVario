@@ -21,20 +21,37 @@ do
 	--title "[ M A I N - M E N U ]" \
 	--menu "You can use the UP/DOWN arrow keys" 15 50 6 \
 	Flash_SDCard   "Write image to SD Card" \
+	Backup-Image   "Backup complete Image" \
 	Reboot   "Reboot" \
-	Exit "Exit to shell" 2>"${INPUT}"
+	Exit "Exit to shell" \
+    2>"${INPUT}"
 	 
 	menuitem=$(<"${INPUT}")
  
 	# make decsion 
 case $menuitem in
 	Flash_SDCard) select_image;;
+	Backup-Image) backup_image;;
 	Reboot) /opt/bin/reboot.sh;;
 	Exit) /bin/bash;;
 esac
 
 done
 }
+
+	
+function backup_image(){
+  datestring=$(date +%F)
+  mkdir -p /$DIRNAME/backup
+  # backup 1GB
+  # dd if=/dev/mmcblk0 bs=1M count=1024 | gzip > /$DIRNAME/backup/$datestring.img.gz
+  
+  # test backup 50MB (Boot areal + 10 MB)
+  dd if=/dev/mmcblk0 bs=1M count=50 | gzip > /$DIRNAME/backup/$datestring.img.gz | dialog --gauge "Writing Image ... " 10 50 0
+  
+  echo "Backup finished"
+}
+
 
 function select_image(){
 	
