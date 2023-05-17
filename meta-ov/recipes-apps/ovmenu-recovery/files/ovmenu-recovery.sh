@@ -57,7 +57,7 @@ function backup_image(){
 
 function select_image(){
 	
-	images=$DIRNAME/images/OpenVario-linux*.gz
+	images=$DIRNAME/images/O*V*-*.gz
 
 	let i=0 # define counting variable
 	files=() # define working array
@@ -65,11 +65,21 @@ function select_image(){
 	while read -r line; do # process file by file
 		let i=$i+1
 		files+=($i "$line")
-		temp=$(echo $line | grep -oE '[0-9]{5}')
-		temp2=$(echo $line | grep -o "testing")
-		temp3=$(echo $line | awk -F'openvario-|.rootfs' '{print $2}')
-		temp="$temp $temp3 $temp2"
-		files_nice+=($i "$temp")
+        filename=$(basename "$line") 
+        # OpenVario-linux
+		temp1=$(echo $line | grep -oE '[0-9]{5}')
+		if [ -n "$temp1"]
+		then
+			# the complete (new) filename without extension
+			# temp1=$(echo $line | awk -F'/|.img' '{print $4}')
+			temp1=${filename}
+		else
+			temp2=$(echo $line | awk -F'openvario-|.rootfs' '{print $3}')
+			temp3=$(echo $line | grep -o "testing")
+		fi
+		
+		# temp="$temp1 $temp2 $temp3"
+		files_nice+=($i "$temp1 $temp2 $temp3")
 	done < <( ls -1 $images )
 	
 	if [ -n "$files" ]
