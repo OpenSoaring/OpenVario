@@ -24,6 +24,7 @@ do
 	Backup-Image   "Backup complete Image" \
 	Reboot   "Reboot" \
 	Exit "Exit to shell" \
+	ShutDown "ShutDown... " \
     2>"${INPUT}"
 	 
 	menuitem=$(<"${INPUT}")
@@ -34,6 +35,7 @@ case $menuitem in
 	Backup-Image) backup_image;;
 	Reboot) /opt/bin/reboot.sh;;
 	Exit) /bin/bash;;
+	ShutDown) shutdown -h now;;
 esac
 
 done
