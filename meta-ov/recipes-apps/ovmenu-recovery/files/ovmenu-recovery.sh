@@ -97,7 +97,7 @@ function select_image(){
 	
 	menuitem=$(<"${INPUT}")
  
-	# make decsion 
+	# make decision:
 	case $menuitem in
 		UpdateuBoot) updateuboot;;
 		UpdateAll) updateall;;
