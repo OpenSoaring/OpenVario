@@ -158,4 +158,18 @@ function update_system() {
 
 # ??? setfont cp866-8x14.psf.gz
 
-main_menu
+read IMAGEFILE < $DIRNAME/upgrade.file
+
+echo "UpdateFile: $IMAGEFILE "
+
+if [ -e "$IMAGEFILE" ];
+then
+	echo "Update $IMAGEFILE !!!!"
+	updateall
+else
+	main_menu
+fi
+
+#=====================================================================================
+#=====================================================================================
+#=====================================================================================
