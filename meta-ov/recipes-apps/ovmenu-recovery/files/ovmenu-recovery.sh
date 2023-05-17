@@ -156,6 +156,6 @@ function update_system() {
 	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
-setfont cp866-8x14.psf.gz
+# ??? setfont cp866-8x14.psf.gz
 
 main_menu
