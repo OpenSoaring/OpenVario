@@ -144,7 +144,27 @@ function updateall(){
 	(pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
     #########################################
     # rename the recovery file:
-    mv $DIRNAME/ov-recovery.itb $DIRNAME/ov-recovery.itx 
+    mv $DIRNAME/ov-recovery.itb $DIRNAME/ov-recovery.itx
+    # recover XCSoarData:
+    if [ -d "${DIRNAME}/sdcard/part2/xcsoar" ]; then
+        mkdir -p /mnt/sd
+        mount ${TARGET}p2  /mnt/sd
+        ls -l /mnt/sd/home/root/.xcsoar
+        
+        rm -rf /mnt/sd/home/root/.xcsoar/*
+        cp -frv ${DIRNAME}/sdcard/part2/xcsoar/* /mnt/sd/home/root/.xcsoar/
+        if [ -d "${DIRNAME}/sdcard/part2/glider_club" ]; then
+          mkdir -p /mnt/sd/home/root/.glider_club
+          cp -frv ${DIRNAME}/sdcard/part2/glider_club/* /mnt/sd/home/root/.glider_club/
+        fi
+
+        ls -l /mnt/sd/home/root/.xcsoar
+        echo "ready OV upgrade!"
+        # read -p "Press enter to continue"
+    else
+        echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"
+    fi
+
     # reboot:
     /opt/bin/reboot.sh
 }
