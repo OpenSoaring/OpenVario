@@ -4,15 +4,13 @@ LICENSE = "MIT"
 # openvario-base-image.bb is without CheckSum:
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
-PR = "r27"
+PR = "r28"
 
 S = "${WORKDIR}/${PN}-${PV}"
 
 SRC_URI = "\
         file://openvario-recovery.its \
-        file://mkimage \
         "
-
 
 DEPENDS = "\
         dtc-native \
@@ -40,9 +38,13 @@ do_compile () {
 
 do_mkimage () {
 	# show mkimage version:
-	${S}/mkimage_x -V
+	echo "========================================="
+	mkimage -V
+	/usr/bin/mkimage -V
+	echo "========================================="
 	# Build ITB with provided config
-	${S}/mkimage -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
+	#    mkimage   -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
+	/usr/bin/mkimage -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
 }
 
 addtask mkimage after do_configure before do_install
