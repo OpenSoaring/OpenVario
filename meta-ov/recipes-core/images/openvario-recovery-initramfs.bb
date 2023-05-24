@@ -3,7 +3,7 @@ inherit core-image
 
 LICENSE = "MIT"
 
-PR = "r3"
+PR = "r1"
 
 IMAGE_FEATURES += " package-management"
 
