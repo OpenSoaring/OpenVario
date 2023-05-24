@@ -141,7 +141,7 @@ function updateuboot(){
 #update updateall
 function updateall(){
 
-	(pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
+	(pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | dialog --gauge "Writing Image ...\nfile = ${IMAGEFILE}  " 10 50 0
     #########################################
     # rename the recovery file:
     mv $DIRNAME/ov-recovery.itb $DIRNAME/ov-recovery.itx
