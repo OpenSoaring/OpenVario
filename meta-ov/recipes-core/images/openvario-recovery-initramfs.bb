@@ -3,8 +3,7 @@ inherit core-image
 
 LICENSE = "MIT"
 
-PR = "r2"
->>>>>>> 7fb49aa (ovmenu-recovery.sh - make an upgrade directly in case of a firmware file link)
+PR = "r3"
 
 IMAGE_FEATURES += " package-management"
 
