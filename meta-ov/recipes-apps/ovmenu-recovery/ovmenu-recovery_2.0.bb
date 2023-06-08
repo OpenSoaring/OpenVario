@@ -10,7 +10,7 @@ DEPENDS = "dialog"
 RDEPENDS:${PN} = "dialog \
 					bash \
 				"
-PR = "r9"
+PR = "r1"
 
 inherit allarch
 
