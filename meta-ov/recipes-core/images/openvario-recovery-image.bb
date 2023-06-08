@@ -16,7 +16,7 @@ SRC_URI = "\
 
 DEPENDS = "\
         dtc-native \
-        linux-mainline \
+        virtual/kernel \
         openvario-recovery-initramfs \
         u-boot-mkimage-native \
         u-boot \
@@ -32,9 +32,6 @@ do_configure () {
 	# new initramfs
 	cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
 	cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
-
-	cp -v ${WORKDIR}/mkimage ${S}/mkimage_x
-	chmod 757 ${S}/mkimage_x
 }
 
 do_compile () {
@@ -45,7 +42,7 @@ do_mkimage () {
 	# show mkimage version:
 	${S}/mkimage_x -V
 	# Build ITB with provided config
-	${S}/mkimage_x -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
+	${S}/mkimage -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
 }
 
 addtask mkimage after do_configure before do_install
