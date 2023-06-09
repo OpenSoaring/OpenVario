@@ -1,12 +1,12 @@
 [submodule "meta-openembedded"]
 	path = meta-openembedded
-	url = git://git.openembedded.org/meta-openembedded
+	url = https://github.com/openembedded/meta-openembedded
 [submodule "openembedded-core"]
 	path = openembedded-core
-	url = git://git.openembedded.org/openembedded-core
+	url = https://github.com/openembedded/openembedded-core
 [submodule "bitbake"]
 	path = bitbake
-	url = git://git.openembedded.org/bitbake
+	url = https://github.com/openembedded/bitbake
 [submodule "meta-sunxi"]
 	path = meta-sunxi
-	url = https://github.com/linux-sunxi/meta-sunxi.git
+	url = https://github.com/linux-sunxi/meta-sunxi
