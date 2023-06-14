@@ -4,6 +4,7 @@ require openvario-base-image.bb
 IMAGE_ROOTFS_SIZE ?= "1048576"
 
 IMAGE_INSTALL += "\
+    opensoar \
     xcsoar \
     xcsoar-menu \
     xcsoar-profiles \
