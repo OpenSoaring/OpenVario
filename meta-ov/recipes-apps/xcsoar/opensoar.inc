@@ -25,6 +25,7 @@ DEPENDS = "	\
 		libsodium \
 		c-ares \
 		fmt \
+		dbus \
 "
 
 RDEPENDS:${PN} = "\
@@ -39,10 +40,10 @@ BOOST_FILE = "boost_${@'${BOOST_VERSION}'.replace('.','_')}.tar.bz2"
 SRC_URI += " \
 	file://0007-Disable-touch-screen-auto-detection.patch \
 	https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source/${BOOST_FILE};sha256sum=${BOOST_SHA256HASH};unpack=0 \
-	file://ovmenu-x.service \
 "
+# no OV menu:	file://ovmenu-x.service 
 inherit pkgconfig
-inherit systemd
+# no OV menu:inherit systemd
 
 addtask do_package_write_ipk after do_package
 
@@ -62,15 +63,15 @@ EXTRA_OEMAKE = " \
 	ENABLE_MESA_KMS=y GLES2=y \
 	GEOTIFF=n \
 "
-PACKAGES += "ovmenu-x"
-RDEPENDS:ovmenu-x += " \
-	${PN} \
-	ovmenu-ng-skripts \
-	autofs-config \
-"
-RCONFLICTS:ovmenu-x += "ovmenu-ng-autostart"
-SYSTEMD_PACKAGES = "ovmenu-x"
-SYSTEMD_SERVICE:ovmenu-x = "ovmenu-x.service"
+# no OV menu:PACKAGES += "ovmenu-x"
+# no OV menu:RDEPENDS:ovmenu-x += " 
+# no OV menu:	${PN} 
+# no OV menu:	ovmenu-ng-skripts 
+# no OV menu:	autofs-config 
+# no OV menu:"
+# no OV menu:RCONFLICTS:ovmenu-x += "ovmenu-ng-autostart"
+# no OV menu:SYSTEMD_PACKAGES = "ovmenu-x"
+# no OV menu:SYSTEMD_SERVICE:ovmenu-x = "ovmenu-x.service"
 
 do_configure() {
 	install -d ${B}/output/download
@@ -83,16 +84,16 @@ do_compile() {
 	ln -sf convert.im7 ${STAGING_DIR_NATIVE}/usr/bin/convert
 	export FONTCONFIG_PATH=/etc/fonts
 	oe_runmake
-    oe_runmake output/UNIX/bin/OpenVarioMenu
+# no OV menu:    oe_runmake output/UNIX/bin/OpenVarioMenu
 
 }
 
 do_install() {
 	oe_runmake install-bin install-mo DESTDIR=${D}
-	install -m755 ${S}/output/UNIX/bin/OpenVarioMenu ${D}${bindir}
+# no OV menu:	install -m755 ${S}/output/UNIX/bin/OpenVarioMenu ${D}${bindir}
 
-	install -d ${D}${systemd_unitdir}/system
-	install -m644 ${WORKDIR}/ovmenu-x.service ${D}${systemd_unitdir}/system
+# no OV menu:	install -d ${D}${systemd_unitdir}/system
+# no OV menu:	install -m644 ${WORKDIR}/ovmenu-x.service ${D}${systemd_unitdir}/system
 }
 
 FILES:${PN} = " \
@@ -101,5 +102,5 @@ FILES:${PN} = " \
 "
 # this is in xcsoar-package:	${bindir}/vali-xcs 
 
-FILES:ovmenu-x += "${bindir}/OpenVarioMenu"
+# no OV menu: FILES:ovmenu-x += "${bindir}/OpenVarioMenu"
 
