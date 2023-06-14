@@ -18,37 +18,37 @@ DEPENDS = "\
         openvario-recovery-initramfs \
         u-boot-mkimage-native \
         u-boot \
-	"
+    "
 
 do_compile[deptask] = "do_rm_work"
 
 ## the next line can be toggled between new and old!
 do_configure () {
-	cp ${WORKDIR}/openvario-recovery.its ${S}
-	#new image
-	dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
-	# new initramfs
-	cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
-	cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
+    cp ${WORKDIR}/openvario-recovery.its ${S}
+    #new image
+    dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
+    # new initramfs
+    cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
+    cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
 }
 
 do_compile () {
-	pwd  # only as WO for one action
+    pwd  # only as WO for one action
 }
 
 do_mkimage () {
-	# show mkimage version:
-	echo "========================================="
-	mkimage -V
-	/usr/bin/mkimage -V
-	echo "========================================="
-	# Build ITB with provided config
-	#    mkimage   -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
-	/usr/bin/mkimage -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
+    # show mkimage version:
+    echo "========================================="
+    mkimage -V
+    /usr/bin/mkimage -V
+    echo "========================================="
+    # Build ITB with provided config
+    #    mkimage   -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
+    /usr/bin/mkimage -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
 }
 
 addtask mkimage after do_configure before do_install
 
 do_install () {
-	cp ${S}/ov-recovery.itb ${DEPLOY_DIR_IMAGE}
+    cp ${S}/ov-recovery.itb ${DEPLOY_DIR_IMAGE}
 }
