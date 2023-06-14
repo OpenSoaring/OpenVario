@@ -29,7 +29,11 @@ do_configure () {
     dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
     # new initramfs
     cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
-    cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
+    if [ -e "${DEPLOY_DIR_IMAGE}/openvario.dtb" ]; then
+      cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
+    else
+      cp -v ${DEPLOY_DIR_IMAGE}/${MACHINE}.dtb ${S}/openvario.dtb
+    fi
 }
 
 do_compile () {
