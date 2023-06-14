@@ -2,13 +2,16 @@
 
 DIALOGRC=/opt/bin/openvario.rc
 
-#Config
+# Config
 TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIRNAME=/mnt/openvario
 
-#Target device (typically /dev/mmcblk0)
+# Target device (typically /dev/mmcblk0)
 TARGET=/dev/mmcblk0
+
+# Image file search string:
+images=$DIRNAME/images/OpenVario-linux*.gz
 
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
@@ -56,34 +59,17 @@ function backup_image(){
 
 
 function select_image(){
-	
-	images=$DIRNAME/images/O*V*-*.gz
-
 	let i=0 # define counting variable
-	files=() # define working array
-	files_nice=()
-	while read -r line; do # process file by file
+	declare -a files=() # define working array
+	declare -a files_nice=()
+	for line in $images; do
 		let i=$i+1
 		files+=($i "$line")
-        filename=$(basename "$line") 
-        # OpenVario-linux
-		temp1=$(echo $line | grep -oE '[0-9]{5}')
-		if [ -n "$temp1"]
-		then
-			# the complete (new) filename without extension
-			# temp1=$(echo $line | awk -F'/|.img' '{print $4}')
-			temp1=${filename}
-		else
-			temp2=$(echo $line | awk -F'openvario-|.rootfs' '{print $3}')
-			temp3=$(echo $line | grep -o "testing")
-		fi
-		
-		# temp="$temp1 $temp2 $temp3"
-		files_nice+=($i "$temp1 $temp2 $temp3")
-	done < <( ls -1 $images )
-	
-	if [ -n "$files" ]
-	then
+		filename=$(basename "$line") 
+		files_nice+=($i "$filename")
+	done
+
+	if [ -n "$files" ]; then
 		# Search for images
 		FILE=$(dialog --backtitle "${TITLE}" \
 		--title "Select image" \
@@ -93,7 +79,7 @@ function select_image(){
 	else
 		dialog --backtitle "${TITLE}" \
 		--title "Select image" \
-		--msgbox "\n\n No image file found !!" 10 40
+		--msgbox "\n\nNo image file found with \n'$images'!!" 10 40
 		return
 	fi
 	IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$FILE p"))
@@ -109,7 +95,7 @@ function select_image(){
 	
 	menuitem=$(<"${INPUT}")
  
-	# make decision:
+	# make decsion 
 	case $menuitem in
 		UpdateuBoot) updateuboot;;
 		UpdateAll) updateall;;
