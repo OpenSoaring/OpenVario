@@ -80,10 +80,12 @@ function select_image(){
 
 
 function start_upgrade(){
-	BOOTSECTOR="$OV_DIRNAME/BootSector.gz"
+	# copy only the 1st block (20MB) (boot-sector!)
+	BOOTSECTOR="$IMAGEFILE"
+	# BOOTSECTOR="$USB_STICK/BootSector.gz"
+	# BOOTSECTOR="$OV_DIRNAME/BootSector.gz"
 	if [ -e "${BOOTSECTOR}" ]; then
-		echo "copy the 1st block (1M) (boot-sector!)"
-		BOOTSECTOR="$OV_DIRNAME/BootSector.gz"
+		echo "copy the 1st block (20MB) (boot-sector!)"
 		gzip -cfd ${BOOTSECTOR} | dd of=$TARGET bs=1M count=20
 	fi
 
@@ -136,7 +138,7 @@ if [ -f "${IMAGEFILE}" ]; then
 	umount /dev/mmcblk0p1
 	umount /dev/mmcblk0p2
 
-	IMAGEFILE=${IMAGEFILE//"/home/root"/""}
+	IMAGEFILE=${IMAGEFILE//"/home/root/usb"/"/mnt"}
 	# no copy!!! cp -f ${IMAGEFILE} ${FW_FILE}
 
 	# Better as copy is writing the name in the 'upgrade file'
