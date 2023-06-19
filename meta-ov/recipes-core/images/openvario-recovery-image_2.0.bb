@@ -4,7 +4,7 @@ LICENSE = "MIT"
 # openvario-base-image.bb is without CheckSum:
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
-PR = "r1"
+require ov-revision.inc
 
 S = "${WORKDIR}/${PN}-${PV}"
 
@@ -24,11 +24,11 @@ do_compile[deptask] = "do_rm_work"
 
 ## the next line can be toggled between new and old!
 do_configure () {
-    cp ${WORKDIR}/openvario-recovery.its ${S}
-    #new image
-    dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
-    # new initramfs
-    cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
+	cp ${WORKDIR}/openvario-recovery.its ${S}
+	#new image
+	dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
+	# new initramfs
+	cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
     if [ -e "${DEPLOY_DIR_IMAGE}/openvario.dtb" ]; then
       cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
     else

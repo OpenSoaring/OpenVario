@@ -3,7 +3,7 @@ inherit core-image
 
 LICENSE = "MIT"
 
-PR = "r1"
+require ov-revision.inc
 
 IMAGE_FEATURES += " package-management"
 
