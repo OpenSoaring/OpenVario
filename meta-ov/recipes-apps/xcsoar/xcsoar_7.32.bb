@@ -6,8 +6,8 @@ RCONFLICTS:${PN}="xcsoar-testing"
 
 SRC_URI = "git://github.com/XCSoar/XCSoar.git;protocol=https;branch=master "
 
-# Commit version for 7.30:
-SRCREV = "b32faf31a537471c6863efffe0cb1e0a90a598e4"
+# Commit version for 7.32:
+SRCREV = "e3c5a68c37c9f5b7b7a8265159ed25726fe44b8c"
 
 BOOST_VERSION = "1.82.0"
 BOOST_SHA256HASH = "a6e1ab9b0860e6a2881dd7b21fe9f737a095e5f33a3a874afc6a345228597ee6"
