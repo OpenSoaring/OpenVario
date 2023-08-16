@@ -7,8 +7,8 @@ RCONFLICTS:${PN}="xcsoar-testing"
 
 SRC_URI = "git://github.com/August2111/OpenSoar.git;protocol=https;branch=opensoar-dev "
 
-# Commit version for 7.33.13
-SRCREV = "d3a81b844ad549867ceee30ec94f6b49b0aee0a7"
+# Commit version for 7.34.14
+SRCREV = "314f090f1b2769f5036662de557a3e44007fe2b5"
 
 BOOST_VERSION = "1.82.0"
 BOOST_SHA256HASH = "a6e1ab9b0860e6a2881dd7b21fe9f737a095e5f33a3a874afc6a345228597ee6"
