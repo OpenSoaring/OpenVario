@@ -1,3 +1,5 @@
+Version v3.0.1-17 - not yet released
+
 Version v3.0.1-16 - 2023/08/16
 
 * merged PR360 (Linux Update 6.3.8, bitbake 2.0, openembedded, ..)
