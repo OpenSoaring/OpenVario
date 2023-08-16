@@ -1,4 +1,4 @@
-Version v3.0.1-13 - not yet released 
+Version v3.0.1-13 - 2023/08/16 
 
 Version v3.0.1-12 - 2023/08/16
 
