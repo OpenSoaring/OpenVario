@@ -1,5 +1,6 @@
-Version v3.0.1-18 - not released yet
+Version v3.0.1-18 - 2023/08/17
 ------------------------------
+* update only opensoar and xcsoar (7.38)
 
 Version v3.0.1-17 - 2023/08/16
 ------------------------------
