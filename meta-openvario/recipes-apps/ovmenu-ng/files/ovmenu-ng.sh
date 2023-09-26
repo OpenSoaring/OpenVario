@@ -5,8 +5,12 @@ TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIALOG_CANCEL=1
 
-if [ -e ~/.glider_club/GliderClub_Std.prf ]
-then
+if [ -e ~/config.uSys ]; then
+  /usr/bin/update-system-config.sh
+  # read -t 10 -p "Hit ENTER to continue or wait 10 seconds ..."
+fi
+
+if [ -e ~/.glider_club/GliderClub_Std.prf ]; then
   MENU_VERSION="club"
   MENU_ITEM="club_menu"
   START_PROGRAM="start_opensoar_club"

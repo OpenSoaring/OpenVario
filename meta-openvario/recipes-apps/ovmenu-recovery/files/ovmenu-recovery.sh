@@ -132,8 +132,13 @@ function updateall(){
     # rename the recovery file:
     mv $DIRNAME/ov-recovery.itb $DIRNAME/ov-recovery.itx
     # recover XCSoarData:
-    if [ -d "${DIRNAME}/sdcard/part2/xcsoar" ]; then
+    if [ -d "${DIRNAME}/sdcard" ]; then
         mkdir -p /mnt/sd
+        if [ -e "${DIRNAME}/sdcard/part1/config.uEnv" ]; then
+            mount ${TARGET}p1  /mnt/sd
+            cp ${DIRNAME}/sdcard/part1/config.uEnv /mnt/sd/config.uEnv
+            umount /mnt/sd
+        fi
         mount ${TARGET}p2  /mnt/sd
         ls -l /mnt/sd/home/root/.xcsoar
         
@@ -143,7 +148,11 @@ function updateall(){
           mkdir -p /mnt/sd/home/root/.glider_club
           cp -frv ${DIRNAME}/sdcard/part2/glider_club/* /mnt/sd/home/root/.glider_club/
         fi
-
+        
+        if [ -e "${DIRNAME}/sdcard/config.uSys" ]; then
+          cp ${DIRNAME}/sdcard/config.uSys /mnt/sd/home/root/config.uSys
+        fi
+        
         ls -l /mnt/sd/home/root/.xcsoar
         echo "ready OV upgrade!"
         # read -p "Press enter to continue"
