@@ -17,7 +17,6 @@ inherit allarch
 S = "${WORKDIR}"
 
 SRC_URI = " \
-	file://fw-upgrade.sh \
 	file://ovmenu-recovery.sh \
 	file://dialogrc \
 "
@@ -28,12 +27,10 @@ do_compile() {
 do_install() {
 	install -d ${D}/opt/bin
 	install -m 0755 ${S}/ovmenu-recovery.sh ${D}/opt/bin
-	install -m 0755 ${S}/fw-upgrade.sh ${D}/opt/bin
 
 }
 
 PACKAGES = "${PN}"
 FILES:${PN} = " \
 	/opt/bin/ovmenu-recovery.sh \
-	/opt/bin/fw-upgrade.sh \
 "
