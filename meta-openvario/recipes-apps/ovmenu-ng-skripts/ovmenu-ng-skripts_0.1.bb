@@ -26,6 +26,7 @@ SRC_URI = "\
 	file://logbook.sh \
 	file://ov-calibrate-ts.sh \
 	file://reset-xcsoar-data.sh \
+	file://system-info.sh \
 "
 
 
@@ -46,6 +47,7 @@ do_install() {
 		${S}/logbook.sh \
 		${S}/ov-calibrate-ts.sh \
 		${S}/reset-xcsoar-data.sh \
+		${S}/system-info.sh \
 		${D}${bindir}/
 	cd ${D}${bindir}
 	ln -s -r transfer-xcsoar.sh upload-all.sh
