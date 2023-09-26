@@ -168,6 +168,10 @@ read IMAGEFILE < $DIRNAME/upgrade.file
 
 echo "UpdateFile: $IMAGEFILE "
 
+# image file name with path!
+IMAGEFILE="$DIRNAME/images/$IMAGEFILE"
+echo $IMAGEFILE > $DIRNAME/upgrade.fileX
+
 if [ -e "$IMAGEFILE" ];
 then
 	echo "Update $IMAGEFILE !!!!"
