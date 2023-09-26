@@ -4,6 +4,7 @@ echo "Firmware Upgrade OpenVario"
 echo "=========================="
 
 USB_STICK=usb
+DIALOG_CANCEL=1
 # usb is the (my) previous mounted folder to the usb-stick in home dir : ~/usb, maybe it ist to create before...
 # because the USB-Stick with this file isn't callable before mounting this pice of code cannot run:
 if [ -e "$USB_STICK/fw-upgrade.sh" ]; then
@@ -57,15 +58,46 @@ function select_image(){
         # temp="$temp1 $temp2 $temp3"
         files_nice+=($i "$temp1 $temp2 $temp3")
     done < <( ls -1 $images )
+    
+    
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    DEBUG=n
+    # read DEBUG
+    if [[ "$DEBUG" == "y" ]]; then
+        echo "===================================================="
+        echo "===================================================="
+        echo "===================================================="
+        echo "files = $files"
+        for i in "${files[@]}"
+        do
+           echo "$i"
+           # or do whatever with individual element of the array
+        done
 
+        echo "===================================================="
+        echo "===================================================="
+        echo "===================================================="
+        for i in "${files_nice[@]}"
+        do
+           echo "$i"
+           # or do whatever with individual element of the array
+        done
+        echo "===================================================="
+        echo "===================================================="
+        echo "===================================================="
+        
+        read DEBUG
+    fi
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
     if [ -n "$files" ]; then
         # Search for images
-        FILE=$(dialog --backtitle "${TITLE}" \
+        FILE=$(dialog --backtitle "Selection upgrade image from file list" \
         --title "Select image" \
         --menu "Use [UP/DOWN] keys to move, ENTER to select" \
         18 60 12 \
         "${files_nice[@]}" 3>&2 2>&1 1>&3)
-
+        
         IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$FILE p"))
     else
         FILE=""
@@ -76,6 +108,8 @@ function select_image(){
         --title "Select image" \
         --msgbox "\n\n No image file found !!" 10 40
         exit
+    else
+        echo "selected image file:    $IMAGEFILE"
     fi
 }
 
@@ -94,14 +128,14 @@ function start_upgrade(){
     shutdown -r now
 }
 
+
+
 # Selecting image file:
 select_image
 
 # Complete Update
 if [ -f "${IMAGEFILE}" ]; then
     echo "Start..."
-    # echo "Trial !!!!!!" > $OV_DIRNAME/trial.txt
-    # echo "Trial2 !!!!!!">$OV_DIRNAME/trial2.txt
 
     # make tmp dir clean:
     if [ -d "$SDC_DIR" ]; then
@@ -138,12 +172,11 @@ if [ -f "${IMAGEFILE}" ]; then
     umount /dev/mmcblk0p2
 
     BOOT_PARTITION=${IMAGEFILE}                                 # 1st
-    # IMAGEFILE=${IMAGEFILE//"/home/root"/""}
     echo "$IMAGEFILE" > $OV_DIRNAME/upgrade.file0
-    echo "${IMAGEFILE//"/home/root/usb/openvario/images"/""}" > $OV_DIRNAME/upgrade.file1
-    echo "${IMAGEFILE//"/home/root/usb"/"/mnt"}" > $OV_DIRNAME/upgrade.file2
-    IMAGEFILE=${IMAGEFILE//"/home/root/usb"/"/mnt"}
-    # no copy!!! cp -f ${IMAGEFILE} ${FW_FILE}
+    echo "${IMAGEFILE//"$OV_DIRNAME/images"/""}" > $OV_DIRNAME/upgrade.file1
+    #     echo "${IMAGEFILE//"$MNT_DIR/"/mnt"}" > $OV_DIRNAME/upgrade.file2
+    # remove path:
+    IMAGEFILE=${IMAGEFILE//"$OV_DIRNAME/images"/""}
 
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGEFILE !"
@@ -159,8 +192,7 @@ if [ -f "${IMAGEFILE}" ]; then
     # read -rsp $'Press enter to continue...\n'
     IMAGENAME=$(basename "$IMAGEFILE" .gz)
     TIMEOUT=5
-    # DIALOG_CANCEL=1 dialog --nook --nocancel --pause "OpenVario Upgrade with \\n'${IMAGEFILE} ... \\n Press [ESC] for interrupting" 10 30 $TIMEOUT 2>&1
-    DIALOG_CANCEL=1 dialog --nook --nocancel --pause "OpenVario Upgrade with \\n'${IMAGENAME}' ... \\n Press [ESC] for interrupting" 20 60 $TIMEOUT 2>&1
+    dialog --nook --nocancel --pause "OpenVario Upgrade with \\n'${IMAGENAME}' ... \\n Press [ESC] for interrupting" 20 60 $TIMEOUT 2>&1
 
     case $? in
         1) echo "Upgrade interrupted!";;
