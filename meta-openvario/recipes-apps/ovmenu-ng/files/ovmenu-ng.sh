@@ -5,9 +5,12 @@ TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIALOG_CANCEL=1
 
+# set system configs if config.uSys is available (from Upgrade)
 if [ -e ~/config.uSys ]; then
+  echo "Update system config" > sysconfig.txt
   /usr/bin/update-system-config.sh
-  # read -t 10 -p "Hit ENTER to continue or wait 10 seconds ..."
+elif [ ! -e ~/_config.uSys ]; then
+  echo "config.uSys not found" > sysconfig.txt
 fi
 
 if [ -e ~/.glider_club/GliderClub_Std.prf ]; then
@@ -291,6 +294,10 @@ do
     10 "Bright" \
     2>/sys/class/backlight/lcd/brightness
 done
+if [ "$(</sys/class/backlight/lcd/brightness)" == "" ]; then 
+  # in case of ESC brightness is empty
+  echo "$menuitem" > /sys/class/backlight/lcd/brightness
+fi
     submenu_settings
 }
 
