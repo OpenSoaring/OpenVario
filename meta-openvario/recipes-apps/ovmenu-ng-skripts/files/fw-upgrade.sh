@@ -52,6 +52,17 @@ function select_image(){
         files_nice+=($i "$temp1 $temp2 $temp3")
     done < <( ls -1 $images )
     
+    #=======================================
+    # only for testing
+    echo "curr dir $(pwd)"
+    for i in "${files_nice[@]}"
+    do
+        echo "$i"
+   # or do whatever with individual element of the array
+    done
+    read -rsp $'Press enter to continue...(0)\n'
+    #=======================================
+    
     if [ -n "$files" ]; then
         # Search for images
         FILE=$(dialog --backtitle "Selection upgrade image from file list" \
