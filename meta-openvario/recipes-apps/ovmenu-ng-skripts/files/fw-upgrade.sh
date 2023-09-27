@@ -3,17 +3,16 @@
 echo "Firmware Upgrade OpenVario"
 echo "=========================="
 
-USB_STICK=usb
-DIALOG_CANCEL=1
-# usb is the (my) previous mounted folder to the usb-stick in home dir : ~/usb, maybe it ist to create before...
-# because the USB-Stick with this file isn't callable before mounting this pice of code cannot run:
-if [ -e "$USB_STICK/fw-upgrade.sh" ]; then
-    echo "USB-Stick is mounted already"
+# USB_STICK=usb
+if [ "$(dirname $0)" == "/usr/bin"]; then 
+  USB_STICK=/usb/usbstick
 else
-    mkdir -p $USB_STICK
-    mount /dev/sda1 $USB_STICK
-    $USB_STICK/fw-upgrade.sh
+  USB_STICK="$(dirname $0)"
 fi
+echo "USB_STICK = $USB_STICK"
+read -rsp $'Press enter to continue...(0)\n'
+
+DIALOG_CANCEL=1
 
 # the OV dirname at USB stick
 OV_DIRNAME=$USB_STICK/openvario
@@ -24,7 +23,6 @@ MNT_DIR=$OV_DIRNAME/usb
 
 # SD card:
 TARGET=/dev/mmcblk0
-# old: IMAGEFILE=$OV_DIRNAME/images/OV-3.0.1-10-CB2-CH57.img.gz
 IMAGEFILE=""
 
 BACKUP_DIR=$SDC_DIR
@@ -59,37 +57,6 @@ function select_image(){
         files_nice+=($i "$temp1 $temp2 $temp3")
     done < <( ls -1 $images )
     
-    
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    DEBUG=n
-    # read DEBUG
-    if [[ "$DEBUG" == "y" ]]; then
-        echo "===================================================="
-        echo "===================================================="
-        echo "===================================================="
-        echo "files = $files"
-        for i in "${files[@]}"
-        do
-           echo "$i"
-           # or do whatever with individual element of the array
-        done
-
-        echo "===================================================="
-        echo "===================================================="
-        echo "===================================================="
-        for i in "${files_nice[@]}"
-        do
-           echo "$i"
-           # or do whatever with individual element of the array
-        done
-        echo "===================================================="
-        echo "===================================================="
-        echo "===================================================="
-        
-        read DEBUG
-    fi
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
     if [ -n "$files" ]; then
         # Search for images
         FILE=$(dialog --backtitle "Selection upgrade image from file list" \
@@ -116,16 +83,21 @@ function select_image(){
 
 
 function start_upgrade(){
+    if [ "$HW_CONFIG" == "" ]; then
+       HW_CONFIG="ch57"
+    fi
     # rename the ov-recovery.itx to ov-recovery.itb for the next step!!!
-    mv -f $OV_DIRNAME/ov-recovery.itx    $OV_DIRNAME/ov-recovery.itb
+    cp -f $OV_DIRNAME/images/$HW_CONFIG/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
 
     echo "copy the 1st block (20MB) (boot-sector!)"
     # gzip -cfd $USB_STICK/BootPartition/BootSector16MB.gz | dd of=$TARGET bs=1M
     gzip -cfd ${BOOT_PARTITION} | dd of=$TARGET bs=1M count=20
 
     echo "Boot Recovery preparation with '${IMAGEFILE}' finished!"
-    # read -rsp $'Press enter to continue...\n'
-
+    if [ "$DEBUG_STOPS" == "y" ]; then
+      # set outside in shell
+      read -rsp $'Press enter to continue...\n'
+    fi
     shutdown -r now
 }
 
@@ -133,16 +105,6 @@ function start_upgrade(){
 
 # Selecting image file:
 select_image
-
-#===================================
-# only for test
-TEST="y"
-## if [ "$TEST" == "y" ]; then
-IMAGEFILE="/usb/openvario/images/OV-3.0.2-19-CB2-CH57.img.gz"
-echo "selected image file:    $IMAGEFILE"
-read INPUT
-## fi
-#===================================
 
 # Complete Update
 if [ -f "${IMAGEFILE}" ]; then
@@ -204,8 +166,10 @@ if [ -f "${IMAGEFILE}" ]; then
 
 
     # pause:
-    read -rsp $'Press enter to continue...\n'
-
+    if [ "$DEBUG_STOPS" == "y" ]; then
+      # set outside in shell
+      read -rsp $'Press enter to continue...\n'
+    fi
     umount /dev/mmcblk0p1
     umount /dev/mmcblk0p2
 
@@ -227,7 +191,10 @@ if [ -f "${IMAGEFILE}" ]; then
     rm -rf $MNT_DIR
 
     # echo "Upgrade with '${IMAGEFILE}'"
-    # read -rsp $'Press enter to continue...\n'
+    if [ "$DEBUG_STOPS" == "y" ]; then
+      # set outside in shell
+      read -rsp $'Press enter to continue...(4)\n'
+    fi
     IMAGENAME=$(basename "$IMAGEFILE" .gz)
     TIMEOUT=5
     dialog --nook --nocancel --pause "OpenVario Upgrade with \\n'${IMAGENAME}' ... \\n Press [ESC] for interrupting" 20 60 $TIMEOUT 2>&1
