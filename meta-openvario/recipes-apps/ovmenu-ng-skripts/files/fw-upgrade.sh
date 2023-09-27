@@ -175,9 +175,36 @@ if [ -f "${IMAGEFILE}" ]; then
         mkdir -p $BACKUP_DIR/part2/glider_club
         cp -frv $MOUNT_DIR2/home/root/.glider_club/* $BACKUP_DIR/part2/glider_club/
     fi
+    
+    #================== System Config =======================================================
+    #save system config in config.uSys for restoring reason
+    echo "" > $BACKUP_DIR/config.uSys
+    if /bin/systemctl --quiet is-enabled dropbear.socket; then
+        echo "SSH=\"enabled\""
+        echo "SSH=\"enabled\"" >> $BACKUP_DIR/config.uSys
+    elif /bin/systemctl --quiet is-active dropbear.socket; then
+        echo "SSH=\"temporary\""
+        echo "SSH=\"temporary\"" >> $BACKUP_DIR/config.uSys
+    else
+        echo "SSH=\"disabled\""
+        echo "SSH=\"disabled\"" >> $BACKUP_DIR/config.uSys
+    fi
+
+    echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\""
+    echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\"" >> $BACKUP_DIR/config.uSys
+    echo "ROTATION=\"$(</sys/class/graphics/fbcon/rotate_all)\""
+    echo "ROTATION=\"$(</sys/class/graphics/fbcon/rotate_all)\"" >> $BACKUP_DIR/config.uSys
+    
+    source $MOUNT_DIR1/config.uEnv
+    echo "HARDWARE=\"$(basename $fdtfile .dtb)\""
+    echo "HARDWARE=\"$(basename $fdtfile .dtb)\"" >> $BACKUP_DIR/config.uSys
+
+    # Synchronize the commands (?)
+    sync
+
 
     # pause:
-    # read -rsp $'Press enter to continue...\n'
+    read -rsp $'Press enter to continue...\n'
 
     umount /dev/mmcblk0p1
     umount /dev/mmcblk0p2
@@ -204,6 +231,9 @@ if [ -f "${IMAGEFILE}" ]; then
     IMAGENAME=$(basename "$IMAGEFILE" .gz)
     TIMEOUT=5
     dialog --nook --nocancel --pause "OpenVario Upgrade with \\n'${IMAGENAME}' ... \\n Press [ESC] for interrupting" 20 60 $TIMEOUT 2>&1
+
+    # Synchronize the commands (?)
+    sync
 
     case $? in
         0) start_upgrade;;
