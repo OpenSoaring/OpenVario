@@ -4,13 +4,25 @@ echo "Firmware Upgrade OpenVario"
 echo "=========================="
 
 # USB_STICK=usb
-if [ "$(dirname $0)" == "/usr/bin"]; then 
-  USB_STICK=/usb/usbstick
-else
-  USB_STICK="$(dirname $0)"
-fi
-echo "USB_STICK = $USB_STICK"
-read -rsp $'Press enter to continue...(0)\n'
+USB_STICK=/usb/usbstick
+
+### if [ "$(dirname $0)" = "/usr/bin" ]; then 
+###   USB_STICK=/usb/usbstick
+### else
+###   USB_STICK=/usb/usbstick
+###   # USB_STICK="$(dirname $0)"
+### fi
+### echo "dirname $0 = $(dirname $0)"
+### echo "USB_STICK = $USB_STICK"
+### TESTNAME="/usr/bin/fw-upgrade.sh"
+### echo "TEST = $(dirname $TESTNAME)"
+### if [ "$(dirname $TESTNAME)" = "/usr/bin" ]; then 
+###   echo Test 1 is ok!
+### fi
+### if [ $(dirname $TESTNAME) = "/usr/bin" ]; then 
+###   echo Test 2 is ok!
+### fi
+### read -rsp $'Press enter to continue...(0)\n'
 
 DIALOG_CANCEL=1
 
