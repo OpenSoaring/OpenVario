@@ -24,9 +24,8 @@ then
     fi
     # ==================== Brightness ========================
     if [ ! "$BRIGHTNESS" == "" ]; then 
-        echo " [####======] Brightness set to $BRIGHTNESS"
-        echo $BRIGHTNESS > /sys/class/backlight/lcd/brightness
-        # read -t 5 -p "Hit ENTER to continue or wait 5 seconds ..."
+        echo "$BRIGHTNESS" > /sys/class/backlight/lcd/brightness
+        echo " [####======] Brightness set to '$BRIGHTNESS'"
     fi
     # ==================== End ===============================
     mv ./config.uSys ./_config.uSys
