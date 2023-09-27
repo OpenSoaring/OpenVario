@@ -111,13 +111,14 @@ function select_image(){
     else
         echo "selected image file:    $IMAGEFILE"
     fi
+    
 }
 
 
-
-
 function start_upgrade(){
-    # copy only the 1st block (20MB) (boot-sector!)
+    # rename the ov-recovery.itx to ov-recovery.itb for the next step!!!
+    mv -f $OV_DIRNAME/ov-recovery.itx    $OV_DIRNAME/ov-recovery.itb
+
     echo "copy the 1st block (20MB) (boot-sector!)"
     # gzip -cfd $USB_STICK/BootPartition/BootSector16MB.gz | dd of=$TARGET bs=1M
     gzip -cfd ${BOOT_PARTITION} | dd of=$TARGET bs=1M count=20
@@ -132,6 +133,16 @@ function start_upgrade(){
 
 # Selecting image file:
 select_image
+
+#===================================
+# only for test
+TEST="y"
+## if [ "$TEST" == "y" ]; then
+IMAGEFILE="/usb/openvario/images/OV-3.0.2-19-CB2-CH57.img.gz"
+echo "selected image file:    $IMAGEFILE"
+read INPUT
+## fi
+#===================================
 
 # Complete Update
 if [ -f "${IMAGEFILE}" ]; then
@@ -172,17 +183,17 @@ if [ -f "${IMAGEFILE}" ]; then
     umount /dev/mmcblk0p2
 
     BOOT_PARTITION=${IMAGEFILE}                                 # 1st
-    echo "$IMAGEFILE" > $OV_DIRNAME/upgrade.file0
-    echo "${IMAGEFILE//"$OV_DIRNAME/images"/""}" > $OV_DIRNAME/upgrade.file1
-    #     echo "${IMAGEFILE//"$MNT_DIR/"/mnt"}" > $OV_DIRNAME/upgrade.file2
+    echo "$IMAGEFILE" > $OV_DIRNAME/upgrade.file0.txt
+    echo "${IMAGEFILE//"$OV_DIRNAME/images"/""}" > $OV_DIRNAME/upgrade.file1.txt
+    #     echo "${IMAGEFILE//"$MNT_DIR/"/mnt"}" > $OV_DIRNAME/upgrade.file2.txt
     # remove path:
-    IMAGEFILE=${IMAGEFILE//"$OV_DIRNAME/images"/""}
+    # IMAGEFILE=${IMAGEFILE//"$OV_DIRNAME/images"/""}
+    IMAGEFILE=$(basename $IMAGEFILE)
 
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGEFILE !"
     echo "$IMAGEFILE" > $OV_DIRNAME/upgrade.file
-    # rename the ov-recovery.itx to ov-recovery.itb for the next step!!!
-    mv -f $OV_DIRNAME/ov-recovery.itx    $OV_DIRNAME/ov-recovery.itb
+    echo "$IMAGEFILE" > $OV_DIRNAME/upgrade.file.txt
 
     echo "Upgrade step 1 finished!"
     chmod 757 -R $MNT_DIR
@@ -195,8 +206,8 @@ if [ -f "${IMAGEFILE}" ]; then
     dialog --nook --nocancel --pause "OpenVario Upgrade with \\n'${IMAGENAME}' ... \\n Press [ESC] for interrupting" 20 60 $TIMEOUT 2>&1
 
     case $? in
-        1) echo "Upgrade interrupted!";;
-        *) start_upgrade;;
+        0) start_upgrade;;
+        *) echo "Upgrade interrupted!";;
     esac
 
 else
