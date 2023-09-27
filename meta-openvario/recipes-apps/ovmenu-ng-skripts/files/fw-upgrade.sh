@@ -24,8 +24,6 @@ BACKUP_DIR=$SDC_DIR
 MOUNT_DIR1=$MNT_DIR/part1
 MOUNT_DIR2=$MNT_DIR/part2
 
-mkdir
-
 BOOT_PARTITION=$USB_STICK/BootPartition/BootSector16MB.gz   # 2nd option
 BOOT_PARTITION=$OV_DIRNAME/BootSector.gz                    # 3rd option
 
