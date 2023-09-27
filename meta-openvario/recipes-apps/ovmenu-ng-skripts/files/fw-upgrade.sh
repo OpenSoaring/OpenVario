@@ -6,24 +6,6 @@ echo "=========================="
 # USB_STICK=usb
 USB_STICK=/usb/usbstick
 
-### if [ "$(dirname $0)" = "/usr/bin" ]; then 
-###   USB_STICK=/usb/usbstick
-### else
-###   USB_STICK=/usb/usbstick
-###   # USB_STICK="$(dirname $0)"
-### fi
-### echo "dirname $0 = $(dirname $0)"
-### echo "USB_STICK = $USB_STICK"
-### TESTNAME="/usr/bin/fw-upgrade.sh"
-### echo "TEST = $(dirname $TESTNAME)"
-### if [ "$(dirname $TESTNAME)" = "/usr/bin" ]; then 
-###   echo Test 1 is ok!
-### fi
-### if [ $(dirname $TESTNAME) = "/usr/bin" ]; then 
-###   echo Test 2 is ok!
-### fi
-### read -rsp $'Press enter to continue...(0)\n'
-
 DIALOG_CANCEL=1
 
 # the OV dirname at USB stick
@@ -31,7 +13,8 @@ OV_DIRNAME=$USB_STICK/openvario
 
 # temporary directories at USB stick to save the setting informations
 SDC_DIR=$OV_DIRNAME/sdcard
-MNT_DIR=$OV_DIRNAME/usb
+MNT_DIR="mnt"
+# MNT_DIR=$OV_DIRNAME/usb
 
 # SD card:
 TARGET=/dev/mmcblk0
@@ -40,6 +23,8 @@ IMAGEFILE=""
 BACKUP_DIR=$SDC_DIR
 MOUNT_DIR1=$MNT_DIR/part1
 MOUNT_DIR2=$MNT_DIR/part2
+
+mkdir
 
 BOOT_PARTITION=$USB_STICK/BootPartition/BootSector16MB.gz   # 2nd option
 BOOT_PARTITION=$OV_DIRNAME/BootSector.gz                    # 3rd option
@@ -166,12 +151,25 @@ if [ -f "${IMAGEFILE}" ]; then
 
     echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\""
     echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\"" >> $BACKUP_DIR/config.uSys
-    echo "ROTATION=\"$(</sys/class/graphics/fbcon/rotate_all)\""
-    echo "ROTATION=\"$(</sys/class/graphics/fbcon/rotate_all)\"" >> $BACKUP_DIR/config.uSys
+    # echo "ROTATION=\"$(</sys/class/graphics/fbcon/rotate_all)\""
+    # echo "ROTATION=\"$(</sys/class/graphics/fbcon/rotate_all)\"" >> $BACKUP_DIR/config.uSys
     
     source $MOUNT_DIR1/config.uEnv
-    echo "HARDWARE=\"$(basename $fdtfile .dtb)\""
-    echo "HARDWARE=\"$(basename $fdtfile .dtb)\"" >> $BACKUP_DIR/config.uSys
+    case $(basename $fdtfile .dtb) in
+        openvario-57-lvds)      hw_config="ch57";;
+        openvario-7-CH070)      hw_config="ch70";;
+        openvario-7-PQ070)      hw_config="pq70";;
+        openvario-7-AM070-DS2)  hw_config="ds70";;
+        openvario-43-rgb)       hw_config="am43";;
+        *)                      hw_config="ch57";;
+    esac
+    # echo "HARDWARE=\"$(basename $fdtfile .dtb)\""
+    echo "HARDWARE=\"$hw_config\""
+    echo "HARDWARE=\"$hw_config\"" >> $BACKUP_DIR/config.uSys
+
+    echo "ROTATION=\"$rotation\""
+    echo "ROTATION=\"$rotation\"" >> $BACKUP_DIR/config.uSys
+    # TEMP=$(grep "rotation" /boot/config.uEnv)
 
     # Synchronize the commands (?)
     sync
