@@ -128,8 +128,8 @@ function updateuboot(){
 
 #update updateall
 function updateall(){
-    IMAGENAME="$(basename $IMAGEFILE)"
-    (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | dialog --gauge "Writing Image ...\nfile = ${IMAGENAME}  " 10 50 0
+    IMAGE_NAME="$(basename $IMAGEFILE .gz)"
+    (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | dialog --gauge "Writing Image ...\nfile = ${IMAGE_NAME}  " 10 50 0
     #########################################
     # remove the recovery file:
     rm -f $DIRNAME/ov-recovery.itb
