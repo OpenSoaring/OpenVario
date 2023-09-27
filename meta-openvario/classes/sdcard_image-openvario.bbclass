@@ -26,6 +26,11 @@ BOOTDD_VOLUME_ID = "OV-${SHORT_OV_MACHINE}"
 # Boot partition size [in KiB] (0xA000)
 BOOT_SPACE ?= "40960"
 
+### # Data partition size [in KiB] (0x14000)
+### DATA_PARTITION_SIZE ?= "81920"
+# Data partition size [in KiB] (0x200)
+DATA_PARTITION_SIZE = "512"
+
 # First partition begin at sector 2048 : 2048*1024 = 2097152
 IMAGE_ROOTFS_ALIGNMENT = "2048"
 
@@ -48,7 +53,7 @@ IMAGE_CMD:openvario-sdimg () {
 	# Align partitions
 	BOOT_SPACE_ALIGNED=$(expr ${BOOT_SPACE} + ${IMAGE_ROOTFS_ALIGNMENT} - 1)
 	BOOT_SPACE_ALIGNED=$(expr ${BOOT_SPACE_ALIGNED} - ${BOOT_SPACE_ALIGNED} % ${IMAGE_ROOTFS_ALIGNMENT})
-	SDIMG_SIZE=$(expr ${IMAGE_ROOTFS_ALIGNMENT} + ${BOOT_SPACE_ALIGNED} + $ROOTFS_SIZE + ${IMAGE_ROOTFS_ALIGNMENT})
+	SDIMG_SIZE=$(expr ${IMAGE_ROOTFS_ALIGNMENT} + ${BOOT_SPACE_ALIGNED} + $ROOTFS_SIZE + $DATA_PARTITION_SIZE + ${IMAGE_ROOTFS_ALIGNMENT})
 
 	# Initialize sdcard image file
 	dd if=/dev/zero of=${SDIMG} bs=1 count=0 seek=$(expr 1024 \* ${SDIMG_SIZE})
@@ -61,6 +66,11 @@ IMAGE_CMD:openvario-sdimg () {
 	# Create rootfs partition
 	parted -s ${SDIMG} unit KiB mkpart primary ext2 $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT}) $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE})
 	parted ${SDIMG} print
+    # =======================================================
+	# Create a new DATA partition
+	parted -s ${SDIMG} unit KiB mkpart primary ext2 $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE}) $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE} \+ ${DATA_PARTITION_SIZE})
+	parted ${SDIMG} print
+    # =======================================================
 
 	# Create a vfat image with boot files
 	BOOT_BLOCKS=$(LC_ALL=C parted -s ${SDIMG} unit b print | awk '/ 1 / { print substr($4, 1, length($4 -1)) / 512 /2 }')
