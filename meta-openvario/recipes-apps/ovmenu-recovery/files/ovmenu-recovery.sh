@@ -11,7 +11,9 @@ DIRNAME=/mnt/openvario
 TARGET=/dev/mmcblk0
 
 # Image file search string:
-images=$DIRNAME/images/OpenVario-linux*.gz
+# images=$DIRNAME/images/OpenVario-linux*.gz
+# old: images=$DIRNAME/images/OpenVario-linux*.gz
+images=$DIRNAME/images/O*V*-*.gz
 
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
@@ -126,11 +128,11 @@ function updateuboot(){
 
 #update updateall
 function updateall(){
-
-	(pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | dialog --gauge "Writing Image ...\nfile = ${IMAGEFILE}  " 10 50 0
+    IMAGENAME="$(basename $IMAGEFILE)"
+    (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | dialog --gauge "Writing Image ...\nfile = ${IMAGENAME}  " 10 50 0
     #########################################
-    # rename the recovery file:
-    mv $DIRNAME/ov-recovery.itb $DIRNAME/ov-recovery.itx
+    # remove the recovery file:
+    rm -f $DIRNAME/ov-recovery.itb
     # recover XCSoarData:
     if [ -d "${DIRNAME}/sdcard" ]; then
         mkdir -p /mnt/sd
