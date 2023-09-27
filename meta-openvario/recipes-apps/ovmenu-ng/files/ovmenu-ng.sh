@@ -5,14 +5,6 @@ TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIALOG_CANCEL=1
 
-# set system configs if config.uSys is available (from Upgrade)
-if [ -e ~/config.uSys ]; then
-  echo "Update system config" > sysconfig.txt
-  /usr/bin/update-system-config.sh
-elif [ ! -e ~/_config.uSys ]; then
-  echo "config.uSys not found" > sysconfig.txt
-fi
-
 if [ -e ~/.glider_club/GliderClub_Std.prf ]; then
   MENU_VERSION="club"
   MENU_ITEM="club_menu"
@@ -294,7 +286,7 @@ do
     10 "Bright" \
     2>/sys/class/backlight/lcd/brightness
 done
-if [ "$(</sys/class/backlight/lcd/brightness)" == "" ]; then 
+if [ "$(</sys/class/backlight/lcd/brightness)" = "" ]; then 
   # in case of ESC brightness is empty
   echo "$menuitem" > /sys/class/backlight/lcd/brightness
 fi
@@ -354,7 +346,7 @@ function upgrade_firmware() {
     /usr/bin/fw-upgrade.sh
     
     # pause:
-    read -rsp $'Press enter to continue...\n'
+    read -rsp $'Press enter to continue...(1)\n'
     sync
 }
 
@@ -493,6 +485,16 @@ function do_shell(){
         /bin/sh 2>&1
     fi
 }
+
+# set system configs if config.uSys is available (from Upgrade)
+if [ -e ~/config.uSys ]; then
+  echo "Update system config" > sysconfig.txt
+  /usr/bin/update-system-config.sh
+elif [ ! -e ~/_config.uSys ]; then
+  echo "config.uSys not found" > sysconfig.txt
+else
+  echo "No config found !!!!!" > sysconfig.txt
+fi
 
 dialog --nook --nocancel --pause \
 "Starting OpenSoar (!)... \\n Press [ESC] for menu" \
