@@ -487,13 +487,14 @@ function do_shell(){
 }
 
 # set system configs if config.uSys is available (from Upgrade)
-if [ -f ./config.uSys ]; then
+cd ~/
+if [ -f config.uSys ]; then
   echo "Update system config" > sysconfig.txt
   /usr/bin/update-system-config.sh
-elif [ ! -f ./_config.uSys ]; then
+elif [ ! -f _config.uSys ]; then
   echo "config.uSys not found" > sysconfig.txt
 else
-  echo "No config found !!!!!" > sysconfig.txt
+  echo "only backup config found !!!!!" > sysconfig.txt
 fi
 
 dialog --nook --nocancel --pause \
