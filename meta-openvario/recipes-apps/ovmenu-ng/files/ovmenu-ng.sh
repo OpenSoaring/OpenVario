@@ -344,9 +344,8 @@ function update_system() {
 function upgrade_firmware() {
     echo "Upgrade Firmware ..." > /tmp/tail.$$
     /usr/bin/fw-upgrade.sh
-    
-    # pause:
-    read -rsp $'Press enter to continue...(1)\n'
+    echo "firmware upgrade interrupted..."
+    echo "==============================="
     sync
 }
 
