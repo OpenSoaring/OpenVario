@@ -3,7 +3,8 @@
 echo "Firmware Upgrade OpenVario"
 echo "=========================="
 
-# USB_STICK=usb
+DEBUG_STOP=""
+
 USB_STICK=/usb/usbstick
 
 DIALOG_CANCEL=1
@@ -29,10 +30,18 @@ MOUNT_DIR1=/boot
 # partition 2 of SD card is mounted on the root of the system
 MOUNT_DIR2=/
 
-rsync --version > NUL
+rsync --version > /dev/null
 if [ "$?" -eq "0" ]; then
    RSYNC_COPY="ok"
 fi
+
+function debug_stop(){
+    if [ -n "$DEBUG_STOP" ]; then
+      echo "Debug-Stop"
+      read -p "Press enter to continue"
+    fi
+}
+
 
 function select_image(){
     images=$OV_DIRNAME/images/O*V*-*.gz
@@ -317,7 +326,7 @@ if [ -f "${IMAGEFILE}" ]; then
     echo "2nd: save boot folder to Backup from partition 1"
     mkdir -p $SDC_DIR/part1
     if [ -n "$RSYNC_COPY" ]; then
-        rsync ruvtcE --progress $MOUNT_DIR1/* $SDC_DIR/part1/ --delete 
+        rsync -ruvtcE --progress $MOUNT_DIR1/* $SDC_DIR/part1/ --delete 
         echo "'ov-recovery.itb' done"
     else
         echo "  copy command (rsync not available)..."
@@ -345,7 +354,7 @@ if [ -f "${IMAGEFILE}" ]; then
         cp -fv   $MOUNT_DIR2/home/root/.bash_history $SDC_DIR/part2/
     fi
     # HardLink 
-    
+    debug_stop
     # cp -al $SDC_DIR/part2/XCSoarData $SDC_DIR/part2/xcsoar
     cp -al $SDC_DIR/part2/xcsoar $SDC_DIR/part2/XCSoarData
     
