@@ -29,6 +29,11 @@ MOUNT_DIR1=/boot
 # partition 2 of SD card is mounted on the root of the system
 MOUNT_DIR2=/
 
+rsync --version > NUL
+if [ "$?" -eq "0" ]; then
+   RSYNC_COPY="ok"
+fi
+
 function select_image(){
     images=$OV_DIRNAME/images/O*V*-*.gz
 
@@ -132,20 +137,31 @@ function save_system(){
     mkdir -p $SDC_DIR
     
     # start with a new 'config.uSys':
-    rm -f $SDC_DIR/config.uSys
-    if /bin/systemctl --quiet is-enabled dropbear.socket; then
+    if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
+        rm -f $SDC_DIR/config.uSys
+        if /bin/systemctl --quiet is-enabled dropbear.socket; then
+            echo "SSH=\"enabled\""
+            echo "SSH=\"enabled\"" >> $SDC_DIR/config.uSys
+        elif /bin/systemctl --quiet is-active dropbear.socket; then
+            echo "SSH=\"temporary\""
+            echo "SSH=\"temporary\"" >> $SDC_DIR/config.uSys
+        else
+            echo "SSH=\"disabled\""
+            echo "SSH=\"disabled\"" >> $SDC_DIR/config.uSys
+        fi
+    else
+        # if there no dropbear.preset found -> enable the SSH like in this
+        # old fw version!
         echo "SSH=\"enabled\""
         echo "SSH=\"enabled\"" >> $SDC_DIR/config.uSys
-    elif /bin/systemctl --quiet is-active dropbear.socket; then
-        echo "SSH=\"temporary\""
-        echo "SSH=\"temporary\"" >> $SDC_DIR/config.uSys
-    else
-        echo "SSH=\"disabled\""
-        echo "SSH=\"disabled\"" >> $SDC_DIR/config.uSys
     fi
 
-    echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\""
-    echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\"" >> $SDC_DIR/config.uSys
+    if [ -r "/sys/class/backlight/lcd/brightness" ]; then
+      echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\""
+      echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\"" >> $SDC_DIR/config.uSys
+    else
+      echo "BRIGHTNESS=\"9\"" >> $SDC_DIR/config.uSys    
+    fi 
     
     # if config.uEnv not exist
     if [ ! -f $MOUNT_DIR1/config.uEnv ]; then
@@ -160,10 +176,14 @@ function save_system(){
     fi
     source $MOUNT_DIR1/config.uEnv
     # fdtfile=openvario-57-lvds.dtb
-    echo "ROTATION=$rotation"
-    if [ ! -n $fdtfile ]; then
+    if [ -z "$fdtfile" ]; then
       echo "'$fdtfile' don't exist!?!"
       echo "What is to do???"
+      VERSION_INFO=$(head -n 1 $MOUNT_DIR1/image-version-info)
+      fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $3}')
+      if [ -z "$fdtfile" ]; then fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $2}'); fi
+      fdtfile="openvario-$fdtfile"
+      echo "fdtfile = '$fdtfile'!!!!"
       read -p "Press enter to continue"
     
     fi
@@ -180,7 +200,6 @@ function save_system(){
 
     echo "ROTATION=\"$rotation\""
     echo "ROTATION=\"$rotation\"" >> $SDC_DIR/config.uSys
-    # TEMP=$(grep "rotation" /boot/config.uEnv)
 
     echo "System Save End"
 }
@@ -224,7 +243,24 @@ function start_upgrade(){
     
     # copy the ov-recovery.itb from HW folder for the next step!!!
     # cp -f $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
-    rsync -auv --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+    if [ -z "$HW_TARGET" ]; then
+      HW_TARGET="ch57"
+    fi 
+    if [ -f "$OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb" ]; then
+      if [ -n "$RSYNC_COPY" ]; then
+        rsync -auvtcE --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+        echo "'ov-recovery.itb' done"
+      else
+        echo "copy 'ov-recovery.itb' in the correct directory..."
+        cp -f  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+      fi
+    fi
+    if [ ! -f "$OV_DIRNAME/ov-recovery.itb" ]; then
+        echo "'$OV_DIRNAME/ov-recovery.itb' don't exist - no upgrade possible"
+        read -p "Press enter to continue"
+        echo "Exit!"
+        exit
+    fi
 
     echo "FILENAME_TYPE: $FILENAME_TYPE  vs FW_VERSION: $FW_VERSION / HW_TARGET: $HW_TARGET"
     if [ "$FILENAME_TYPE" = "2" ] || [ $FW_VERSION -gt 23000 ]; then
@@ -280,21 +316,38 @@ if [ -f "${IMAGEFILE}" ]; then
     # 2nd: save boot folder to Backup from partition 1
     echo "2nd: save boot folder to Backup from partition 1"
     mkdir -p $SDC_DIR/part1
-    rsync -auv --progress $MOUNT_DIR1/* $SDC_DIR/part1/ --delete 
+    if [ -n "$RSYNC_COPY" ]; then
+        rsync ruvtcE --progress $MOUNT_DIR1/* $SDC_DIR/part1/ --delete 
+        echo "'ov-recovery.itb' done"
+    else
+        echo "  copy command (rsync not available)..."
+        # this is possible on older fw (17119 for example)
+        rm -fr $SDC_DIR/part1/*
+        cp -rfv  $MOUNT_DIR1/* $SDC_DIR/part1/
+    fi
     #      --exclude ...
 
     # 3rd: save XCSoarData from partition 2:
     echo "3rd: save XCSoarData from partition 2"
-    mkdir -p $SDC_DIR/part2/xcsoar
-    mkdir -p $SDC_DIR/part2/XCSoarData
+    # mkdir -p $SDC_DIR/part2/XCSoarData
 
-    rsync -auv --progress $MOUNT_DIR2/home/root/.xcsoar/* $SDC_DIR/part2/xcsoar/ \
-          --delete --exclude cache  --exclude logs
-    # rsync -auv --progress $MOUNT_DIR2/home/root/.xcsoar/* $SDC_DIR/part2/XCSoarData/ \
-    #       --delete --exclude cache  --exclude logs
-    # HardLinnk 
+    if [ -n "$RSYNC_COPY" ]; then
+        # mkdir -p $SDC_DIR/part2/xcsoar
+        rsync -ruvtcE --progress $MOUNT_DIR2/home/root/.xcsoar/* $SDC_DIR/part2/xcsoar/ \
+              --delete --exclude cache  --exclude logs
+        rsync -uvtcE --progress $MOUNT_DIR2/home/root/.bash_history $SDC_DIR/part2/
+    else
+        echo "  copy command (rsync not available)..."
+        # this is possible on older fw (17119 for example)
+        rm -fr $SDC_DIR/part2/*
+        mkdir -p $SDC_DIR/part2/xcsoar
+        cp -rfv  $MOUNT_DIR2/home/root/.xcsoar/* $SDC_DIR/part2/xcsoar/
+        cp -fv   $MOUNT_DIR2/home/root/.bash_history $SDC_DIR/part2/
+    fi
+    # HardLink 
     
     # cp -al $SDC_DIR/part2/XCSoarData $SDC_DIR/part2/xcsoar
+    cp -al $SDC_DIR/part2/xcsoar $SDC_DIR/part2/XCSoarData
     
     if [ -d "$MOUNT_DIR2/home/root/.glider_club" ]; then
         echo "save gliderclub data from partition 2"
