@@ -353,10 +353,12 @@ if [ -f "${IMAGEFILE}" ]; then
         cp -rfv  $MOUNT_DIR2/home/root/.xcsoar/* $SDC_DIR/part2/xcsoar/
         cp -fv   $MOUNT_DIR2/home/root/.bash_history $SDC_DIR/part2/
     fi
-    # HardLink 
     debug_stop
+
+    # HardLink 
+    # TODO: hard link with directory makes some problems...
     # cp -al $SDC_DIR/part2/XCSoarData $SDC_DIR/part2/xcsoar
-    cp -al $SDC_DIR/part2/xcsoar $SDC_DIR/part2/XCSoarData
+    # cp -al $SDC_DIR/part2/xcsoar $SDC_DIR/part2/XCSoarData
     
     if [ -d "$MOUNT_DIR2/home/root/.glider_club" ]; then
         echo "save gliderclub data from partition 2"
