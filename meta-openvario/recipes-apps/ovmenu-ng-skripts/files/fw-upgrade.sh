@@ -3,8 +3,6 @@
 echo "Firmware Upgrade OpenVario"
 echo "=========================="
 
-DEBUG_STOPS="n"
-
 # USB_STICK=usb
 USB_STICK=/usb/usbstick
 
@@ -26,11 +24,8 @@ HW_TARGET="0000"
 HW_BASE="0000"
 FILENAME_TYPE=0
 
-BACKUP_DIR=$SDC_DIR
-    # delete: MOUNT_DIR1=$MNT_DIR/part1
 # partition 1 of SD card is mounted as '/boot'!
 MOUNT_DIR1=/boot
-    # delete: MOUNT_DIR2=$MNT_DIR/part2
 # partition 2 of SD card is mounted on the root of the system
 MOUNT_DIR2=/
 
@@ -46,7 +41,9 @@ function select_image(){
         filename=$(basename "$line") 
         temp1=$(echo $filename | grep -oE '[0-9]{5}')
         if [ -n "$temp1" ]; then
-            temp2=$(echo $filename | awk -F'openvario-|.rootfs' '{print $3}')
+            teststr=$(echo $filename | awk -F'-ipk-|.rootfs' '{print $2}')
+            # teststr is now: 17119-openvario-57-lvds[-testing]
+            temp2=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
         else
             # the complete (new) filename without extension
             # temp1=$(echo $filename | awk -F'/|.img' '{print $4}')
@@ -94,28 +91,33 @@ function select_image(){
         FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]{5}')
         if [ -n "$FW_VERSION" ]; then
             FILENAME_TYPE=1
-            # find the part between 'openvario- 
-            TARGET=$(echo $IMAGE_NAME | awk -F'openvario-|.rootfs' '{print $3}')
-            case $TARGET in
+            # find the part between '-ipk- and .rootfs
+            teststr=$(echo $IMAGE_NAME | awk -F'-ipk-|.rootfs' '{print $2}')
+            # teststr is now: 17119-openvario-57-lvds[-testing]
+            hw_target=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
+            case $hw_target in
+                57lvds)       HW_TARGET="ch57";;
                 57-lvds)      HW_TARGET="ch57";;
                 7-CH070)      HW_TARGET="ch70";;
                 7-PQ070)      HW_TARGET="pq70";;
                 7-AM070-DS2)  HW_TARGET="ds70";;
                 43-rgb)       HW_TARGET="am43";;
-                *)            HW_TARGET="unknown";;
+                *)            HW_TARGET="'$hw_target' (unknown)";;
             esac
         else
             # grep a version in form '##.##.##-##' like '3.0.2-20' 
             FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
             FILENAME_TYPE=2
-            TARGET=$(echo $filename | awk -F'CB2-|.img' '{print $3}')
-            case $TARGET in
+            hw_target=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
+            # awk is splitting 'OV-3.0.2-20-CB2-CH57.img.gz' in:
+            # OV-3.0.2-20', 'CH57', '.gz' (-CB2- and .img are cutted out) 
+            case $hw_target in
                 CH57)        HW_TARGET="ch57";;
                 CH70)        HW_TARGET="ch70";;
                 PQ70)        HW_TARGET="pq70";;
                 AM70_DS2)    HW_TARGET="ds70";;
                 AM43)        HW_TARGET="am43";;
-                *)           HW_TARGET="unknown";;
+                *)           HW_TARGET="'$hw_target' (unknown)";;
             esac
         fi
         echo "selected image file:    $IMAGE_NAME"
@@ -127,58 +129,60 @@ function save_system(){
     #================== System Config =======================================================
     echo "1st: save system config in config.uSys for restoring reason"
     # 1st save system config in config.uSys for restoring reason
-    mkdir -p $BACKUP_DIR
+    mkdir -p $SDC_DIR
     
     # start with a new 'config.uSys':
-    rm -f $BACKUP_DIR/config.uSys
-        # delete: echo "" > $BACKUP_DIR/config.uSys
+    rm -f $SDC_DIR/config.uSys
     if /bin/systemctl --quiet is-enabled dropbear.socket; then
         echo "SSH=\"enabled\""
-        echo "SSH=\"enabled\"" >> $BACKUP_DIR/config.uSys
+        echo "SSH=\"enabled\"" >> $SDC_DIR/config.uSys
     elif /bin/systemctl --quiet is-active dropbear.socket; then
         echo "SSH=\"temporary\""
-        echo "SSH=\"temporary\"" >> $BACKUP_DIR/config.uSys
+        echo "SSH=\"temporary\"" >> $SDC_DIR/config.uSys
     else
         echo "SSH=\"disabled\""
-        echo "SSH=\"disabled\"" >> $BACKUP_DIR/config.uSys
+        echo "SSH=\"disabled\"" >> $SDC_DIR/config.uSys
     fi
 
     echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\""
-    echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\"" >> $BACKUP_DIR/config.uSys
+    echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\"" >> $SDC_DIR/config.uSys
     
+    # if config.uEnv not exist
+    if [ ! -f $MOUNT_DIR1/config.uEnv ]; then
+        MOUNT_DIR1="/mnt/boot"
+        mkdir -p $MOUNT_DIR1
+        # $TARGET  = /dev/mmcblk0
+        mount /dev/mmcblk0p1 $MOUNT_DIR1
+        if [ ! -f $MOUNT_DIR1/config.uEnv ]; then
+           echo "'$MOUNT_DIR1/config.uEnv' don't exist!?!"
+           read -p "Press enter to continue"
+        fi
+    fi
     source $MOUNT_DIR1/config.uEnv
     # fdtfile=openvario-57-lvds.dtb
     echo "ROTATION=$rotation"
+    if [ ! -n $fdtfile ]; then
+      echo "'$fdtfile' don't exist!?!"
+      echo "What is to do???"
+      read -p "Press enter to continue"
+    
+    fi
     case $(basename "$fdtfile" .dtb) in
         openvario-57-lvds)      HW_BASE="ch57";;
         openvario-7-CH070)      HW_BASE="ch70";;
         openvario-7-PQ070)      HW_BASE="pq70";;
         openvario-7-AM070-DS2)  HW_BASE="ds70";;
         openvario-43-rgb)       HW_BASE="am43";;
-        *)
-        echo "FDT file =  $fdtfile"
-        fdtfile=${fdtfile##*/}
-        echo "FDT file =  $fdtfile"
-        HW_BASE=$(basename "${fdtfile%.*}")
-        echo "FDT file =  $HW_BASE"
-        HW_BASE=$(basename "${fdtfile}" ".${fdtfile##*.}")
-        echo "FDT file =  $HW_BASE"
-        HW_BASE="${s%.*}"
-        echo "FDT file =  $HW_BASE"
-        echo 
-        read -rsp $'Press enter to continue...\n'
-        HW_BASE="unknown";;
+        *)                      HW_BASE="unknown";;
     esac
-    # echo "HARDWARE=\"$(basename $fdtfile .dtb)\""
     echo "HARDWARE=\"$HW_BASE\""
-    echo "HARDWARE=\"$HW_BASE\"" >> $BACKUP_DIR/config.uSys
+    echo "HARDWARE=\"$HW_BASE\"" >> $SDC_DIR/config.uSys
 
     echo "ROTATION=\"$rotation\""
-    echo "ROTATION=\"$rotation\"" >> $BACKUP_DIR/config.uSys
+    echo "ROTATION=\"$rotation\"" >> $SDC_DIR/config.uSys
     # TEMP=$(grep "rotation" /boot/config.uEnv)
 
     echo "System Save End"
-    #delete: read -rsp $'Press enter to continue...\n'
 }
 
 function start_upgrade(){
@@ -192,7 +196,7 @@ function start_upgrade(){
       TIMEOUT=20
       MENU_TITLE="Differenz between Update Target and Hardware '$HW_BASE'"
       MENU_TITLE="$MENU_TITLE\nVersion   $FW_VERSION"
-      MENU_TITLE="$MENU_TITLE\nTarget    $TARGET"
+      MENU_TITLE="$MENU_TITLE\nTarget    $HW_TARGET"
       if [ -n "$TESTING" ]; then
         TESTING="Yes"
       else
@@ -212,36 +216,43 @@ function start_upgrade(){
       INPUT="$?"
       if [ ! "$INPUT" = "0" ]; then
         echo "Exit!"
-        # read -rsp $'Press enter to continue...\n'
         exit
       fi 
-##aug!
+
     fi
     echo "Start Upgrading with '$IMAGE_NAME'..."
     
     # copy the ov-recovery.itb from HW folder for the next step!!!
-    cp -f $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
-    
+    # cp -f $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+    rsync -auv --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+
     echo "FILENAME_TYPE: $FILENAME_TYPE  vs FW_VERSION: $FW_VERSION / HW_TARGET: $HW_TARGET"
-    read -rsp $'Press enter to continue...\n'
     if [ "$FILENAME_TYPE" = "2" ] || [ $FW_VERSION -gt 23000 ]; then
       # copy the 1st block only if newer fw files
       # (and the BASE-FW is old...)
       echo "copy the 1st block (20MB) (boot-sector!)"
-      # gzip -cfd $USB_STICK/BootPartition/BootSector16MB.gz | dd of=$TARGET bs=1M
       gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1M count=20
     else
       dialog --nook --nocancel --pause "This is an old FW file ($FW_VERSION)!" 10 30 5 2>&1
     fi
     
     echo "Boot Recovery preparation with '${IMAGE_NAME}' finished!"
-    if [ "$DEBUG_STOPS" = "y" ]; then
-      # set outside in shell
-      echo "Debug Stop: Finish"
-      read -rsp $'Press enter to continue...\n'
-    fi
     shutdown -r now
 }
+
+# check if usb dir exist and is mounted!
+if [ ! -d $USB_STICK ]; then
+  USB_STICK=/mnt/usb
+  mkdir -p $USB_STICK
+  mount /dev/sda1 $USB_STICK
+  # or sdb1, sdc1, ...
+  if [ ! -d $OV_DIRNAME ]; then
+    echo "'$OV_DIRNAME' don't exist!?!"
+    read -p "Press enter to continue"
+  fi
+
+fi 
+
 
 # Selecting image file:
 select_image
@@ -252,55 +263,49 @@ if [ -f "${IMAGEFILE}" ]; then
     # make tmp dir clean:
     if [ -d "$SDC_DIR" ]; then
         chmod 757 -R $SDC_DIR
-        rm -r $SDC_DIR
+        # don't delete, better to make 'with rsync --delete' rm -r $SDC_DIR
+    fi
+    
+    if [ ! -f $MOUNT_DIR1/config.uEnv ]; then
+      # sd partition 1 is not in boot gemounted...
+      MOUNT_DIR1="/mnt/sd1"
+      mkdir -p $MOUNT_DIR1
+      
     fi
 
     # 1st: Save the system
     save_system
-        # delete: echo "1st) mount partition 1"
-    
-        # delete: rm -rf $MOUNT_DIR1
-    mkdir -p $BACKUP_DIR/part1
-        # delete: mkdir -p $MOUNT_DIR1
-        # delete: mount /dev/mmcblk0p1 $MOUNT_DIR1
+
 
     # 2nd: save boot folder to Backup from partition 1
     echo "2nd: save boot folder to Backup from partition 1"
-    # cp -frv $MOUNT_DIR1/* $BACKUP_DIR/part1/
-##aug!
-    rsync -auv --progress $MOUNT_DIR1/* $BACKUP_DIR/part1/ --delete 
+    mkdir -p $SDC_DIR/part1
+    rsync -auv --progress $MOUNT_DIR1/* $SDC_DIR/part1/ --delete 
     #      --exclude ...
 
     # 3rd: save XCSoarData from partition 2:
     echo "3rd: save XCSoarData from partition 2"
-        # delete: rm -rf $MOUNT_DIR2
-        # delete: mkdir -p $MOUNT_DIR2
-    mkdir -p $BACKUP_DIR/part2/xcsoar
-        # delete: mount /dev/mmcblk0p2 $MOUNT_DIR2
-    # cp -frv $MOUNT_DIR2/home/root/.xcsoar/* $BACKUP_DIR/part2/xcsoar/
-##aug!    rsync -auv --progress $MOUNT_DIR2/home/root/.xcsoar/* $BACKUP_DIR/part2/xcsoar/ \
-##aug!          --delete --exclude cache  --exclude logs
+    mkdir -p $SDC_DIR/part2/xcsoar
+    mkdir -p $SDC_DIR/part2/XCSoarData
+
+    rsync -auv --progress $MOUNT_DIR2/home/root/.xcsoar/* $SDC_DIR/part2/xcsoar/ \
+          --delete --exclude cache  --exclude logs
+    # rsync -auv --progress $MOUNT_DIR2/home/root/.xcsoar/* $SDC_DIR/part2/XCSoarData/ \
+    #       --delete --exclude cache  --exclude logs
+    # HardLinnk 
+    
+    # cp -al $SDC_DIR/part2/XCSoarData $SDC_DIR/part2/xcsoar
     
     if [ -d "$MOUNT_DIR2/home/root/.glider_club" ]; then
         echo "save gliderclub data from partition 2"
-        mkdir -p $BACKUP_DIR/part2/glider_club
-        cp -frv $MOUNT_DIR2/home/root/.glider_club/* $BACKUP_DIR/part2/glider_club/
+        mkdir -p $SDC_DIR/part2/glider_club
+        cp -frv $MOUNT_DIR2/home/root/.glider_club/* $SDC_DIR/part2/glider_club/
     fi
     
 
     # Synchronize the commands (?)
     sync
 
-    # pause:
-    if [ "$DEBUG_STOPS" = "y" ]; then
-      # set outside in shell
-      echo "Debug Stop: After Saving"
-      read -rsp $'Press enter to continue...\n'
-    fi
-    umount /dev/mmcblk0p1
-    umount /dev/mmcblk0p2
-
-    # BOOT_PARTITION=${IMAGEFILE}                                 # 1st
     echo "$IMAGEFILE" > $OV_DIRNAME/upgrade.file0.txt
 
     # Better as copy is writing the name in the 'upgrade file'
@@ -312,15 +317,8 @@ if [ -f "${IMAGEFILE}" ]; then
     chmod 757 -R $MNT_DIR
     rm -rf $MNT_DIR
 
-    # echo "Upgrade with '${IMAGEFILE}'"
-    if [ "$DEBUG_STOPS" = "y" ]; then
-      # set outside in shell
-      echo "Debug Stop: After Upgrade Step 1"
-      read -rsp $'Press enter to continue...(4)\n'
-    fi
     IMAGE_NAME=$(basename "$IMAGEFILE" .gz)
     TIMEOUT=5
-    # DIALOG_CANCEL=1 
     dialog --nook --nocancel --pause \
     "OpenVario Upgrade with \\n'$IMAGE_NAME' ... \\n Press [ESC] for interrupting" \
     20 60 $TIMEOUT 2>&1
