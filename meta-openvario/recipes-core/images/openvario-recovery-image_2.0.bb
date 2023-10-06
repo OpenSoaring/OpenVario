@@ -36,19 +36,19 @@ do_configure () {
     fi
 }
 
-do_compile () {
-    pwd  # only as WO for one action
-}
+# do_compile () {
+#     pwd  # only as WO for one action
+# }
 
 do_mkimage () {
     # show mkimage version:
+    # MK_IMAGE=mkimage - this isn't the correct version TODO: check it!
+    MK_IMAGE=/usr/bin/mkimage
     echo "========================================="
-    mkimage -V
-    /usr/bin/mkimage -V
+    $MK_IMAGE -V
     echo "========================================="
     # Build ITB with provided config
-    #    mkimage   -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
-    /usr/bin/mkimage -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
+    $MK_IMAGE -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
 }
 
 addtask mkimage after do_configure before do_install
