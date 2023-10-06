@@ -150,6 +150,8 @@ function updateall(){
           mkdir -p /mnt/sd/home/root/.glider_club
           cp -frv ${DIRNAME}/sdcard/part2/glider_club/* /mnt/sd/home/root/.glider_club/
         fi
+        cp -fv  ${DIRNAME}/sdcard/part2/.bash_history /mnt/sd/home/root/
+
         
         if [ -e "${DIRNAME}/sdcard/config.uSys" ]; then
           cp ${DIRNAME}/sdcard/config.uSys /mnt/sd/home/root/config.uSys
@@ -157,7 +159,6 @@ function updateall(){
         
         ls -l /mnt/sd/home/root/.xcsoar
         echo "ready OV upgrade!"
-        # read -p "Press enter to continue"
     else
         echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"
     fi
