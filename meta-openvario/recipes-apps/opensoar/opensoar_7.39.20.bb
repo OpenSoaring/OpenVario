@@ -13,6 +13,7 @@ SRC_URI = "git://github.com/August2111/OpenSoar.git;protocol=https;branch=openso
 SRCREV = "6ccbded36ce094cdfba583e9472125601e6c0a36"
 SRCREV = "0267a87fa4d1930b5c52308f882f8ac704254b00"
 SRCREV = "1e07f8d7f51ac16f8576c8d74529d9012b6dd368"
+SRCREV = "393a47f2b79b1f863ab1bf6ca055dc85daf853d4"
 # not on server: SRCREV = "bc71974d997cd241f7efdbe3b8bcdb388bb2e1b5"
 
 BOOST_VERSION = "1.82.0"
