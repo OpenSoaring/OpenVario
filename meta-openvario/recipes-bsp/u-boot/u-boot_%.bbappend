@@ -5,6 +5,8 @@ DESCRIPTION="Upstream's U-boot configured for sunxi devices (openvario-cubiebord
 # removed suffix '-sunxi' to use it in this script
 # disabling the fields with suffix '-sun50i'
 
+PR="r2"
+
 # use f.e. boot.cmd from layer meta-sunxi!
 FILESEXTRAPATHS:prepend := "${THISDIR}/../../../meta-sunxi/recipes-bsp/u-boot/files:"
 
