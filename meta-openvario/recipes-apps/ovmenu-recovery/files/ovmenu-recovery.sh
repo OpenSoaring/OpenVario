@@ -7,7 +7,7 @@ TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIRNAME=/mnt/openvario
 
-# Target device (typically /dev/mmcblk0)
+# Target device (typically /dev/mmcblk0):
 TARGET=/dev/mmcblk0
 
 # Image file search string:
@@ -15,8 +15,11 @@ TARGET=/dev/mmcblk0
 # old: images=$DIRNAME/images/OpenVario-linux*.gz
 images=$DIRNAME/images/O*V*-*.gz
 
-echo "3" >/sys/class/graphics/fbcon/rotate_all
-
+ROTATION=$(grep "rotation" ${DIRNAME}/sdcard/part1/config.uEnv)
+if [ -n $ROTATION ]; then
+  # 
+  echo "$ROTATION" >/sys/class/graphics/fbcon/rotate_all
+fi
 
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
