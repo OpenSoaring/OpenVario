@@ -134,11 +134,6 @@ function updateall(){
     IMAGE_NAME="$(basename $IMAGEFILE .gz)"
     (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | \
     dialog --gauge "Writing Image ...\nfile = ${IMAGE_NAME}  " 10 50 0
-## =======
-##     ### Messages wrong redirection?? 
-##     (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 3>error3.txt | \
-##          dialog --gauge "Writing Image ...\nfile = ${IMAGE_NAME}  " 10 50 0 3>error3b.txt
-## >>>>>>> 6a72dc1 (ovmenu-recovery.sh - update redirections of messages)
     #########################################
     # remove the recovery file:
     rm -f $DIRNAME/ov-recovery.itb
