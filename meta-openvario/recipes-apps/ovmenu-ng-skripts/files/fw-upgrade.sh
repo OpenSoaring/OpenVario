@@ -255,15 +255,18 @@ function start_upgrade(){
     if [ -z "$HW_TARGET" ]; then
       HW_TARGET="ch57"
     fi 
-    if [ -f "$OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb" ]; then
-      # unfortunately hardlink isn't possible?
-      ## ln -f $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb $OV_DIRNAME/ov-recovery.itb
-      if [ -n "$RSYNC_COPY" ]; then
-        rsync -auvtcE --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
-        echo "'ov-recovery.itb' done"
-      else
-        echo "copy 'ov-recovery.itb' in the correct directory..."
-        cp -f  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+    if [ ! -f "$OV_DIRNAME/ov-recovery.itb" ]; then
+      # only copy it if not available:
+      if [ -f "$OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb" ]; then
+        # unfortunately hardlink isn't possible?
+        ## ln -f $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb $OV_DIRNAME/ov-recovery.itb
+        if [ -n "$RSYNC_COPY" ]; then
+          rsync -auvtcE --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+          echo "'ov-recovery.itb' done"
+        else
+          echo "copy 'ov-recovery.itb' in the correct directory..."
+          cp -f  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+        fi
       fi
     fi
     if [ ! -f "$OV_DIRNAME/ov-recovery.itb" ]; then
