@@ -15,6 +15,9 @@ TARGET=/dev/mmcblk0
 # old: images=$DIRNAME/images/OpenVario-linux*.gz
 images=$DIRNAME/images/O*V*-*.gz
 
+echo "3" >/sys/class/graphics/fbcon/rotate_all
+
+
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 
