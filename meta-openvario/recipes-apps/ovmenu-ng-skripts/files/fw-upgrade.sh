@@ -93,10 +93,9 @@ function select_image(){
     fi
 
     if [ ! -e "$IMAGEFILE" ]; then
-        dialog --backtitle "${TITLE}" \
-        --title "Select image" \
-        --msgbox "\n\n No image file found !!" 10 40
-        echo "no image file... 2nd"
+        if [ -n $IMAGEFILE ]; then
+            echo "no image file '$IMAGEFILE' found ... "
+        fi
         exit
     else
         IMAGE_NAME="$(basename $IMAGEFILE)"
