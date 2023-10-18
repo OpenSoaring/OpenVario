@@ -48,7 +48,7 @@ function select_image(){
 
     let i=0 # define counting variable
     files=()        # define file array 
-    files_nice=()   # define array with index + file description for dialog
+    files_nice=()   # define array with index + file description for dialogdialog
     while read -r line; do # process file by file
         let i=$i+1
         files+=($i "$line")
@@ -263,22 +263,46 @@ function start_upgrade(){
     if [ -z "$HW_TARGET" ]; then
       HW_TARGET="ch57"
     fi 
-    if [ ! -f "$OV_DIRNAME/ov-recovery.itb" ]; then
+##    if [ ! -f "$OV_DIRNAME/ov-recovery.itb" ]; then
+##      # only copy it if not available:
+##      if [ -f "$OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb" ]; then
+##        # unfortunately hardlink isn't possible?
+##        ## ln -f $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb $OV_DIRNAME/ov-recovery.itb
+##        if [ -n "$RSYNC_COPY" ]; then
+##          rsync -auvtcE --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+##          echo "'ov-recovery.itb' done"
+##        else
+##          echo "copy 'ov-recovery.itb' in the correct directory..."
+##          cp -f  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+##        fi
+##      fi
+##    fi
+##    if [ ! -f "$OV_DIRNAME/ov-recovery.itb" ]; then
+##        echo "'$OV_DIRNAME/ov-recovery.itb' don't exist - no upgrade possible"
+##        read -p "Press enter to continue"
+##        echo "Exit!"
+##        exit
+##    fi
+
+    if [ ! -f "/usr/bin/ov-recovery.itb" ]; then
       # only copy it if not available:
       if [ -f "$OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb" ]; then
         # unfortunately hardlink isn't possible?
         ## ln -f $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb $OV_DIRNAME/ov-recovery.itb
         if [ -n "$RSYNC_COPY" ]; then
-          rsync -auvtcE --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+          rsync -auvtcE --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    /usr/bin/ov-recovery.itb
           echo "'ov-recovery.itb' done"
         else
           echo "copy 'ov-recovery.itb' in the correct directory..."
-          cp -f  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    $OV_DIRNAME/ov-recovery.itb
+          cp -f  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    /usr/bin/ov-recovery.itb
         fi
       fi
     fi
-    if [ ! -f "$OV_DIRNAME/ov-recovery.itb" ]; then
-        echo "'$OV_DIRNAME/ov-recovery.itb' don't exist - no upgrade possible"
+    if [ -f "/usr/bin/ov-recovery.itb" ]; then
+        ln -f /usr/bin/ov-recovery.itb ov-recovery.itb
+    fi
+    if [ ! -f "ov-recovery.itb" ]; then
+        echo "'ov-recovery.itb' don't exist - no upgrade possible"
         read -p "Press enter to continue"
         echo "Exit!"
         exit
