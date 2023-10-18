@@ -91,6 +91,7 @@ function select_image(){
         echo "no image file available"
         IMAGEFILE=""
     fi
+    clear_display
 
     if [ ! -e "$IMAGEFILE" ]; then
         if [ -n $IMAGEFILE ]; then
@@ -138,6 +139,13 @@ function select_image(){
 }
 
 
+function clear_display(){
+    #================== clear display (after diolog) =======================================================
+    for ((i=1 ; i<=20 ; i++ )); do 
+        echo ""
+    done
+}
+    
 function save_system(){
     #================== System Config =======================================================
     echo "1st: save system config in config.uSys for restoring reason"
@@ -241,6 +249,7 @@ function start_upgrade(){
       
       # store the selection for debug reasons:
       INPUT="$?"
+      clear_display
       if [ ! "$INPUT" = "0" ]; then
         echo "Exit!"
         exit
@@ -283,6 +292,7 @@ function start_upgrade(){
       gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1M count=20
     else
       dialog --nook --nocancel --pause "This is an old FW file ($FW_VERSION)!" 10 30 5 2>&1
+      clear_display
     fi
     
     echo "Boot Recovery preparation with '${IMAGE_NAME}' finished!"
@@ -388,12 +398,13 @@ if [ -f "${IMAGEFILE}" ]; then
     IMAGE_NAME=$(basename "$IMAGEFILE" .gz)
     TIMEOUT=5
     dialog --nook --nocancel --pause \
-    "OpenVario Upgrade with \\n'$IMAGE_NAME' ... \\n Press [ESC] for interrupting" \
+    "OpenVario Upgrade with \\n'$IMAGE_NAME' ... \\n Press [Enter] or wait $TIMEOUT seconds to continue\\n Press [ESC] for interrupting" \
     20 60 $TIMEOUT 2>&1
     # DO NOTHING AFTER USING '$?' ONE TIMES!!!
     
     # store the selection for debug reasons:
     INPUT="$?"
+    clear_display
     case $INPUT in
         0) 
             start_upgrade;;
