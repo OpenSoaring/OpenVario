@@ -64,10 +64,17 @@ IMAGE_CMD:openvario-sdimg () {
     parted -s ${SDIMG} unit KiB mkpart primary fat32 ${IMAGE_ROOTFS_ALIGNMENT} $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT})
     parted -s ${SDIMG} set 1 boot on
     # Create rootfs partition
-    parted -s ${SDIMG} unit KiB mkpart primary ext2 $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT}) $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE})
+    LINUX_START=$(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT})
+    LINUX_END=$(expr ${LINUX_START} \+ ${ROOTFS_SIZE})
+    parted -s ${SDIMG} unit KiB mkpart primary ext2 $LINUX_START $LINUX_END
+    # parted -s ${SDIMG} unit KiB mkpart primary ext2 $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT}) $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE})
     # =======================================================
     # Create a new DATA partition
-    parted -s ${SDIMG} unit KiB mkpart primary ext2 $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE}) $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE} \+ ${DATA_PARTITION_SIZE})
+    ###DATA_START = $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE})
+    ### DATA_END =   $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE} \+ ${DATA_PARTITION_SIZE})
+    DATA_START=$LINUX_END
+    DATA_END=$(expr ${DATA_START} \+ ${DATA_PARTITION_SIZE})
+    parted -s ${SDIMG} unit KiB mkpart primary ext2 $DATA_START  $DATA_END
     # =======================================================
     parted ${SDIMG} print
 
