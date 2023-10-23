@@ -29,7 +29,10 @@ BOOT_SPACE ?= "40960"
 ### # Data partition size [in KiB] (0x14000)
 ### DATA_PARTITION_SIZE ?= "81920"
 # Data partition size [in KiB] (0x200)
-DATA_PARTITION_SIZE = "512"
+# DATA_PARTITION_SIZE = "512"
+# difference size...:
+# DATA_PARTITION_SIZE = "1024"  
+DATA_PARTITION_SIZE = "1536"  
 # DATA_PARTITION_SIZE = "81920"
 
 # First partition begin at sector 2048 : 2048*1024 = 2097152
