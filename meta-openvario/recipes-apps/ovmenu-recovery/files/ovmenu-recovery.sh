@@ -150,6 +150,9 @@ function updateall(){
             umount /mnt/sd
         fi
         mount ${TARGET}p2  /mnt/sd
+        # removing '/mnt/sd/home/root/ov-recovery.itb' not necessary because after
+        # overwriting image this file/link isn't available anymore 
+        # rm -f /mnt/sd/home/root/ov-recovery.itb
         ls -l /mnt/sd/home/root/.xcsoar
         
         rm -rf /mnt/sd/home/root/.xcsoar/*
