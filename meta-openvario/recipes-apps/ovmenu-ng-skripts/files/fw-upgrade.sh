@@ -299,6 +299,7 @@ function start_upgrade(){
       fi
     fi
     if [ -f "/usr/bin/ov-recovery.itb" ]; then
+        # hardlink from '/hone/root/' to '/usr/bin/ov-recovery.itb'
         ln -f /usr/bin/ov-recovery.itb ov-recovery.itb
     fi
     if [ ! -f "ov-recovery.itb" ]; then
