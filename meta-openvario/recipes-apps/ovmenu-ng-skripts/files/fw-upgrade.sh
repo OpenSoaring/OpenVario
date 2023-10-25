@@ -214,6 +214,12 @@ function save_system(){
     
     fi
     case $(basename "$fdtfile" .dtb) in
+        ov-ch57)      HW_BASE="ch57";;
+        ov-ch70)      HW_BASE="ch70";;
+        ov-pq70)      HW_BASE="pq70";;
+        ov-ds70)      HW_BASE="ds70";;
+        ov-am43)      HW_BASE="am43";;
+
         openvario-57-lvds)      HW_BASE="ch57";;
         openvario-7-CH070)      HW_BASE="ch70";;
         openvario-7-PQ070)      HW_BASE="pq70";;
