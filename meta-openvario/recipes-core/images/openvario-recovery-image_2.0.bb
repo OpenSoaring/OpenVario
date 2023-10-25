@@ -21,6 +21,8 @@ DEPENDS = "\
         u-boot \
     "
 
+# DEPENDS += "ov-revision.inc "
+
 do_compile[deptask] = "do_rm_work"
 
 ## the next line can be toggled between new and old!
