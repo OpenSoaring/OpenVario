@@ -5,7 +5,8 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=6bc538ed5bd9a7fc9398086aedcd7e46"
 
 inherit kernel kernel-yocto siteinfo
 
-require ov-revision.inc
+# require ov-revision.inc
+# PR = "r3"
 
 S = "${WORKDIR}/git"
 
@@ -65,7 +66,7 @@ KMACHINE ?= "${MACHINE}"
 KMETA = ".kernel-meta"
 
 do_configure:prepend:sunxi() {
-	cp ${WORKDIR}/openvario-*.dts ${S}/arch/arm/boot/dts/
+	cp ${WORKDIR}/*.dts ${S}/arch/arm/boot/dts/
 }
 
 FILES_${KERNEL_PACKAGE_NAME}-base:append = " ${nonarch_base_libdir}/modules/${KERNEL_VERSION}/modules.builtin.modinfo"
