@@ -123,9 +123,18 @@ function select_image(){
             FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
             FILENAME_TYPE=2
             hw_target=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
-            # awk is splitting 'OV-3.0.2-20-CB2-CH57.img.gz' in:
-            # OV-3.0.2-20', 'CH57', '.gz' (-CB2- and .img are cutted out) 
+            # awk is splitting 'OV-3.0.2.20-CB2-CH57.img.gz' in:
+            # OV-3.0.2.20', 'ch57', '.gz' (-CB2- and .img are cutted out) 
+            # if [ $hw_target in ("ch57", ch70", pq70", ds70", am43") ]; then
+            #  HW_TARGET="$hw_target"
+            # else 
             case $hw_target in
+                ch57)        HW_TARGET="$hw_target";;
+                ch70)        HW_TARGET="$hw_target";;
+                pq70)        HW_TARGET="$hw_target";;
+                ds70)        HW_TARGET="$hw_target";;
+                am43)        HW_TARGET="$hw_target";;
+
                 CH57)        HW_TARGET="ch57";;
                 CH70)        HW_TARGET="ch70";;
                 PQ70)        HW_TARGET="pq70";;
@@ -133,6 +142,7 @@ function select_image(){
                 AM43)        HW_TARGET="am43";;
                 *)           HW_TARGET="'$hw_target' (unknown)";;
             esac
+            # fi
         fi
         echo "selected image file:    $IMAGE_NAME"
     fi
