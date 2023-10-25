@@ -35,7 +35,9 @@ if len(sys.argv) > 1:
     elif ov_type == 'CH70':
                 machines = ['openvario-7-CH070']
     elif ov_type == 'CH57':
-                machines = ['openvario-57-lvds']
+                machines = ['ov-ch57']
+    elif ov_type == 'ch57':
+                machines = ['ov-ch57']
     else:
                 machines = [ov_type]
 else:

@@ -42,6 +42,7 @@ Available machines for the OpenVario with the original adapter board are:
 - openvario-7-CH070
 - openvario-57-lvds
 - openvario-43-rgb
+- ov-ch57
 
 Available machines for the OpenVario with the new adapter board DS2 are:
 - openvario-7-CH070-DS2

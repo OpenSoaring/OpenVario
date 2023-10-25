@@ -49,6 +49,8 @@ SRC_URI:append:sunxi = " \
 	file://openvario-7-CH070.dts \
 	file://openvario-7-PQ070.dts \
 	\
+	file://ov-ch57.dts \
+	\
 	file://sunxi.cfg \
 	file://drm.cfg \
 "
