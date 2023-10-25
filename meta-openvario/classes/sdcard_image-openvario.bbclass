@@ -26,15 +26,6 @@ BOOTDD_VOLUME_ID = "OV-${SHORT_OV_MACHINE}"
 # Boot partition size [in KiB] (0xA000)
 BOOT_SPACE ?= "40960"
 
-#### ### # Data partition size [in KiB] (0x14000)
-#### ### DATA_PARTITION_SIZE ?= "81920"
-#### # Data partition size [in KiB] (0x200)
-#### # DATA_PARTITION_SIZE = "512"
-#### # difference size...:
-#### # DATA_PARTITION_SIZE = "1024"  
-#### DATA_PARTITION_SIZE = "1536"  
-#### # DATA_PARTITION_SIZE = "81920"
-
 # First partition begin at sector 2048 : 2048*1024 = 2097152
 IMAGE_ROOTFS_ALIGNMENT = "2048"
 
@@ -71,28 +62,13 @@ IMAGE_CMD:openvario-sdimg () {
     LINUX_START=$(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT})
     LINUX_END=$(expr ${LINUX_START} \+ ${ROOTFS_SIZE})
     parted -s ${SDIMG} unit KiB mkpart primary ext2 $LINUX_START $LINUX_END
-    # parted -s ${SDIMG} unit KiB mkpart primary ext2 $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT}) $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE})
-###    # =======================================================
-###    # Create a new DATA partition
-###    ###DATA_START = $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE})
-###    ### DATA_END =   $(expr ${BOOT_SPACE_ALIGNED} \+ ${IMAGE_ROOTFS_ALIGNMENT} \+ ${ROOTFS_SIZE} \+ ${DATA_PARTITION_SIZE})
-###    DATA_START=$LINUX_END
-###    DATA_END=$(expr ${DATA_START} \+ ${DATA_PARTITION_SIZE})
-###    parted -s ${SDIMG} unit KiB mkpart primary ext2 $DATA_START  $DATA_END
-###    # parted -s ${SDIMG} unit KiB mkpart primary fat32 $DATA_START  $DATA_END
     # =======================================================
     parted ${SDIMG} print
-    
 
     # Create a vfat image with boot files
     BOOT_BLOCKS=$(LC_ALL=C parted -s ${SDIMG} unit b print | awk '/ 1 / { print substr($4, 1, length($4 -1)) / 512 /2 }')
     rm -f ${WORKDIR}/boot.img
     mkfs.vfat -n "${BOOTDD_VOLUME_ID}" -S 512 -C ${WORKDIR}/boot.img $BOOT_BLOCKS
-    
-###    THIRD_BLOCKS=$(LC_ALL=C parted -s ${SDIMG} unit b print | awk '/ 3 / { print substr($4, 1, length($4 -1)) / 512 /2 }')
-###    # mkfs.ext4 -n "Data" -S 512 -C ${WORKDIR}/boot.img $THIRD_BLOCKS
-###    # mkfs.vfat -n "Data" -S 512 $THIRD_BLOCKS
-###    # mkfs.ext2 -n "Data" $THIRD_BLOCKS
 
     mcopy -i ${WORKDIR}/boot.img -s ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE}.bin ::${KERNEL_IMAGETYPE}
 
