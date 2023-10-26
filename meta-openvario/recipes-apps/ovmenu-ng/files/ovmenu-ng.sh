@@ -7,21 +7,24 @@ DIALOG_CANCEL=1
 HOMEDIR=/home/root
 DATADIR=$HOMEDIR/data
 
+echo "begin startup.. " > $HOMEDIR/start-debug.log
 if [ ! -e /dev/mmcblk0p3 ]; then
+  echo "/dev/mmcblk0p3 dom't exist " >> $HOMEDIR/start-debug.log
+  ls -l /dev/mm* >> $HOMEDIR/start-debug.log
   # create the 3rd SD card partition:
   source /usr/bin/create_datapart.sh
 
-  echo "Debug-Stop: 3rd SD card partition created"
+  echo "Debug-Stop: 3rd SD card partition created" >> $HOMEDIR/start-debug.log
   if [ -f $HOMEDIR/_config.uSys ]; then
     # reactivate the previous system data
     mv -f $HOMEDIR/_config.uSys $HOMEDIR/config.uSys
   fi 
       ### read -p "Press enter to continue"
   if [ ! -e /dev/mmcblk0p3 ]; then
-    echo "Reboot ===================================="
-    echo "Wait until OpenVario after Reboot is ready!"
+    echo "Reboot ====================================" >> $HOMEDIR/start-debug.log
+    echo "Wait until OpenVario after Reboot is ready!" >> $HOMEDIR/start-debug.log
     reboot
-    read -p "Press enter to continue"
+    ### read -p "Press enter to continue"
   fi
 fi
 
@@ -29,20 +32,21 @@ fi
 # if [ ! -d $DATADIR ]; then mkdir $DATADIR; fi
 if ! mount /dev/mmcblk0p3 $DATADIR; then
   if ! mkfs.ext4 /dev/mmcblk0p3; then
-    echo "Error 1: mmcblk0p3 couldn't be formatted"
+    echo "Error 1: mmcblk0p3 couldn't be formatted"  >> $HOMEDIR/start-debug.log
   fi
   if ! mount /dev/mmcblk0p3 $DATADIR; then
-    echo "Error 2: mmcblk0p3 couldn't be mounted"
+    echo "Error 2: mmcblk0p3 couldn't be mounted"  >> $HOMEDIR/start-debug.log
   fi
 fi
 
 if [ ! -d $DATADIR/XCSoarData ]; then
   # the data dir is new and has to be filled
   mkdir -p $DATADIR/XCSoarData
-  echo "'data/XCSoarData'is new and has to be filled..."
-  mv -v $HOMEDIR/.xcsoar/* $DATADIR/XCSoarData
+  echo "'data/XCSoarData'is new and has to be filled..."  >> $HOMEDIR/start-debug.log
+  mv -v $HOMEDIR/.xcsoar/* $DATADIR/XCSoarData  >> $HOMEDIR/start-debug.log
   rm -f $HOMEDIR/.xcsoar
 fi
+echo "startup is ready..."  >> $HOMEDIR/start-debug.log
 
 if [ -e ~/.glider_club/GliderClub_Std.prf ]; then
   MENU_VERSION="club"
