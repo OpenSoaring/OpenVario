@@ -21,11 +21,21 @@ if [ ! -e /dev/mmcblk0p3 ]; then
     echo "Reboot ===================================="
     echo "Wait until OpenVario after Reboot is ready!"
     reboot
+    read -p "Press enter to continue"
   fi
 fi
 
 # Mount the 3rd partition to the data dir
-mount /dev/mmcblk0p3 $DATADIR
+# if [ ! -d $DATADIR ]; then mkdir $DATADIR; fi
+if ! mount /dev/mmcblk0p3 $DATADIR; then
+  if ! mkfs.ext4 -L "ov-data" /dev/mmcblk0p3; then
+    echo "Error 1: mmcblk0p3 couldn't be formatted"
+  fi
+  if ! mount /dev/mmcblk0p3 $DATADIR; then
+    echo "Error 2: mmcblk0p3 couldn't be mounted"
+  fi
+fi
+
 
 if [ ! -d $DATADIR/XCSoarData ]; then
   # the data dir is new and has to be filled
