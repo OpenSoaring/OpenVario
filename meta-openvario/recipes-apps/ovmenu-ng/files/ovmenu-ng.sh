@@ -28,14 +28,13 @@ fi
 # Mount the 3rd partition to the data dir
 # if [ ! -d $DATADIR ]; then mkdir $DATADIR; fi
 if ! mount /dev/mmcblk0p3 $DATADIR; then
-  if ! mkfs.ext4 -L "ov-data" /dev/mmcblk0p3; then
+  if ! mkfs.ext4 /dev/mmcblk0p3; then
     echo "Error 1: mmcblk0p3 couldn't be formatted"
   fi
   if ! mount /dev/mmcblk0p3 $DATADIR; then
     echo "Error 2: mmcblk0p3 couldn't be mounted"
   fi
 fi
-
 
 if [ ! -d $DATADIR/XCSoarData ]; then
   # the data dir is new and has to be filled
