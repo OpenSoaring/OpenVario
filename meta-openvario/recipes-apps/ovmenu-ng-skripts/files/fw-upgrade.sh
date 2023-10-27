@@ -182,10 +182,12 @@ function save_system(){
         echo "SSH=\"enabled\"" >> $SDC_DIR/config.uSys
     fi
 
-    if [ -r "/sys/class/backlight/lcd/brightness" ]; then
-      echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\""
-      echo "BRIGHTNESS=\"$(</sys/class/backlight/lcd/brightness)\"" >> $SDC_DIR/config.uSys
+    brightness=$(</sys/class/backlight/lcd/brightness)
+    if [ -n brightness ]; then
+      echo "BRIGHTNESS=\"$brightness\""
+      echo "BRIGHTNESS=\"$brightness\"" >> $SDC_DIR/config.uSys
     else
+      echo "'brightness' doesn't exist"
       echo "BRIGHTNESS=\"9\"" >> $SDC_DIR/config.uSys    
     fi 
     
