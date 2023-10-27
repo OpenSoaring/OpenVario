@@ -332,6 +332,13 @@ done
 if [ "$(</sys/class/backlight/lcd/brightness)" = "" ]; then 
   # in case of ESC brightness is empty
   echo "$menuitem" > /sys/class/backlight/lcd/brightness
+  # for later usage (upgrade fw...)
+  count=$(grep -c "brightness" /boot/config.uEnv)
+  if [ "$count"´-eq "0" ]; then 
+    echo "brightness=$menuitem" >> /boot/config.uEnv
+  else
+    sed -i 's/^brightness=.*/brightness='$menuitem'/' /boot/config.uEnv
+  fi
 fi
     submenu_settings
 }
