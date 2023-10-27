@@ -146,7 +146,19 @@ function updateall(){
         mkdir -p /mnt/sd
         if [ -e "${DIRNAME}/sdcard/part1/config.uEnv" ]; then
             mount ${TARGET}p1  /mnt/sd
-            cp ${DIRNAME}/sdcard/part1/config.uEnv /mnt/sd/config.uEnv
+            # cp ${DIRNAME}/sdcard/part1/config.uEnv /mnt/sd/config.uEnv
+            source ${DIRNAME}/sdcard/part1/config.uEnv
+            if [ -n rotation ]; then
+                sed -i 's/^rotation=.*/rotation='$rotation'/' /mnt/sd/config.uEnv
+            fi
+            if [ -n font ]; then
+                sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
+            fi
+            if [ -n brightness ]; then
+                sed -i 's/^brightness=.*/brightness='$brightness'/' /mnt/sd/config.uEnv
+            fi
+            
+            
             umount /mnt/sd
         fi
         mount ${TARGET}p2  /mnt/sd
