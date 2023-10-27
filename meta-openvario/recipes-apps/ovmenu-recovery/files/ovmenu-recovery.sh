@@ -148,14 +148,25 @@ function updateall(){
             mount ${TARGET}p1  /mnt/sd
             # cp ${DIRNAME}/sdcard/part1/config.uEnv /mnt/sd/config.uEnv
             source ${DIRNAME}/sdcard/part1/config.uEnv
-            if [ -n rotation ]; then
-                sed -i 's/^rotation=.*/rotation='$rotation'/' /mnt/sd/config.uEnv
-            fi
+                 if [ -n rotation ]; then
+                     sed -i 's/^rotation=.*/rotation='$rotation'/' /mnt/sd/config.uEnv
+                 fi
             if [ -n font ]; then
                 sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
             fi
-            if [ -n brightness ]; then
-                sed -i 's/^brightness=.*/brightness='$brightness'/' /mnt/sd/config.uEnv
+                 if [ -n brightness ]; then
+                     sed -i 's/^brightness=.*/brightness='$brightness'/' /mnt/sd/config.uEnv
+                 fi
+            
+            source ${DIRNAME}/sdcard/config.uSys
+            ##### if [ -n ROTATION ]; then
+            #####     sed -i 's/^rotation=.*/rotation='$ROTATION'/' /mnt/sd/config.uEnv
+            ##### fi
+            ##### if [ -n font ]; then
+            #####     sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
+            ##### fi
+            if [ -n BRIGHTNESS ]; then
+                sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' /mnt/sd/config.uEnv
             fi
             
             
