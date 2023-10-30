@@ -154,9 +154,14 @@ function updateall(){
             if [ -n font ]; then
                 sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
             fi
-                 if [ -n brightness ]; then
-                     sed -i 's/^brightness=.*/brightness='$brightness'/' /mnt/sd/config.uEnv
-                 fi
+            if [ -n brightness ]; then
+              count=$(grep -c "brightness" /mnt/sd/config.uEnv)
+              if [ "$count"´-eq "0" ]; then 
+                echo "brightness=$brightness" >> /mnt/sd/config.uEnv
+              else
+                sed -i 's/^brightness=.*/brightness='$brightness'/' /mnt/sd/config.uEnv
+              fi
+            fi
             
             source ${DIRNAME}/sdcard/config.uSys
             ##### if [ -n ROTATION ]; then
@@ -165,8 +170,14 @@ function updateall(){
             ##### if [ -n font ]; then
             #####     sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
             ##### fi
+            # TODO(August2111): check, if this correct
             if [ -n BRIGHTNESS ]; then
-                sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' /mnt/sd/config.uEnv
+                  count=$(grep -c "brightness" /mnt/sd/config.uEnv)
+                  if [ "$count"´-eq "0" ]; then 
+                    echo "brightness=$BRIGHTNESS" >> /mnt/sd/config.uEnv
+                  else
+                    sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' /mnt/sd/config.uEnv
+                  fi
             fi
             
             
