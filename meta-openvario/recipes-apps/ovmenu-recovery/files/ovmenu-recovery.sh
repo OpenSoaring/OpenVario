@@ -156,7 +156,7 @@ function updateall(){
             fi
             if [ -n brightness ]; then
               count=$(grep -c "brightness" /mnt/sd/config.uEnv)
-              if [ "$count"Â´-eq "0" ]; then 
+              if [ "$count"´-eq "0" ]; then 
                 echo "brightness=$brightness" >> /mnt/sd/config.uEnv
               else
                 sed -i 's/^brightness=.*/brightness='$brightness'/' /mnt/sd/config.uEnv
@@ -173,7 +173,7 @@ function updateall(){
             # TODO(August2111): check, if this correct
             if [ -n BRIGHTNESS ]; then
                   count=$(grep -c "brightness" /mnt/sd/config.uEnv)
-                  if [ "$count"Â´-eq "0" ]; then 
+                  if [ "$count"´-eq "0" ]; then 
                     echo "brightness=$BRIGHTNESS" >> /mnt/sd/config.uEnv
                   else
                     sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' /mnt/sd/config.uEnv
@@ -221,8 +221,11 @@ function update_system() {
 
 # ??? setfont cp866-8x14.psf.gz
 
-read IMAGEFILE < $DIRNAME/upgrade.file
-
+if [ -e $DIRNAME/upgrade.file ]; then
+  read IMAGEFILE < $DIRNAME/upgrade.file
+else
+  IMAGEFILE="Not available!"
+fi
 echo "UpdateFile: $IMAGEFILE "
 
 # image file name with path!
