@@ -242,6 +242,10 @@ function updateall(){
     # set dmesg kernel level back to the highest:
     dmesg -n 8
     dmesg > /mnt/dmesg.txt
+    #############################################################
+    # only for debug-test
+    /bin/bash
+    #############################################################
     
     # reboot:
     /opt/bin/reboot.sh
