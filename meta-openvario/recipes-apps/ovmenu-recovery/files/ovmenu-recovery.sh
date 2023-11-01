@@ -239,6 +239,9 @@ function updateall(){
 
     
     echo "Upgrade ready"  >> %DEBUG_LOG%
+    # set dmesg kernel level back to the highest:
+    dmesg -n 8
+    dmesg > /mnt/dmesg.txt
     
     # reboot:
     /opt/bin/reboot.sh
@@ -263,6 +266,9 @@ echo "UpdateFile: $IMAGEFILE "
 # image file name with path!
 IMAGEFILE="$DIRNAME/images/$IMAGEFILE"
 echo "Detected image file: '$IMAGEFILE'!"  >> %DEBUG_LOG%
+
+# set dmesg minimum kernel level:
+dmesg -n 1
 
 if [ -e "$IMAGEFILE" ];
 then
