@@ -235,6 +235,15 @@ function save_system(){
     echo "ROTATION=\"$rotation\""
     echo "ROTATION=\"$rotation\"" >> $SDC_DIR/config.uSys
 
+    #UpgradeType
+    # 0 - from new fw to new fw
+    # 1 - from previous fw to new fw
+    # 2 - from new fw to previous fw
+    # 3 - from previous fw to previous fw
+    # 4 - from old fw (f.e. 17119) to new fw
+    # 5 - from new fw to old fw
+    # other types are not supported (f.e. old to previous an so on)!
+    echo "UPGRADE_TYPE=\"0\"" >> $SDC_DIR/config.uSys
     echo "System Save End"
 }
 
