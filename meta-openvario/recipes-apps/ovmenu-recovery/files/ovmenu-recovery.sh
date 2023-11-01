@@ -237,6 +237,22 @@ function updateall(){
         echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"  >> %DEBUG_LOG%
     fi
 
+
+    echo "UPGRADE_LEVEL = '$UPGRADE_LEVEL'"  >> %DEBUG_LOG%
+    if [ -z $UPGRADE_LEVEL ]; then 
+       echo "UPGRADE_LEVEL is set to '0000'"  >> %DEBUG_LOG%
+       UPGRADE_LEVEL=0;
+    fi
+    
+    case "$UPGRADE_LEVEL" in
+    0|1) echo "create 3rd partition 'ov-data'"
+         echo "------------------------------"
+         read -p "Press enter to continue"
+         source /mnt/sd/usr/bin/create_datapart.sh
+         ;;
+    *)   echo "unknown UPGRADE_LEVEL '$UPGRADE_LEVEL'"  >> %DEBUG_LOG% ;;
+    esac
+    
     
     echo "Upgrade ready"  >> %DEBUG_LOG%
     # set dmesg kernel level back to the highest:
@@ -244,6 +260,7 @@ function updateall(){
     dmesg > /mnt/dmesg.txt
     #############################################################
     # only for debug-test
+    read -p "Press enter to continue"
     # /bin/bash
     #############################################################
     
