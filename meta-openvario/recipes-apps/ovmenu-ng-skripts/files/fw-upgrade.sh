@@ -412,18 +412,13 @@ if [ -f "${IMAGEFILE}" ]; then
     fi
     debug_stop
 
-    # HardLink 
-    # TODO: hard link with directory makes some problems...
-    # cp -al $SDC_DIR/part2/XCSoarData $SDC_DIR/part2/xcsoar
-    # cp -al $SDC_DIR/part2/xcsoar $SDC_DIR/part2/XCSoarData
-    
+    # HardLink at FAT isn't possible
     if [ -d "$MOUNT_DIR2/home/root/.glider_club" ]; then
         echo "save gliderclub data from partition 2"
         mkdir -p $SDC_DIR/part2/glider_club
         cp -frv $MOUNT_DIR2/home/root/.glider_club/* $SDC_DIR/part2/glider_club/
     fi
     
-
     # Synchronize the commands (?)
     sync
 
