@@ -7,6 +7,8 @@ TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIRNAME=/mnt/openvario
 
+DEBUG_LOG=/mnt/debug.log
+
 # Target device (typically /dev/mmcblk0):
 TARGET=/dev/mmcblk0
 
@@ -14,6 +16,12 @@ TARGET=/dev/mmcblk0
 # images=$DIRNAME/images/OpenVario-linux*.gz
 # old: images=$DIRNAME/images/OpenVario-linux*.gz
 images=$DIRNAME/images/O*V*-*.gz
+
+####################################################################
+echo "Upgrade start"  > %DEBUG_LOG%
+date  >> %DEBUG_LOG%
+time  >> %DEBUG_LOG%
+date; time  >> %DEBUG_LOG%
 
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
@@ -129,66 +137,91 @@ function updateuboot(){
 #update updateall
 function updateall(){
     sync
+    echo "Upgrade with '${IMAGEFILE}'"  >> %DEBUG_LOG%
     IMAGE_NAME="$(basename $IMAGEFILE .gz)"
     (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | \
     dialog --gauge "Writing Image ...\nfile = ${IMAGE_NAME}  " 10 50 0
     #########################################
     # remove the recovery file:
+    echo "Upgrade '${IMAGEFILE}' finished"  >> %DEBUG_LOG%
     rm -f $DIRNAME/ov-recovery.itb
     # recover XCSoarData:
     if [ -d "${DIRNAME}/sdcard" ]; then
         mkdir -p /mnt/sd
         if [ -e "${DIRNAME}/sdcard/part1/config.uEnv" ]; then
             mount ${TARGET}p1  /mnt/sd
-            # cp ${DIRNAME}/sdcard/part1/config.uEnv /mnt/sd/config.uEnv
             source ${DIRNAME}/sdcard/part1/config.uEnv
-                 if [ -n rotation ]; then
-                     sed -i 's/^rotation=.*/rotation='$rotation'/' /mnt/sd/config.uEnv
-                 fi
-            if [ -n font ]; then
-                sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
+            echo "sdcard/part1/config.uEnv"      >> %DEBUG_LOG%
+            echo "------------------------"      >> %DEBUG_LOG%
+            echo "rotation      = $rotation"     >> %DEBUG_LOG%
+            echo "brightness    = $brightness"   >> %DEBUG_LOG%
+            echo "font          = $font"         >> %DEBUG_LOG%
+            echo "fdt           = $fdtfile"      >> %DEBUG_LOG%
+            echo "========================"      >> %DEBUG_LOG%
+            if [ -n rotation ]; then
+                echo "Set rotaton '$rotation'"  >> %DEBUG_LOG%
+                sed -i 's/^rotation=.*/rotation='$rotation'/' /mnt/sd/config.uEnv
             fi
-            if [ -n brightness ]; then
+            if [ -n $font ]; then
+                sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
+                echo "Set font '$font'"  >> %DEBUG_LOG%
+            fi
+            if [ -n $brightness ]; then
               count=$(grep -c "brightness" /mnt/sd/config.uEnv)
-              if [ "$count"´-eq "0" ]; then 
+              if [ "$count" = "0" ]; then 
                 echo "brightness=$brightness" >> /mnt/sd/config.uEnv
+                echo "Set brightness (1) '$brightness' NEW"  >> %DEBUG_LOG%
               else
                 sed -i 's/^brightness=.*/brightness='$brightness'/' /mnt/sd/config.uEnv
+                echo "Set brightness (2) '$brightness' UPDATE"  >> %DEBUG_LOG%
               fi
             fi
             
-            source ${DIRNAME}/sdcard/config.uSys
-            ##### if [ -n ROTATION ]; then
-            #####     sed -i 's/^rotation=.*/rotation='$ROTATION'/' /mnt/sd/config.uEnv
-            ##### fi
-            ##### if [ -n font ]; then
-            #####     sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
-            ##### fi
+           source ${DIRNAME}/sdcard/config.uSys
+            echo "sdcard/config.uSys"           >> %DEBUG_LOG%
+            echo "------------------"           >> %DEBUG_LOG%
+            echo "ROTATION      = $ROTATION"    >> %DEBUG_LOG%
+            echo "BRIGHTNESS    = $BRIGHTNESS"  >> %DEBUG_LOG%
+            echo "FONT          = $FONT"        >> %DEBUG_LOG%
+            echo "SSH           = $SSH"         >> %DEBUG_LOG%
+            echo "========================"     >> %DEBUG_LOG%
+            if [ -n $ROTATION ]; then
+                sed -i 's/^rotation=.*/rotation='$ROTATION'/' /mnt/sd/config.uEnv
+            fi
+            if [ -n font ]; then
+                sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
+            fi
             # TODO(August2111): check, if this correct
-            if [ -n BRIGHTNESS ]; then
+            if [ -n $BRIGHTNESS ]; then
                   count=$(grep -c "brightness" /mnt/sd/config.uEnv)
-                  if [ "$count"´-eq "0" ]; then 
+                  if [ "$count" = "0" ]; then 
                     echo "brightness=$BRIGHTNESS" >> /mnt/sd/config.uEnv
+                    echo "Set BRIGHTNESS (3) '$BRIGHTNESS' NEW"  >> %DEBUG_LOG%
                   else
                     sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' /mnt/sd/config.uEnv
+                    echo "Set BRIGHTNESS (4) '$BRIGHTNESS' UPDATE"  >> %DEBUG_LOG%
                   fi
             fi
             
             
             umount /mnt/sd
         fi
+
         mount ${TARGET}p2  /mnt/sd
-        # removing '/mnt/sd/home/root/ov-recovery.itb' not necessary because after
-        # overwriting image this file/link isn't available anymore 
-        # rm -f /mnt/sd/home/root/ov-recovery.itb
-        ls -l /mnt/sd/home/root/.xcsoar
-        
-        rm -rf /mnt/sd/home/root/.xcsoar/*
-        cp -frv ${DIRNAME}/sdcard/part2/xcsoar/* /mnt/sd/home/root/.xcsoar/
-        if [ -d "${DIRNAME}/sdcard/part2/glider_club" ]; then
-          mkdir -p /mnt/sd/home/root/.glider_club
-          cp -frv ${DIRNAME}/sdcard/part2/glider_club/* /mnt/sd/home/root/.glider_club/
+        if [ "$Upgrade" = "OldSystem" ]; then 
+            # removing '/mnt/sd/home/root/ov-recovery.itb' not necessary because after
+            # overwriting image this file/link isn't available anymore 
+            # rm -f /mnt/sd/home/root/ov-recovery.itb
+            ls -l /mnt/sd/home/root/.xcsoar
+            
+            rm -rf /mnt/sd/home/root/.xcsoar/*
+            cp -frv ${DIRNAME}/sdcard/part2/xcsoar/* /mnt/sd/home/root/.xcsoar/
+            if [ -d "${DIRNAME}/sdcard/part2/glider_club" ]; then
+              mkdir -p /mnt/sd/home/root/.glider_club
+              cp -frv ${DIRNAME}/sdcard/part2/glider_club/* /mnt/sd/home/root/.glider_club/
+            fi
         fi
+        # restore the bash history:
         cp -fv  ${DIRNAME}/sdcard/part2/.bash_history /mnt/sd/home/root/
 
         
@@ -198,10 +231,15 @@ function updateall(){
         
         ls -l /mnt/sd/home/root/.xcsoar
         echo "ready OV upgrade!"
+        echo "ready OV upgrade!"  >> %DEBUG_LOG%
     else
         echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"
+        echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"  >> %DEBUG_LOG%
     fi
 
+    
+    echo "Upgrade ready"  >> %DEBUG_LOG%
+    
     # reboot:
     /opt/bin/reboot.sh
 }
@@ -224,7 +262,7 @@ echo "UpdateFile: $IMAGEFILE "
 
 # image file name with path!
 IMAGEFILE="$DIRNAME/images/$IMAGEFILE"
-echo $IMAGEFILE > $DIRNAME/upgrade.fileX
+echo "Detected image file: '$IMAGEFILE'!"  >> %DEBUG_LOG%
 
 if [ -e "$IMAGEFILE" ];
 then
