@@ -427,12 +427,9 @@ if [ -f "${IMAGEFILE}" ]; then
     # Synchronize the commands (?)
     sync
 
-    echo "$IMAGEFILE" > $OV_DIRNAME/upgrade.file0.txt
-
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGE_NAME !"
     echo "$IMAGE_NAME" > $OV_DIRNAME/upgrade.file
-    echo "$IMAGE_NAME" > $OV_DIRNAME/upgrade.file.txt
 
     echo "Upgrade step 1 finished!"
     chmod 757 -R $MNT_DIR
