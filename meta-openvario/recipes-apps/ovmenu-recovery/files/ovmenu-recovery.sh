@@ -244,13 +244,12 @@ function updateall(){
     dmesg > /mnt/dmesg.txt
     #############################################################
     # only for debug-test
-    /bin/bash
+    # /bin/bash
     #############################################################
     
     # reboot:
     /opt/bin/reboot.sh
 }
-
 
 function update_system() {
 	echo "Updating System ..." > /tmp/tail.$$
