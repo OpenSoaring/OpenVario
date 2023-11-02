@@ -8,7 +8,9 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=c79ff39f19dfec6d
 SECTION = "base/app"
 
 S = "${WORKDIR}"
-PR = "r15"
+# PR = "r15"
+require ov-revision.inc
+
 
 inherit allarch systemd
 
