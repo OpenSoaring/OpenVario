@@ -247,7 +247,7 @@ function updateall(){
     case "$UPGRADE_LEVEL" in
     0|1) echo "create 3rd partition 'ov-data'"
          echo "------------------------------"
-         read -p "Press enter to continue"
+         # debug: read -p "Press enter to continue"
          source /mnt/sd/usr/bin/create_datapart.sh
          ;;
     *)   echo "unknown UPGRADE_LEVEL '$UPGRADE_LEVEL'"  >> %DEBUG_LOG% ;;
@@ -260,7 +260,7 @@ function updateall(){
     dmesg > /mnt/dmesg.txt
     #############################################################
     # only for debug-test
-    read -p "Press enter to continue"
+    # debug: read -p "Press enter to continue"
     # /bin/bash
     #############################################################
     
