@@ -32,6 +32,7 @@ SRC_URI =      "\
 	file://openvario.rc \
 	file://${BPN}.service \
 	file://disable_dropbear.preset \
+	file://create_datapart.sh \
 "
 
 
@@ -44,7 +45,10 @@ do_compile() {
 do_install() {
 	install -d ${D}/${bindir}
 	install -m 0755 ${S}/ovmenu-ng.sh ${D}/${bindir}
+	install -m 0755 ${S}/create_datapart.sh ${D}/${bindir}
 	install -d ${D}${ROOT_HOME}
+	install -d ${D}${ROOT_HOME}/.xcsoar
+	install -d ${D}${ROOT_HOME}/data  # mount dir for data partition!
 	install -m 0755 ${S}/openvario.rc ${D}${ROOT_HOME}/.dialogrc
 	install -d ${D}${systemd_unitdir}/system
 	install -m 0644 ${WORKDIR}/ovmenu-ng.service ${D}${systemd_unitdir}/system
@@ -52,12 +56,17 @@ do_install() {
 	# TODO: move this preset file to a more appropriate recipe
 	install -d ${D}${systemd_unitdir}/system-preset
 	install -m 0644 ${WORKDIR}/disable_dropbear.preset ${D}${systemd_unitdir}/system-preset/50-disable_dropbear.preset
+
+
 }
 
 SYSTEMD_SERVICE:${PN} = "${PN}.service"
 
 FILES:${PN} = " \
 	${bindir}/ovmenu-ng.sh \
+	${bindir}/create_datapart.sh \
 	${ROOT_HOME}/.dialogrc \
 	${systemd_unitdir}/system-preset/50-disable_dropbear.preset \
+	${ROOT_HOME}/.xcsoar/ \
+	${ROOT_HOME}/data/ \
 "
