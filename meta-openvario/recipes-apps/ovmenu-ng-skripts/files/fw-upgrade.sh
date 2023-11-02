@@ -313,9 +313,18 @@ function start_upgrade(){
 
     if [ ! -f "/usr/bin/ov-recovery.itb" ]; then
       # only copy it if not available:
+      case $UPDATE_TYPE in
+          -1) 
+             echo "This is not possible with UPDATE_TYPE: $UPDATE_TYPE"
+             read -p "Press enter to continue"
+             ;;
+          0|*) # only for debug-test
+             # debug: 
+             read -p "Press enter to continue"
+             ;;
+      esac
       if [ -f "$OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb" ]; then
-        # unfortunately hardlink isn't possible?
-        ## ln -f $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb $OV_DIRNAME/ov-recovery.itb
+        # hardlink fro FAT (USB-Stick..) is not possible 
         if [ -n "$RSYNC_COPY" ]; then
           rsync -auvtcE --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    /usr/bin/ov-recovery.itb
           echo "'ov-recovery.itb' done"
