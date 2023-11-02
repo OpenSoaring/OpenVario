@@ -26,6 +26,10 @@ BOOTDD_VOLUME_ID = "OV-${SHORT_OV_MACHINE}"
 # Boot partition size [in KiB] (0xA000)
 BOOT_SPACE ?= "40960"
 
+# IMAGE_ROOTFS_EXTRA_SPACE = "1048576"
+IMAGE_OVERHEAD_FACTOR = "2.0"
+
+
 ### # Data partition size [in KiB] (0x14000)
 ### DATA_PARTITION_SIZE ?= "81920"
 # Data partition size [in KiB] (0x200)
