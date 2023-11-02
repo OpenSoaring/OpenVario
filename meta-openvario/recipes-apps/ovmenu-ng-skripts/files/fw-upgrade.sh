@@ -85,6 +85,7 @@ function select_image(){
 function start_upgrade(){
     # copy only the 1st block (20MB) (boot-sector!)
     echo "copy the 1st block (20MB) (boot-sector!)"
+    # gzip -cfd $USB_STICK/BootPartition/BootSector16MB.gz | dd of=$TARGET bs=1M
     gzip -cfd ${BOOT_PARTITION} | dd of=$TARGET bs=1M count=20
 
     echo "Boot Recovery preparation with '${IMAGEFILE}' finished!"
@@ -99,8 +100,8 @@ select_image
 # Complete Update
 if [ -f "${IMAGEFILE}" ]; then
     echo "Start..."
-    echo "Trial !!!!!!" > $OV_DIRNAME/trial.txt
-    echo "Trial2 !!!!!!">$OV_DIRNAME/trial2.txt
+    # echo "Trial !!!!!!" > $OV_DIRNAME/trial.txt
+    # echo "Trial2 !!!!!!">$OV_DIRNAME/trial2.txt
 
     # make tmp dir clean:
     if [ -d "$SDC_DIR" ]; then
@@ -138,6 +139,9 @@ if [ -f "${IMAGEFILE}" ]; then
 
     BOOT_PARTITION=${IMAGEFILE}                                 # 1st
     # IMAGEFILE=${IMAGEFILE//"/home/root"/""}
+    echo "$IMAGEFILE" > $OV_DIRNAME/upgrade.file0
+    echo "${IMAGEFILE//"/home/root/usb/openvario/images"/""}" > $OV_DIRNAME/upgrade.file1
+    echo "${IMAGEFILE//"/home/root/usb"/"/mnt"}" > $OV_DIRNAME/upgrade.file2
     IMAGEFILE=${IMAGEFILE//"/home/root/usb"/"/mnt"}
     # no copy!!! cp -f ${IMAGEFILE} ${FW_FILE}
 
