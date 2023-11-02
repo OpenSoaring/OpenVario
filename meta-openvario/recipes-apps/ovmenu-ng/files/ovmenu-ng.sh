@@ -4,6 +4,38 @@
 TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIALOG_CANCEL=1
+HOMEDIR=/home/root
+DATADIR=$HOMEDIR/data
+
+if [ ! -e /dev/mmcblk0p3 ]; then
+  # create the 3rd SD card partition:
+  source /usr/bin/create_datapart.sh
+
+  echo "Debug-Stop: 3rd SD card partition created"
+      ### read -p "Press enter to continue"
+  if [ ! -e /dev/mmcblk0p3 ]; then
+    echo "Debug-Stop: Reboot ====================="
+    echo "Wait until OpenVario after Reboot ready!"
+    reboot
+  fi
+fi
+
+if [ ! -d $DATADIR ]; then
+  # after upgrade no data dir 
+  mkdir -p $DATADIR
+     echo "'data'- dir not available"
+     read -p "Press enter to continue"
+  #
+fi
+
+mount /dev/mmcblk0p3 $DATADIR
+
+if [ ! -d $DATADIR/XCSoarData ]; then
+  mkdir -p $DATADIR/XCSoarData
+  cp -vfr $HOMEDIR/.xcsoar/* $DATADIR/XCSoarData/
+     echo "'data/XCSoarData'is new and has to be filled..."
+     read -p "Press enter to continue"
+fi
 
 if [ -e ~/.glider_club/GliderClub_Std.prf ]; then
   MENU_VERSION="club"
@@ -429,20 +461,21 @@ function reset_data(){
 
 function start_opensoar_club() {
     # reset the profile to standard profile
-    cp /home/root/.glider_club/GliderClub_Std.prf /home/root/.xcsoar/GliderClub.prf
+    cp $DATADIR/.glider_club/GliderClub_Std.prf $DATADIR/XCSoarData/GliderClub.prf
     # start the GliderClub version of opensoar
-    /usr/bin/OpenSoar -fly -profile=GliderClub.prf
+    /usr/bin/OpenSoar -fly -profile=$DATADIR/XCSoarData/GliderClub.prf \
+      -datapath=$DATADIR/XCSoarData/
     sync
 }
 
 
 function start_opensoar() {
-    /usr/bin/OpenSoar -fly
+    /usr/bin/OpenSoar -fly -datapath=$DATADIR/XCSoarData/
     sync
 }
 
 function start_xcsoar() {
-    /usr/bin/xcsoar -fly
+    /usr/bin/xcsoar -fly -datapath=$DATADIR/XCSoarData/
     sync
 }
 
