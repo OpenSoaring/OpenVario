@@ -114,7 +114,9 @@ IMAGE_CMD:openvario-sdimg () {
     fi
 
     # Add stamp file
-    echo "${IMAGE_NAME}" > ${WORKDIR}/image-version-info
+    echo "${SDIMG_LINK}" > ${WORKDIR}/image-version-info
+    echo "${IMAGE_NAME}" >> ${WORKDIR}/image-version-info
+    echo "${MACHINE}, ${DISTRO_VERSION}" >> ${WORKDIR}/image-version-info
     mcopy -i ${WORKDIR}/boot.img -v ${WORKDIR}/image-version-info ::
 
     # Burn Partitions
