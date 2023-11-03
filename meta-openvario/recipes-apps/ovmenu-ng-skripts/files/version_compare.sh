@@ -23,7 +23,7 @@ vercomp () {
         fi
         if ((10#${ver1[i]} < 10#${ver2[i]}))
         then
-            return 2
+            return -1
         fi
     done
     return 0
