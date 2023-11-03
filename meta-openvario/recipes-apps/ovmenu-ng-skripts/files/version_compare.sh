@@ -28,6 +28,3 @@ vercomp () {
     done
     return 0
 }
-
-vercomp $1 $2
-RESULT=$?
