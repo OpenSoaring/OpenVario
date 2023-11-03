@@ -10,6 +10,19 @@ vercomp () {
     do
         ver1[i]=0
     done
+    
+    if [[ ${ver1[0]} > 10000 ]]
+    then
+       # with fw 17119 make version 0.17119 for a correct compare
+            ver1[1]=ver1[0]
+            ver1[0]=0
+    fi
+    if [[ ${ver2[0]} > 10000 ]]
+    then
+       # with fw 17119 make version 0.17119 for a correct compare
+            ver2[1]=ver2[0]
+            ver2[0]=0
+    fi
     for ((i=0; i<${#ver1[@]}; i++))
     do
         if [[ -z ${ver2[i]} ]]
