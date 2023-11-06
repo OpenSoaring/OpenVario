@@ -310,11 +310,11 @@ function start_upgrade(){
         # hardlink fro FAT (USB-Stick..) is not possible 
         if [ -n "$RSYNC_COPY" ]; then
           rsync -auvtcE --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    /usr/bin/ov-recovery.itb
-          echo "'ov-recovery.itb' done"
         else
           echo "copy 'ov-recovery.itb' in the correct directory..."
           cp -f  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    /usr/bin/ov-recovery.itb
         fi
+        echo "'ov-recovery.itb' done"
       fi
     fi
     if [ -f "/usr/bin/ov-recovery.itb" ]; then
