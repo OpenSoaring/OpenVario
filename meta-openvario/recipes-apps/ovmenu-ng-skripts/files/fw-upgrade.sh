@@ -320,6 +320,8 @@ function start_upgrade(){
     if [ -f "/usr/bin/ov-recovery.itb" ]; then
         # hardlink from '/home/root/' to '/usr/bin/ov-recovery.itb'
         ln -f /usr/bin/ov-recovery.itb ov-recovery.itb
+    else
+        echo "this is an old firmware"
     fi
     if [ ! -f "ov-recovery.itb" ]; then
         echo "'ov-recovery.itb' don't exist - no upgrade possible"
