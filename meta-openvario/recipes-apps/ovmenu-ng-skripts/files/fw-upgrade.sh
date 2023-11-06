@@ -42,6 +42,9 @@ function debug_stop(){
     fi
 }
 
+BATCH_PATH=$(dirname $0)
+echo "Batch Path = '$BATCH_PATH'"
+source $BATCH_PATH/version_compare.sh
 
 function select_image(){
     images=$OV_DIRNAME/images/O*V*-*.gz
@@ -205,6 +208,7 @@ function save_system(){
     source $MOUNT_DIR1/config.uEnv
     # fdtfile=openvario-57-lvds.dtb
     if [ -z "$fdtfile" ]; then
+      # this means, we have a (very) old version (< 21000 ?)
       echo "'$fdtfile' don't exist!?!"
       echo "What is to do???"
       VERSION_INFO=$(head -n 1 $MOUNT_DIR1/image-version-info)
