@@ -16,7 +16,9 @@ SRCREV = "1e07f8d7f51ac16f8576c8d74529d9012b6dd368"
 SRCREV = "393a47f2b79b1f863ab1bf6ca055dc85daf853d4"
 # not on server: SRCREV = "bc71974d997cd241f7efdbe3b8bcdb388bb2e1b5"
 
-BOOST_VERSION = "1.82.0"
-BOOST_SHA256HASH = "a6e1ab9b0860e6a2881dd7b21fe9f737a095e5f33a3a874afc6a345228597ee6"
+# Commit version for 7.40.20 - in the moment only dev_branch
+
+BOOST_VERSION = "1.83.0"
+BOOST_SHA256HASH = "6478edfe2f3305127cffe8caf73ea0176c53769f4bf1585be237eb30798c3b8e"
 
 require opensoar.inc
