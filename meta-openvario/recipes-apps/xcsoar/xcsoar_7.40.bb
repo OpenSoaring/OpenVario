@@ -6,10 +6,10 @@ RCONFLICTS:${PN}="xcsoar-testing"
 
 SRC_URI = "git://github.com/XCSoar/XCSoar.git;protocol=https;branch=master "
 
-# Commit version for 7.39:
-SRCREV = "1418e0dceb48bc5797185efa1bbbcfb425df2dac"
+# Commit version for 7.40:
+SRCREV = "1164801fe9b16f203b65c0e305a9ba43256c977c"
 
-BOOST_VERSION = "1.82.0"
-BOOST_SHA256HASH = "a6e1ab9b0860e6a2881dd7b21fe9f737a095e5f33a3a874afc6a345228597ee6"
+BOOST_VERSION = "1.83.0"
+BOOST_SHA256HASH = "6478edfe2f3305127cffe8caf73ea0176c53769f4bf1585be237eb30798c3b8e"
 
 require xcsoar.inc
