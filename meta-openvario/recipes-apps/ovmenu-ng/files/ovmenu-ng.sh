@@ -48,15 +48,31 @@ if [ ! -d $DATADIR/XCSoarData ]; then
 fi
 echo "startup is ready..."  >> $HOMEDIR/start-debug.log
 
+
 if [ -e ~/.glider_club/GliderClub_Std.prf ]; then
   MENU_VERSION="club"
   MENU_ITEM="club_menu"
-  START_PROGRAM="start_opensoar_club"
 else
   MENU_VERSION="normal"
   MENU_ITEM="normal_menu"
-  START_PROGRAM="start_opensoar"
 fi
+
+# detect main application and start this
+source /boot/config.uEnv
+case "$main_app" in 
+  xcsoar)
+      START_PROGRAM="start_xcsoar"
+      ;;
+  OpenSoar|*)
+    if [ "$MENU_VERSION" = "club" ]; then
+      START_PROGRAM="start_opensoar_club"
+    else
+      START_PROGRAM="start_opensoar"
+    fi
+    ;;
+  # LK8000)  START_PROGRAM="start_lk8000";;
+esac
+
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 

@@ -78,6 +78,8 @@ do_install:append:cubieboard2() {
 	install -m 644 -D ${WORKDIR}/config.uEnv ${D}/boot
 	cat ${WORKDIR}/font.env >>${D}/boot/config.uEnv
 	echo fdtfile=${KERNEL_DEVICETREE} >>${D}/boot/config.uEnv
+	# echo main_app=xcsoar >>${D}/boot/config.uEnv
+	echo main_app=OpenSoar >>${D}/boot/config.uEnv
 }
 
 do_deploy:append:cubieboard2() {
@@ -86,4 +88,6 @@ do_deploy:append:cubieboard2() {
 	install -m 644 -D ${WORKDIR}/config.uEnv ${DEPLOYDIR}
 	cat ${WORKDIR}/font.env >>${DEPLOYDIR}/config.uEnv
 	echo fdtfile=${KERNEL_DEVICETREE} >>${DEPLOYDIR}/config.uEnv
+	# echo main_app=xcsoar >>${DEPLOYDIR}/config.uEnv
+	echo main_app=OpenSoar >>${DEPLOYDIR}/config.uEnv
 }
