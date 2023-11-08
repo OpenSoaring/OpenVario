@@ -495,18 +495,40 @@ function reset_data(){
 
 
 # datapath with short name: better visibility im OpenSoar/XCSoar
+function check_exit_code() {
+  case "$1" in
+    200) # Quit
+      # do nothing
+      echo "OpenSoar Exit Code: $1 = 200(simple end)"
+    ;;
+    201) # Reboot
+      do_reboot
+    ;;
+    202) # ShutDown
+      # do_power_off # with question!
+      shutdown -h now
+    ;;
+    *)
+      echo "OpenSoar Exit Code: '$1'"
+      read -p "Press enter to continue"
+    ;;
+  esac
+}
+# datapath with short name: better visibility im OpenSoar/XCSoar
 function start_opensoar_club() {
     # reset the profile to standard profile
     cp $DATADIR/.glider_club/GliderClub_Std.prf $DATADIR/XCSoarData/GliderClub.prf
     # start the GliderClub version of opensoar
     /usr/bin/OpenSoar -fly -profile=$DATADIR/XCSoarData/GliderClub.prf \
       -datapath=data/XCSoarData/
+    check_exit_code $?
     sync
 }
 
 
 function start_opensoar() {
     /usr/bin/OpenSoar -fly -datapath=data/XCSoarData/
+    check_exit_code $?
     sync
 }
 
