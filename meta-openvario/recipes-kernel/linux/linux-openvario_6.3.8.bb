@@ -39,15 +39,14 @@ SRC_URI:append:sunxi = " \
 	file://0004-Set-minimum-CPU-voltage-to-1.3V.patch\
 	\
 	file://openvario-common.dts \
-	file://openvario-43-rgb.dts \
-	file://openvario-57-lvds-DS2.dts \
-	file://openvario-57-lvds.dts \
-	file://openvario-7-AM070-DS2.dts \
-	file://openvario-7-CH070-DS2.dts \
-	file://openvario-7-CH070.dts \
-	file://openvario-7-PQ070.dts \
 	\
+	file://ov-am43.dts \
 	file://ov-ch57.dts \
+	file://ov-ch57s.dts \
+	file://ov-ch70.dts \
+	file://ov-ch70s.dts \
+	file://ov-pq70.dts \
+	file://ov-am70s.dts \
 	\
 	file://sunxi.cfg \
 	file://drm.cfg \

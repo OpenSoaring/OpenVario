@@ -15,34 +15,33 @@ if len(sys.argv) > 1:
     ov_type = sys.argv[2]
     if ov_type == '--all' or ov_type == '-a':
           machines = [
-          'openvario-7-CH070',
-          'openvario-7-PQ070',
-          # n.d. 'openvario-7-AM070',
-          'openvario-57-lvds',
-          'openvario-43-rgb',
-          'openvario-7-AM070-DS2',
-          'openvario-7-CH070-DS2',
-          # n.d. 'openvario-57-ldvs-DS2',
+          'ov-ch70',
+          'ov-pq70',
+          'ov-ch57',
+          'ov-am43',
+          'ov-am70s',
+          'ov-ch70s',
+          # n.d. 'ov-ch57s',
         ]
-    elif ov_type == 'AM70':
-                machines = ['openvario-7-AM070-DS2']
-    elif ov_type == 'PQ70':
-                machines = ['openvario-7-PQ070']
-    elif ov_type == 'TX70':
-                machines = ['openvario-7-CH070']
-    elif ov_type == 'CH70':
-                machines = ['openvario-7-CH070']
-    elif ov_type == 'CH70':
-                machines = ['openvario-7-CH070']
-    elif ov_type == 'CH57':
-                machines = ['ov-ch57']
+    elif ov_type == 'am70s':
+                machines = ['ov-am70s']
+    elif ov_type == 'pq70':
+                machines = ['ov-pq70']
+    elif ov_type == 'tx70':
+                machines = ['ov-ch70']
+    elif ov_type == 'ch70':
+                machines = ['ov-ch70']
+    elif ov_type == 'ch70s':
+                machines = ['ov-ch70s']
     elif ov_type == 'ch57':
                 machines = ['ov-ch57']
+    elif ov_type == 'am43':
+                machines = ['ov-am43']
     else:
                 machines = [ov_type]
 else:
     # only one!
-    machines = ['openvario-7-CH070']
+    machines = ['ov-ch70']
 
 # my_env['TEMPLATECONF'] = 'meta-openvario/conf'
 # my_env['TEMPLATECONF'] = '../meta-ov/conf'
