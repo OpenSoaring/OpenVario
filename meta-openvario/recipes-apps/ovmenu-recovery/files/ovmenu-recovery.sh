@@ -7,7 +7,7 @@ TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIRNAME=/mnt/openvario
 
-DEBUG_LOG=/mnt/debug.log
+DEBUG_LOG=$DIRNAME/debug.log
 
 # Target device (typically /dev/mmcblk0):
 TARGET=/dev/mmcblk0
@@ -147,9 +147,9 @@ function updateall(){
     rm -f $DIRNAME/ov-recovery.itb
     # recover XCSoarData:
     if [ -d "${DIRNAME}/sdcard" ]; then
-        mkdir -p /mnt/sd
+        mkdir -p /sd
         if [ -e "${DIRNAME}/sdcard/part1/config.uEnv" ]; then
-            mount ${TARGET}p1  /mnt/sd
+            mount ${TARGET}p1  /sd
             source ${DIRNAME}/sdcard/part1/config.uEnv
             echo "sdcard/part1/config.uEnv"      >> %DEBUG_LOG%
             echo "------------------------"      >> %DEBUG_LOG%
@@ -160,19 +160,19 @@ function updateall(){
             echo "========================"      >> %DEBUG_LOG%
             if [ -n rotation ]; then
                 echo "Set rotaton '$rotation'"  >> %DEBUG_LOG%
-                sed -i 's/^rotation=.*/rotation='$rotation'/' /mnt/sd/config.uEnv
+                sed -i 's/^rotation=.*/rotation='$rotation'/' /sd/config.uEnv
             fi
             if [ -n $font ]; then
-                sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
+                sed -i 's/^font=.*/font='$font'/' /sd/config.uEnv
                 echo "Set font '$font'"  >> %DEBUG_LOG%
             fi
             if [ -n $brightness ]; then
-              count=$(grep -c "brightness" /mnt/sd/config.uEnv)
+              count=$(grep -c "brightness" /sd/config.uEnv)
               if [ "$count" = "0" ]; then 
-                echo "brightness=$brightness" >> /mnt/sd/config.uEnv
+                echo "brightness=$brightness" >> /sd/config.uEnv
                 echo "Set brightness (1) '$brightness' NEW"  >> %DEBUG_LOG%
               else
-                sed -i 's/^brightness=.*/brightness='$brightness'/' /mnt/sd/config.uEnv
+                sed -i 's/^brightness=.*/brightness='$brightness'/' /sd/config.uEnv
                 echo "Set brightness (2) '$brightness' UPDATE"  >> %DEBUG_LOG%
               fi
             fi
@@ -186,50 +186,50 @@ function updateall(){
             echo "SSH           = $SSH"         >> %DEBUG_LOG%
             echo "========================"     >> %DEBUG_LOG%
             if [ -n $ROTATION ]; then
-                sed -i 's/^rotation=.*/rotation='$ROTATION'/' /mnt/sd/config.uEnv
+                sed -i 's/^rotation=.*/rotation='$ROTATION'/' /sd/config.uEnv
             fi
             if [ -n font ]; then
-                sed -i 's/^font=.*/font='$font'/' /mnt/sd/config.uEnv
+                sed -i 's/^font=.*/font='$font'/' /sd/config.uEnv
             fi
             # TODO(August2111): check, if this correct
             if [ -n $BRIGHTNESS ]; then
-                  count=$(grep -c "brightness" /mnt/sd/config.uEnv)
+                  count=$(grep -c "brightness" /sd/config.uEnv)
                   if [ "$count" = "0" ]; then 
-                    echo "brightness=$BRIGHTNESS" >> /mnt/sd/config.uEnv
+                    echo "brightness=$BRIGHTNESS" >> /sd/config.uEnv
                     echo "Set BRIGHTNESS (3) '$BRIGHTNESS' NEW"  >> %DEBUG_LOG%
                   else
-                    sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' /mnt/sd/config.uEnv
+                    sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' /sd/config.uEnv
                     echo "Set BRIGHTNESS (4) '$BRIGHTNESS' UPDATE"  >> %DEBUG_LOG%
                   fi
             fi
             
             
-            umount /mnt/sd
+            umount /sd
         fi
 
-        mount ${TARGET}p2  /mnt/sd
+        mount ${TARGET}p2  /sd
         if [ "$Upgrade" = "OldSystem" ]; then 
-            # removing '/mnt/sd/home/root/ov-recovery.itb' not necessary because after
+            # removing '/sd/home/root/ov-recovery.itb' not necessary because after
             # overwriting image this file/link isn't available anymore 
-            # rm -f /mnt/sd/home/root/ov-recovery.itb
-            ls -l /mnt/sd/home/root/.xcsoar
+            # rm -f /sd/home/root/ov-recovery.itb
+            ls -l /sd/home/root/.xcsoar
             
-            rm -rf /mnt/sd/home/root/.xcsoar/*
-            cp -frv ${DIRNAME}/sdcard/part2/xcsoar/* /mnt/sd/home/root/.xcsoar/
+            rm -rf /sd/home/root/.xcsoar/*
+            cp -frv ${DIRNAME}/sdcard/part2/xcsoar/* /sd/home/root/.xcsoar/
             if [ -d "${DIRNAME}/sdcard/part2/glider_club" ]; then
-              mkdir -p /mnt/sd/home/root/.glider_club
-              cp -frv ${DIRNAME}/sdcard/part2/glider_club/* /mnt/sd/home/root/.glider_club/
+              mkdir -p /sd/home/root/.glider_club
+              cp -frv ${DIRNAME}/sdcard/part2/glider_club/* /sd/home/root/.glider_club/
             fi
         fi
         # restore the bash history:
-        cp -fv  ${DIRNAME}/sdcard/part2/.bash_history /mnt/sd/home/root/
+        cp -fv  ${DIRNAME}/sdcard/part2/.bash_history /sd/home/root/
 
         
         if [ -e "${DIRNAME}/sdcard/config.uSys" ]; then
-          cp ${DIRNAME}/sdcard/config.uSys /mnt/sd/home/root/config.uSys
+          cp ${DIRNAME}/sdcard/config.uSys /sd/home/root/config.uSys
         fi
         
-        ls -l /mnt/sd/home/root/.xcsoar
+        ls -l /sd/home/root/.xcsoar
         echo "ready OV upgrade!"
         echo "ready OV upgrade!"  >> %DEBUG_LOG%
     else
@@ -248,7 +248,7 @@ function updateall(){
     0|1) echo "create 3rd partition 'ov-data'"
          echo "------------------------------"
          # debug: read -p "Press enter to continue"
-         source /mnt/sd/usr/bin/create_datapart.sh
+         source /sd/usr/bin/create_datapart.sh
          ;;
     *)   echo "unknown UPGRADE_LEVEL '$UPGRADE_LEVEL'"  >> %DEBUG_LOG% ;;
     esac
@@ -256,8 +256,10 @@ function updateall(){
     
     echo "Upgrade ready"  >> %DEBUG_LOG%
     # set dmesg kernel level back to the highest:
+    rm -rf /sd
     dmesg -n 8
-    dmesg > /mnt/dmesg.txt
+    dmesg > $DIRNAME/dmesg.txt
+    gunzip -f $DIRNAME/dmesg.txt
     #############################################################
     # only for debug-test
     # debug: read -p "Press enter to continue"
