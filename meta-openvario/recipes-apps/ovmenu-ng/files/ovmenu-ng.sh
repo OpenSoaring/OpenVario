@@ -539,29 +539,18 @@ function start_xcsoar() {
 
 function do_reboot(){
     dialog --backtitle "Openvario" \
-    --nook --nocancel --pause \
+    --title "Reboot ?" --pause \
     "Reboot OpenVario ... \\n Press [ESC] for interrupt" 10 30 2 2>&1
 
-    case $? in
-        0) reboot;;
-    esac
+    if [ "$?" = "0" ]; then reboot; fi; 
 }
 
 function do_power_off(){
-    ## dialog --backtitle "Openvario" \
-    ## --begin 3 4 \
-    ## --defaultno \
-    ## --title "Really Power-OFF ?" --yesno "Really want to Power-OFF" 5 40
-
     dialog --backtitle "Openvario" \
-    --title "Really Power-OFF ?" --pause \
+    --title "Power-OFF ?" --pause \
     "Really want to Power-OFF \\n Press [ESC] for interrupt" 10 30 10 2>&1
-    # --yesno "Really want to Power-OFF \\n Press [ESC] for interrupt" 10 30 10 2>&1
 
-    response=$?
-    case $response in
-        0) shutdown -h now;;
-    esac
+    if [ "$?" = "0" ]; then shutdown -h now; fi; 
 }
 
 function do_shell(){
