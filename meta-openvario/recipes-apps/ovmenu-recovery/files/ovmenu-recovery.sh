@@ -6,6 +6,8 @@ DIALOGRC=/opt/bin/openvario.rc
 TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIRNAME=/mnt/openvario
+#SDMOUNT=/mnt/sd
+SDMOUNT=/sd
 
 DEBUG_LOG=$DIRNAME/debug.log
 
@@ -18,10 +20,10 @@ TARGET=/dev/mmcblk0
 images=$DIRNAME/images/O*V*-*.gz
 
 ####################################################################
-echo "Upgrade start"  > %DEBUG_LOG%
-date  >> %DEBUG_LOG%
-time  >> %DEBUG_LOG%
-date; time  >> %DEBUG_LOG%
+echo "Upgrade start"  > $DEBUG_LOG
+date  >> $DEBUG_LOG
+time  >> $DEBUG_LOG
+date; time  >> $DEBUG_LOG
 
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
@@ -137,110 +139,110 @@ function updateuboot(){
 #update updateall
 function updateall(){
     sync
-    echo "Upgrade with '${IMAGEFILE}'"  >> %DEBUG_LOG%
+    echo "Upgrade with '${IMAGEFILE}'"  >> $DEBUG_LOG
     IMAGE_NAME="$(basename $IMAGEFILE .gz)"
     (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | \
     dialog --gauge "Writing Image ...\nfile = ${IMAGE_NAME}  " 10 50 0
     #########################################
     # remove the recovery file:
-    echo "Upgrade '${IMAGEFILE}' finished"  >> %DEBUG_LOG%
+    echo "Upgrade '${IMAGEFILE}' finished"  >> $DEBUG_LOG
     rm -f $DIRNAME/ov-recovery.itb
     # recover XCSoarData:
     if [ -d "${DIRNAME}/sdcard" ]; then
-        mkdir -p /sd
+        mkdir -p $SDMOUNT
         if [ -e "${DIRNAME}/sdcard/part1/config.uEnv" ]; then
-            mount ${TARGET}p1  /sd
+            mount ${TARGET}p1  $SDMOUNT
             source ${DIRNAME}/sdcard/part1/config.uEnv
-            echo "sdcard/part1/config.uEnv"      >> %DEBUG_LOG%
-            echo "------------------------"      >> %DEBUG_LOG%
-            echo "rotation      = $rotation"     >> %DEBUG_LOG%
-            echo "brightness    = $brightness"   >> %DEBUG_LOG%
-            echo "font          = $font"         >> %DEBUG_LOG%
-            echo "fdt           = $fdtfile"      >> %DEBUG_LOG%
-            echo "========================"      >> %DEBUG_LOG%
+            echo "sdcard/part1/config.uEnv"      >> $DEBUG_LOG
+            echo "------------------------"      >> $DEBUG_LOG
+            echo "rotation      = $rotation"     >> $DEBUG_LOG
+            echo "brightness    = $brightness"   >> $DEBUG_LOG
+            echo "font          = $font"         >> $DEBUG_LOG
+            echo "fdt           = $fdtfile"      >> $DEBUG_LOG
+            echo "========================"      >> $DEBUG_LOG
             if [ -n rotation ]; then
-                echo "Set rotaton '$rotation'"  >> %DEBUG_LOG%
-                sed -i 's/^rotation=.*/rotation='$rotation'/' /sd/config.uEnv
+                echo "Set rotaton '$rotation'"  >> $DEBUG_LOG
+                sed -i 's/^rotation=.*/rotation='$rotation'/' $SDMOUNT/config.uEnv
             fi
             if [ -n $font ]; then
-                sed -i 's/^font=.*/font='$font'/' /sd/config.uEnv
-                echo "Set font '$font'"  >> %DEBUG_LOG%
+                sed -i 's/^font=.*/font='$font'/' $SDMOUNT/config.uEnv
+                echo "Set font '$font'"  >> $DEBUG_LOG
             fi
             if [ -n $brightness ]; then
-              count=$(grep -c "brightness" /sd/config.uEnv)
+              count=$(grep -c "brightness" $SDMOUNT/config.uEnv)
               if [ "$count" = "0" ]; then 
-                echo "brightness=$brightness" >> /sd/config.uEnv
-                echo "Set brightness (1) '$brightness' NEW"  >> %DEBUG_LOG%
+                echo "brightness=$brightness" >> $SDMOUNT/config.uEnv
+                echo "Set brightness (1) '$brightness' NEW"  >> $DEBUG_LOG
               else
-                sed -i 's/^brightness=.*/brightness='$brightness'/' /sd/config.uEnv
-                echo "Set brightness (2) '$brightness' UPDATE"  >> %DEBUG_LOG%
+                sed -i 's/^brightness=.*/brightness='$brightness'/' $SDMOUNT/config.uEnv
+                echo "Set brightness (2) '$brightness' UPDATE"  >> $DEBUG_LOG
               fi
             fi
             
            source ${DIRNAME}/sdcard/config.uSys
-            echo "sdcard/config.uSys"           >> %DEBUG_LOG%
-            echo "------------------"           >> %DEBUG_LOG%
-            echo "ROTATION      = $ROTATION"    >> %DEBUG_LOG%
-            echo "BRIGHTNESS    = $BRIGHTNESS"  >> %DEBUG_LOG%
-            echo "FONT          = $FONT"        >> %DEBUG_LOG%
-            echo "SSH           = $SSH"         >> %DEBUG_LOG%
-            echo "========================"     >> %DEBUG_LOG%
+            echo "sdcard/config.uSys"           >> $DEBUG_LOG
+            echo "------------------"           >> $DEBUG_LOG
+            echo "ROTATION      = $ROTATION"    >> $DEBUG_LOG
+            echo "BRIGHTNESS    = $BRIGHTNESS"  >> $DEBUG_LOG
+            echo "FONT          = $FONT"        >> $DEBUG_LOG
+            echo "SSH           = $SSH"         >> $DEBUG_LOG
+            echo "========================"     >> $DEBUG_LOG
             if [ -n $ROTATION ]; then
-                sed -i 's/^rotation=.*/rotation='$ROTATION'/' /sd/config.uEnv
+                sed -i 's/^rotation=.*/rotation='$ROTATION'/' $SDMOUNT/config.uEnv
             fi
             if [ -n font ]; then
-                sed -i 's/^font=.*/font='$font'/' /sd/config.uEnv
+                sed -i 's/^font=.*/font='$font'/' $SDMOUNT/config.uEnv
             fi
             # TODO(August2111): check, if this correct
             if [ -n $BRIGHTNESS ]; then
-                  count=$(grep -c "brightness" /sd/config.uEnv)
+                  count=$(grep -c "brightness" $SDMOUNT/config.uEnv)
                   if [ "$count" = "0" ]; then 
-                    echo "brightness=$BRIGHTNESS" >> /sd/config.uEnv
-                    echo "Set BRIGHTNESS (3) '$BRIGHTNESS' NEW"  >> %DEBUG_LOG%
+                    echo "brightness=$BRIGHTNESS" >> $SDMOUNT/config.uEnv
+                    echo "Set BRIGHTNESS (3) '$BRIGHTNESS' NEW"  >> $DEBUG_LOG
                   else
-                    sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' /sd/config.uEnv
-                    echo "Set BRIGHTNESS (4) '$BRIGHTNESS' UPDATE"  >> %DEBUG_LOG%
+                    sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' $SDMOUNT/config.uEnv
+                    echo "Set BRIGHTNESS (4) '$BRIGHTNESS' UPDATE"  >> $DEBUG_LOG
                   fi
             fi
             
             
-            umount /sd
+            umount $SDMOUNT
         fi
 
-        mount ${TARGET}p2  /sd
+        mount ${TARGET}p2  $SDMOUNT
         if [ "$Upgrade" = "OldSystem" ]; then 
-            # removing '/sd/home/root/ov-recovery.itb' not necessary because after
+            # removing '$SDMOUNT/home/root/ov-recovery.itb' not necessary because after
             # overwriting image this file/link isn't available anymore 
-            # rm -f /sd/home/root/ov-recovery.itb
-            ls -l /sd/home/root/.xcsoar
+            # rm -f $SDMOUNT/home/root/ov-recovery.itb
+            ls -l $SDMOUNT/home/root/.xcsoar
             
-            rm -rf /sd/home/root/.xcsoar/*
-            cp -frv ${DIRNAME}/sdcard/part2/xcsoar/* /sd/home/root/.xcsoar/
+            rm -rf $SDMOUNT/home/root/.xcsoar/*
+            cp -frv ${DIRNAME}/sdcard/part2/xcsoar/* $SDMOUNT/home/root/.xcsoar/
             if [ -d "${DIRNAME}/sdcard/part2/glider_club" ]; then
-              mkdir -p /sd/home/root/.glider_club
-              cp -frv ${DIRNAME}/sdcard/part2/glider_club/* /sd/home/root/.glider_club/
+              mkdir -p $SDMOUNT/home/root/.glider_club
+              cp -frv ${DIRNAME}/sdcard/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
             fi
         fi
         # restore the bash history:
-        cp -fv  ${DIRNAME}/sdcard/part2/.bash_history /sd/home/root/
+        cp -fv  ${DIRNAME}/sdcard/part2/.bash_history $SDMOUNT/home/root/
 
         
         if [ -e "${DIRNAME}/sdcard/config.uSys" ]; then
-          cp ${DIRNAME}/sdcard/config.uSys /sd/home/root/config.uSys
+          cp ${DIRNAME}/sdcard/config.uSys $SDMOUNT/home/root/config.uSys
         fi
         
-        ls -l /sd/home/root/.xcsoar
+        ls -l $SDMOUNT/home/root/.xcsoar
         echo "ready OV upgrade!"
-        echo "ready OV upgrade!"  >> %DEBUG_LOG%
+        echo "ready OV upgrade!"  >> $DEBUG_LOG
     else
         echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"
-        echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"  >> %DEBUG_LOG%
+        echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"  >> $DEBUG_LOG
     fi
 
 
-    echo "UPGRADE_LEVEL = '$UPGRADE_LEVEL'"  >> %DEBUG_LOG%
+    echo "UPGRADE_LEVEL = '$UPGRADE_LEVEL'"  >> $DEBUG_LOG
     if [ -z $UPGRADE_LEVEL ]; then 
-       echo "UPGRADE_LEVEL is set to '0000'"  >> %DEBUG_LOG%
+       echo "UPGRADE_LEVEL is set to '0000'"  >> $DEBUG_LOG
        UPGRADE_LEVEL=0;
     fi
     
@@ -248,18 +250,19 @@ function updateall(){
     0|1) echo "create 3rd partition 'ov-data'"
          echo "------------------------------"
          # debug: read -p "Press enter to continue"
-         source /sd/usr/bin/create_datapart.sh
+         source $SDMOUNT/usr/bin/create_datapart.sh
          ;;
-    *)   echo "unknown UPGRADE_LEVEL '$UPGRADE_LEVEL'"  >> %DEBUG_LOG% ;;
+    *)   echo "unknown UPGRADE_LEVEL '$UPGRADE_LEVEL'"  >> $DEBUG_LOG ;;
     esac
     
     
-    echo "Upgrade ready"  >> %DEBUG_LOG%
+    echo "Upgrade ready"  >> $DEBUG_LOG
     # set dmesg kernel level back to the highest:
-    rm -rf /sd
     dmesg -n 8
     dmesg > $DIRNAME/dmesg.txt
     gunzip -f $DIRNAME/dmesg.txt
+    umount $SDMOUNT
+    sync
     #############################################################
     # only for debug-test
     # debug: read -p "Press enter to continue"
@@ -287,7 +290,7 @@ echo "UpdateFile: $IMAGEFILE "
 
 # image file name with path!
 IMAGEFILE="$DIRNAME/images/$IMAGEFILE"
-echo "Detected image file: '$IMAGEFILE'!"  >> %DEBUG_LOG%
+echo "Detected image file: '$IMAGEFILE'!"  >> $DEBUG_LOG
 
 # set dmesg minimum kernel level:
 dmesg -n 1
