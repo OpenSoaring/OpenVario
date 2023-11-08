@@ -548,10 +548,15 @@ function do_reboot(){
 }
 
 function do_power_off(){
+    ## dialog --backtitle "Openvario" \
+    ## --begin 3 4 \
+    ## --defaultno \
+    ## --title "Really Power-OFF ?" --yesno "Really want to Power-OFF" 5 40
+
     dialog --backtitle "Openvario" \
-    --begin 3 4 \
-    --defaultno \
-    --title "Really Power-OFF ?" --yesno "Really want to Power-OFF" 5 40
+    --title "Really Power-OFF ?" --pause \
+    "Really want to Power-OFF \\n Press [ESC] for interrupt" 10 30 10 2>&1
+    # --yesno "Really want to Power-OFF \\n Press [ESC] for interrupt" 10 30 10 2>&1
 
     response=$?
     case $response in
