@@ -185,6 +185,8 @@ function save_system(){
         echo "SSH=\"enabled\"" >> $SDC_DIR/config.uSys
     fi
 
+    tar cvf - /var/lib/connman | gzip >$SDC_DIR/connman.tar.gz
+
     brightness=$(</sys/class/backlight/lcd/brightness)
     if [ -n brightness ]; then
       echo "BRIGHTNESS=\"$brightness\""
