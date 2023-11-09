@@ -318,19 +318,28 @@ function start_upgrade(){
         fi
         echo "'ov-recovery.itb' done"
       fi
+    else
+        echo "'/usr/bin/ov-recovery.itb' is available" # AugTest
+        # read -p "Press enter to continue"  # AugTest
     fi
     if [ -f "/usr/bin/ov-recovery.itb" ]; then
         # hardlink from '/home/root/' to '/usr/bin/ov-recovery.itb'
         ln -f /usr/bin/ov-recovery.itb ov-recovery.itb
+        echo "ln -f /usr/bin/ov-recovery.itb ov-recovery.itb"
+        # read -p "Press enter to continue" # AugTest
     else
         echo "this is an old firmware"
+        ls /usr/bin/ov*  # AugTest
+        read -p "Press enter to continue" # AugTest
     fi
     if [ ! -f "ov-recovery.itb" ]; then
-        echo "'ov-recovery.itb' don't exist - no upgrade possible"
+        echo "'ov-recovery.itb' doesn't exist - no upgrade possible"
         read -p "Press enter to continue"
         echo "Exit!"
         exit
     fi
+
+    # read -p "Press enter to continue" # AugTest
 
     echo "FILENAME_TYPE: $FILENAME_TYPE  vs FW_VERSION: $FW_VERSION / HW_TARGET: $HW_TARGET"
     if [ "$FILENAME_TYPE" = "2" ] || [ $FW_VERSION -gt 23000 ]; then
