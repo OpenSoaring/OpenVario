@@ -497,6 +497,10 @@ function reset_data(){
 # datapath with short name: better visibility im OpenSoar/XCSoar
 function check_exit_code() {
   case "$1" in
+    100) # 'eventExit' without unknown misc argument
+      # do nothing
+      echo "OpenSoar Exit Code: $1 = 100(simple end)"
+    ;;
     200) # Quit
       # do nothing
       echo "OpenSoar Exit Code: $1 = 200(simple end)"
