@@ -30,6 +30,7 @@ BOOT_SPACE ?= "40960"
 IMAGE_ROOTFS_ALIGNMENT = "2048"
 
 SDIMG_ROOTFS = "${IMGDEPLOYDIR}/${IMAGE_NAME}.rootfs.${SDIMG_ROOTFS_TYPE}"
+SDIMG_ROOTFS_2 = "${IMGDEPLOYDIR}/${IMAGE_NAME}.rootfs.${SDIMG_ROOTFS_TYPE}"
 
 do_image_openvario_sdimg[depends] += " \
             parted-native:do_populate_sysroot \
@@ -140,7 +141,8 @@ IMAGE_CMD:openvario-sdimg () {
     ln -sfr ${SDIMG}.gz ${SDIMG_LINK}.gz
 
     # create a relative link to last created image directly for a sd card writer
-    ln -sfr ${SDIMG}.gz last-ov.gz
+    # rm -f last-ov.gz
+    # ln -sfr ${SDIMG}.gz last-ov.gz
 
     # write output filename to file for upload
     echo ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME} > ${DEPLOY_DIR_IMAGE}/image_name    
