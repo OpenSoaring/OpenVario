@@ -1,5 +1,7 @@
 SUMMARY = "A small image just capable of allowing a device to boot."
 
+require ov-revision.inc
+
 IMAGE_FEATURES += "splash ssh-server-dropbear package-management"
 DEPENDS += "linux-firmware \
     "
