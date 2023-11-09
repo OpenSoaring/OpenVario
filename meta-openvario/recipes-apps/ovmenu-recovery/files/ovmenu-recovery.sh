@@ -178,7 +178,7 @@ function updateall(){
                 echo "Set brightness (2) '$brightness' UPDATE"  >> $DEBUG_LOG
               fi
             fi
-            
+
            source ${DIRNAME}/sdcard/config.uSys
             echo "sdcard/config.uSys"           >> $DEBUG_LOG
             echo "------------------"           >> $DEBUG_LOG
@@ -226,6 +226,9 @@ function updateall(){
         # restore the bash history:
         cp -fv  ${DIRNAME}/sdcard/part2/.bash_history $SDMOUNT/home/root/
 
+        if [ -e "${DIRNAME}/sdcard/connman.tar.gz" ]; then
+          tar -zxf ${DIRNAME}/sdcard/connman.tar.gz --directory $SDMOUNT/
+        fi
         
         if [ -e "${DIRNAME}/sdcard/config.uSys" ]; then
           cp ${DIRNAME}/sdcard/config.uSys $SDMOUNT/home/root/config.uSys
