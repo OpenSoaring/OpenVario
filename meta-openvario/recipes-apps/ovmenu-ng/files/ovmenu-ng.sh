@@ -12,29 +12,27 @@ if [ ! -e /dev/mmcblk0p3 ]; then
   source /usr/bin/create_datapart.sh
 
   echo "Debug-Stop: 3rd SD card partition created"
+  if [ -f $HOMEDIR/_config.uSys ]; then
+    # reactivate the previous system data
+    mv -f $HOMEDIR/_config.uSys $HOMEDIR/config.uSys
+  fi 
       ### read -p "Press enter to continue"
   if [ ! -e /dev/mmcblk0p3 ]; then
-    echo "Debug-Stop: Reboot ====================="
-    echo "Wait until OpenVario after Reboot ready!"
+    echo "Reboot ===================================="
+    echo "Wait until OpenVario after Reboot is ready!"
     reboot
   fi
 fi
 
-if [ ! -d $DATADIR ]; then
-  # after upgrade no data dir 
-  mkdir -p $DATADIR
-     echo "'data'- dir not available"
-     read -p "Press enter to continue"
-  #
-fi
-
+# Mount the 3rd partition to the data dir
 mount /dev/mmcblk0p3 $DATADIR
 
 if [ ! -d $DATADIR/XCSoarData ]; then
+  # the data dir is new and has to be filled
   mkdir -p $DATADIR/XCSoarData
-  cp -vfr $HOMEDIR/.xcsoar/* $DATADIR/XCSoarData/
-     echo "'data/XCSoarData'is new and has to be filled..."
-     read -p "Press enter to continue"
+  echo "'data/XCSoarData'is new and has to be filled..."
+  mv -v $HOMEDIR/.xcsoar/* $DATADIR/XCSoarData
+  rm -f $HOMEDIR/.xcsoar
 fi
 
 if [ -e ~/.glider_club/GliderClub_Std.prf ]; then
@@ -459,23 +457,25 @@ function reset_data(){
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
+
+# datapath with short name: better visibility im OpenSoar/XCSoar
 function start_opensoar_club() {
     # reset the profile to standard profile
     cp $DATADIR/.glider_club/GliderClub_Std.prf $DATADIR/XCSoarData/GliderClub.prf
     # start the GliderClub version of opensoar
     /usr/bin/OpenSoar -fly -profile=$DATADIR/XCSoarData/GliderClub.prf \
-      -datapath=$DATADIR/XCSoarData/
+      -datapath=data/XCSoarData/
     sync
 }
 
 
 function start_opensoar() {
-    /usr/bin/OpenSoar -fly -datapath=$DATADIR/XCSoarData/
+    /usr/bin/OpenSoar -fly -datapath=data/XCSoarData/
     sync
 }
 
 function start_xcsoar() {
-    /usr/bin/xcsoar -fly -datapath=$DATADIR/XCSoarData/
+    /usr/bin/xcsoar -fly -datapath=data/XCSoarData/
     sync
 }
 
