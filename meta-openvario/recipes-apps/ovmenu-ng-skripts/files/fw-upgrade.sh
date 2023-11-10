@@ -113,12 +113,12 @@ function select_image(){
             # teststr is now: 17119-openvario-57-lvds[-testing]
             hw_target=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
             case $hw_target in
-                57lvds)       HW_TARGET="ch57";;
-                57-lvds)      HW_TARGET="ch57";;
-                7-CH070)      HW_TARGET="ch70";;
-                7-PQ070)      HW_TARGET="pq70";;
-                7-AM070-DS2)  HW_TARGET="am70s";;
-                43-rgb)       HW_TARGET="am43";;
+                57lvds)       HW_TARGET="CH57";;
+                57-lvds)      HW_TARGET="CH57";;
+                7-CH070)      HW_TARGET="CH70";;
+                7-PQ070)      HW_TARGET="PQ70";;
+                7-AM070-DS2)  HW_TARGET="AM70s";;
+                43-rgb)       HW_TARGET="AM43";;
                 *)            HW_TARGET="'$hw_target' (unknown)";;
             esac
         else
@@ -127,22 +127,18 @@ function select_image(){
             FILENAME_TYPE=2
             hw_target=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
             # awk is splitting 'OV-3.0.2.20-CB2-CH57.img.gz' in:
-            # OV-3.0.2.20', 'ch57', '.gz' (-CB2- and .img are cutted out) 
-            # if [ $hw_target in ("ch57", ch70", pq70", am70s", am43") ]; then
+            # OV-3.0.2.20', 'CH57', '.gz' (-CB2- and .img are cutted out) 
+            # if [ $hw_target in ("CH57", CH70", PQ70", AM70s", AM43") ]; then
             #  HW_TARGET="$hw_target"
             # else 
             case $hw_target in
-                ch57)        HW_TARGET="$hw_target";;
-                ch70)        HW_TARGET="$hw_target";;
-                pq70)        HW_TARGET="$hw_target";;
-                am70s)       HW_TARGET="$hw_target";;
-                am43)        HW_TARGET="$hw_target";;
+                CH57)        HW_TARGET="$hw_target";;
+                CH70)        HW_TARGET="$hw_target";;
+                PQ70)        HW_TARGET="$hw_target";;
+                AM70s)       HW_TARGET="$hw_target";;
+                AM43)        HW_TARGET="$hw_target";;
 
-                CH57)        HW_TARGET="ch57";;
-                CH70)        HW_TARGET="ch70";;
-                PQ70)        HW_TARGET="pq70";;
-                AM70_DS2)    HW_TARGET="am70s";;
-                AM43)        HW_TARGET="am43";;
+                AM70_DS2)    HW_TARGET="AM70s";;
                 *)           HW_TARGET="'$hw_target' (unknown)";;
             esac
             # fi
@@ -222,17 +218,17 @@ function save_system(){
     
     fi
     case $(basename "$fdtfile" .dtb) in
-        ov-ch57)      HW_BASE="ch57";;
-        ov-ch70)      HW_BASE="ch70";;
-        ov-pq70)      HW_BASE="pq70";;
-        ov-am70s)     HW_BASE="am70s";;
-        ov-am43)      HW_BASE="am43";;
+        ov-ch57)      HW_BASE="CH57";;
+        ov-ch70)      HW_BASE="CH70";;
+        ov-pq70)      HW_BASE="PQ70";;
+        ov-am70s)     HW_BASE="AM70s";;
+        ov-am43)      HW_BASE="AM43";;
 
-        openvario-57-lvds)      HW_BASE="ch57";;
-        openvario-7-CH070)      HW_BASE="ch70";;
-        openvario-7-PQ070)      HW_BASE="pq70";;
-        openvario-7-AM070-DS2)  HW_BASE="am70s";;
-        openvario-43-rgb)       HW_BASE="am43";;
+        openvario-57-lvds)      HW_BASE="CH57";;
+        openvario-7-CH070)      HW_BASE="CH70";;
+        openvario-7-PQ070)      HW_BASE="PQ70";;
+        openvario-7-AM070-DS2)  HW_BASE="AM70s";;
+        openvario-43-rgb)       HW_BASE="AM43";;
         *)                      HW_BASE="unknown";;
     esac
     echo "HARDWARE=\"$HW_BASE\""
@@ -293,7 +289,7 @@ function start_upgrade(){
     
     # copy the ov-recovery.itb from HW folder for the next step!!!
     if [ -z "$HW_TARGET" ]; then
-      HW_TARGET="ch57"
+      HW_TARGET="CH57"
     fi 
 
     if [ ! -f "/usr/bin/ov-recovery.itb" ]; then
