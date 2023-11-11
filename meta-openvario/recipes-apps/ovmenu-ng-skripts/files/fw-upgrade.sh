@@ -7,11 +7,17 @@ DEBUG_STOP=""
 
 USB_STICK=/usb/usbstick
 
+stat
+
 DIALOG_CANCEL=1
 SELECTION=/tmp/output.sh.$$
 
 # the OV dirname at USB stick
 OV_DIRNAME=$USB_STICK/openvario
+
+# timestamp > OV-3.0.1-19-CB2-XXXX.img.gz
+# timestamp > OV-3.0.1-19-CB2-XXXX.img.gz
+TIMESTAMP_3_19=1695000000
 
 # temporary directories at USB stick to save the setting informations
 SDC_DIR=$OV_DIRNAME/sdcard
@@ -440,17 +446,14 @@ if [ -f "${IMAGEFILE}" ]; then
 
     # 2nd: save boot folder to Backup from partition 1
     echo "2nd: save boot folder to Backup from partition 1"
+    rm -fdr $SDC_DIR/part1
     mkdir -p $SDC_DIR/part1
-    if [ -n "$RSYNC_COPY" ]; then
-        rsync -ruvtcE --progress $MOUNT_DIR1/* $SDC_DIR/part1/ --delete 
-        echo "'ov-recovery.itb' done"
-    else
-        echo "  copy command (rsync not available)..."
-        # this is possible on older fw (17119 for example)
-        rm -fr $SDC_DIR/part1/*
-        cp -rfv  $MOUNT_DIR1/* $SDC_DIR/part1/
-    fi
-    #      --exclude ...
+    echo "  copy command ..."
+    # cp is available on all (old) firmware
+    # copy only files from interest (no picture, no uImage) 
+    cp -fv  $MOUNT_DIR1/config.uEnv        $SDC_DIR/part1/
+    cp -fv  $MOUNT_DIR1/image-version-info $SDC_DIR/part1/
+    cp -fv  $MOUNT_DIR1/*.dtb              $SDC_DIR/part1/
 
     # 3rd: save XCSoarData from partition 2:
     echo "3rd: save XCSoarData from partition 2"
