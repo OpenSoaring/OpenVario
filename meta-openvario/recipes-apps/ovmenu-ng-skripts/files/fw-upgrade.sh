@@ -27,9 +27,11 @@ MNT_DIR="mnt"
 # SD card:
 TARGET=/dev/mmcblk0
 IMAGEFILE=""
-HW_TARGET="0000"
-HW_BASE="0000"
-FILENAME_TYPE=0
+TARGET_HW="0000"
+TARGET_FILENAME_TYPE=0
+TARGET_FW_VERSION=0
+BASE_HW="0000"
+BASE_FW_VERSION=0
 
 # partition 1 of SD card is mounted as '/boot'!
 MOUNT_DIR1=/boot
@@ -160,41 +162,41 @@ function select_image(){
         IMAGE_NAME="$(basename $IMAGEFILE)"
         TESTING=$(echo $IMAGE_NAME | grep -o "testing")
         # grep the buzzword 'testing'
-        FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]{5}')
-        if [ -n "$FW_VERSION" ]; then
-            FILENAME_TYPE=1
+        TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]{5}')
+        if [ -n "$TARGET_FW_VERSION" ]; then
+            TARGET_FILENAME_TYPE=1
             # find the part between '-ipk- and .rootfs
             teststr=$(echo $IMAGE_NAME | awk -F'-ipk-|.rootfs' '{print $2}')
             # teststr is now: 17119-openvario-57-lvds[-testing]
-            hw_target=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
-            case $hw_target in
-                57lvds)       HW_TARGET="CH57";;
-                57-lvds)      HW_TARGET="CH57";;
-                7-CH070)      HW_TARGET="CH70";;
-                7-PQ070)      HW_TARGET="PQ70";;
-                7-AM070-DS2)  HW_TARGET="AM70s";;
-                43-rgb)       HW_TARGET="AM43";;
-                *)            HW_TARGET="'$hw_target' (unknown)";;
+            TARGET_HW=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
+            case $TARGET_HW in
+                57lvds)       TARGET_HW="CH57";;
+                57-lvds)      TARGET_HW="CH57";;
+                7-CH070)      TARGET_HW="CH70";;
+                7-PQ070)      TARGET_HW="PQ70";;
+                7-AM070-DS2)  TARGET_HW="AM70s";;
+                43-rgb)       TARGET_HW="AM43";;
+                *)            TARGET_HW="'$TARGET_HW' (unknown)";;
             esac
         else
             # grep a version in form '##.##.##-##' like '3.0.2-20' 
-            FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
-            FILENAME_TYPE=2
-            hw_target=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
+            TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
+            TARGET_FILENAME_TYPE=2
+            TARGET_HW=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
             # awk is splitting 'OV-3.0.2.20-CB2-CH57.img.gz' in:
             # OV-3.0.2.20', 'CH57', '.gz' (-CB2- and .img are cutted out) 
-            # if [ $hw_target in ("CH57", CH70", PQ70", AM70s", AM43") ]; then
-            #  HW_TARGET="$hw_target"
+            # if [ $TARGET_HW in ("CH57", CH70", PQ70", AM70s", AM43") ]; then
+            #  TARGET_HW="$TARGET_HW"
             # else 
-            case $hw_target in
-                CH57)        HW_TARGET="$hw_target";;
-                CH70)        HW_TARGET="$hw_target";;
-                PQ70)        HW_TARGET="$hw_target";;
-                AM70s)       HW_TARGET="$hw_target";;
-                AM43)        HW_TARGET="$hw_target";;
+            case $TARGET_HW in
+                CH57)        TARGET_HW="$TARGET_HW";;
+                CH70)        TARGET_HW="$TARGET_HW";;
+                PQ70)        TARGET_HW="$TARGET_HW";;
+                AM70s)       TARGET_HW="$TARGET_HW";;
+                AM43)        TARGET_HW="$TARGET_HW";;
 
-                AM70_DS2)    HW_TARGET="AM70s";;
-                *)           HW_TARGET="'$hw_target' (unknown)";;
+                AM70_DS2)    TARGET_HW="AM70s";;
+                *)           TARGET_HW="'$TARGET_HW' (unknown)";;
             esac
             # fi
         fi
@@ -259,6 +261,8 @@ function save_system(){
         fi
     fi
     source $MOUNT_DIR1/config.uEnv
+    # read 1st line in 'image-version-info'
+    VERSION_INFO=$(head -n 1 $MOUNT_DIR1/image-version-info)
     # fdtfile=openvario-57-lvds.dtb
     if [ -z "$fdtfile" ]; then
       # this means, we have a (very) old version (< 21000 ?)
@@ -268,26 +272,29 @@ function save_system(){
       fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $3}')
       if [ -z "$fdtfile" ]; then fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $2}'); fi
       fdtfile="openvario-$fdtfile"
+      BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]{5}')
       echo "fdtfile = '$fdtfile'!!!!"
       read -p "Press enter to continue"
+    else
+      BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
     
     fi
     case $(basename "$fdtfile" .dtb) in
-        ov-ch57)      HW_BASE="CH57";;
-        ov-ch70)      HW_BASE="CH70";;
-        ov-pq70)      HW_BASE="PQ70";;
-        ov-am70s)     HW_BASE="AM70s";;
-        ov-am43)      HW_BASE="AM43";;
+        ov-ch57)      BASE_HW="CH57";;
+        ov-ch70)      BASE_HW="CH70";;
+        ov-pq70)      BASE_HW="PQ70";;
+        ov-am70s)     BASE_HW="AM70s";;
+        ov-am43)      BASE_HW="AM43";;
 
-        openvario-57-lvds)      HW_BASE="CH57";;
-        openvario-7-CH070)      HW_BASE="CH70";;
-        openvario-7-PQ070)      HW_BASE="PQ70";;
-        openvario-7-AM070-DS2)  HW_BASE="AM70s";;
-        openvario-43-rgb)       HW_BASE="AM43";;
-        *)                      HW_BASE="unknown";;
+        openvario-57-lvds)      BASE_HW="CH57";;
+        openvario-7-CH070)      BASE_HW="CH70";;
+        openvario-7-PQ070)      BASE_HW="PQ70";;
+        openvario-7-AM070-DS2)  BASE_HW="AM70s";;
+        openvario-43-rgb)       BASE_HW="AM43";;
+        *)                      BASE_HW="unknown";;
     esac
-    echo "HARDWARE=\"$HW_BASE\""
-    echo "HARDWARE=\"$HW_BASE\"" >> $SDC_DIR/config.uSys
+    echo "HARDWARE=\"$BASE_HW\""
+    echo "HARDWARE=\"$BASE_HW\"" >> $SDC_DIR/config.uSys
 
     echo "ROTATION=\"$rotation\""
     echo "ROTATION=\"$rotation\"" >> $SDC_DIR/config.uSys
@@ -309,23 +316,23 @@ function start_upgrade(){
 #    echo "Start Upgrading with '$IMAGE_NAME'..."
     #================================
     # grep a number with exactly 5 digit: 
-    # Comparism between HW_BASE  and HW_TARGET:
+    # Comparism between BASE_HW  and TARGET_HW:
 ##aug!
-    if [ ! "$HW_BASE" = "$HW_TARGET" ]; then
+    if [ ! "$BASE_HW" = "$TARGET_HW" ]; then
       TIMEOUT=20
-      MENU_TITLE="Differenz between Update Target and Hardware '$HW_BASE'"
-      MENU_TITLE="$MENU_TITLE\nVersion   $FW_VERSION"
-      MENU_TITLE="$MENU_TITLE\nTarget    $HW_TARGET"
+      MENU_TITLE="Differenz between Update Target and Hardware '$BASE_HW'"
+      MENU_TITLE="$MENU_TITLE\nVersion   $TARGET_FW_VERSION"
+      MENU_TITLE="$MENU_TITLE\nTarget    $TARGET_HW"
       if [ -n "$TESTING" ]; then
         TESTING="Yes"
       else
         TESTING="No"
       fi
       MENU_TITLE="$MENU_TITLE\ntesting?  $TESTING"
-      MENU_TITLE="$MENU_TITLE\nHW_BASE   $HW_BASE"
-      MENU_TITLE="$MENU_TITLE\nHW_TARGET $HW_TARGET"
+      MENU_TITLE="$MENU_TITLE\nBASE_HW   $BASE_HW"
+      MENU_TITLE="$MENU_TITLE\nTARGET_HW $TARGET_HW"
       MENU_TITLE="$MENU_TITLE\n=============================="
-      MENU_TITLE="$MENU_TITLE\nDo you really want to upgrade to '$HW_TARGET'"
+      MENU_TITLE="$MENU_TITLE\nDo you really want to upgrade to '$TARGET_HW'"
       dialog --nook --nocancel --pause \
       "$MENU_TITLE" \
       20 60 $TIMEOUT 2>&1
@@ -343,8 +350,8 @@ function start_upgrade(){
     echo "Start Upgrading with '$IMAGE_NAME'..."
     
     # copy the ov-recovery.itb from HW folder for the next step!!!
-    if [ -z "$HW_TARGET" ]; then
-      HW_TARGET="CH57"
+    if [ -z "$TARGET_HW" ]; then
+      TARGET_HW="CH57"
     fi 
 
     if [ ! -f "/usr/bin/ov-recovery.itb" ]; then
@@ -359,13 +366,13 @@ function start_upgrade(){
              read -p "Press enter to continue"
              ;;
       esac
-      if [ -f "$OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb" ]; then
+      if [ -f "$OV_DIRNAME/images/$TARGET_HW/ov-recovery.itb" ]; then
         # hardlink fro FAT (USB-Stick..) is not possible 
         if [ -n "$RSYNC_COPY" ]; then
-          rsync -auvtcE --progress  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    /usr/bin/ov-recovery.itb
+          rsync -auvtcE --progress  $OV_DIRNAME/images/$TARGET_HW/ov-recovery.itb    /usr/bin/ov-recovery.itb
         else
           echo "copy 'ov-recovery.itb' in the correct directory..."
-          cp -f  $OV_DIRNAME/images/$HW_TARGET/ov-recovery.itb    /usr/bin/ov-recovery.itb
+          cp -f  $OV_DIRNAME/images/$TARGET_HW/ov-recovery.itb    /usr/bin/ov-recovery.itb
         fi
         echo "'ov-recovery.itb' done"
       fi
@@ -391,19 +398,45 @@ function start_upgrade(){
     fi
 
     # read -p "Press enter to continue" # AugTest
-
-    echo "FILENAME_TYPE: $FILENAME_TYPE  vs FW_VERSION: $FW_VERSION / HW_TARGET: $HW_TARGET"
-    if [ "$FILENAME_TYPE" = "2" ] || [ $FW_VERSION -gt 23000 ]; then
-      # copy the 1st block only if newer fw files
-      # (and the BASE-FW is old...)
-      echo "copy the 1st block (20MB) (boot-sector!)"
-      gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1M count=20
+    
+    vercomp "$TARGET_FW_VERSION" "3.2.19"
+    # 0 - equal, 1 - lower, 2 greater
+    TARGET_FW_TYPE=$?  
+    vercomp "$BASE_FW_VERSION" "3.2.19"
+    # 0 - equal, 1 - lower, 2 greater
+    BASE_FW_TYPE=$?  
+    echo "TARGET_FILENAME_TYPE: $TARGET_FILENAME_TYPE  vs TARGET_FW_VERSION: $TARGET_FW_VERSION / TARGET_HW: $TARGET_HW"
+    if [ "$TARGET_FW_TYPE" = "2" ]; then
+      if [ "$BASE_FW_TYPE" = "2" ]; then
+        echo "both FW are a new type!"
+      else
+        echo "Target FW is new but Base FW is old!"
+        echo "copy the 1st block (20MB) (boot-sector!)"
+###!!!        gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1024 count=512
+      fi
     else
-      dialog --nook --nocancel --pause "This is an old FW file ($FW_VERSION)!" 10 30 5 2>&1
-      clear_display
+      if [ "$BASE_FW_TYPE" = "2" ]; then
+        # echo "Target FW is old but Base FW is new!"
+        dialog --nook --nocancel --pause "This is a change to an old FW file ($TARGET_FW_VERSION)!" 10 30 5 2>&1
+        clear_display
+      else
+        echo "both FW are a old type!"
+        echo "copy a bootsector file to the boot sector!)"
+        boot_sector_file=$OV_DIRNAME/images/$TARGET_HW/bootsector.bin.gz
+        if [ -e "$boot_sector_file" ]; then
+###!!!          gzip -cfd $boot_sector_file | dd of=$TARGET
+          else
+            echo "An upgrade without '$boot_sector_file' is not possible!"
+          fi
+      fi
     fi
     
     echo "Boot Recovery preparation with '${IMAGE_NAME}' finished!"
+    echo "========================================================"
+
+    # Test:!!!!
+    debug_stop
+
     shutdown -r now
 }
 
