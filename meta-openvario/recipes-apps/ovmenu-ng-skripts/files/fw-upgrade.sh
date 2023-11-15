@@ -26,7 +26,7 @@ OV_DIRNAME=$USB_STICK/openvario
 TIMESTAMP_3_19=1695000000
 
 # temporary directories at USB stick to save the setting informations
-SDC_DIR=$OV_DIRNAME/sdcard
+SDC_DIR=$OV_DIRNAME/recover_data
 MNT_DIR="mnt"
 # MNT_DIR=$OV_DIRNAME/usb
 
@@ -64,8 +64,8 @@ function debug_stop(){
 BATCH_PATH=$(dirname $0)
 echo "Batch Path = '$BATCH_PATH'"
 vercomp () {
-    echo "'$1' vs. '$2'"
-    echo "-------------"
+    echo "compare '$1' vs. '$2'"
+    echo "---------------------"
     if [[ $1 == $2 ]]
     then
         # debug_stop "equal!"
@@ -96,10 +96,10 @@ vercomp () {
             ver2[0]=0
     fi
 
-    for ((i=0; i<4; i++))
-    do
-        echo ${ver1[i]}  ${ver2[i]}
-    done
+    ## for ((i=0; i<4; i++))
+    ## do
+    ##     echo ${ver1[i]}  ${ver2[i]}
+    ## done
 
     for ((i=0; i<${#ver1[@]}; i++))
     do
@@ -110,16 +110,16 @@ vercomp () {
         fi
         if ((${ver1[i]} > ${ver2[i]}))
         then
-            debug_stop "greater then"
+            # debug_stop "greater then"
             return 2 # greater 
         fi
         if ((${ver1[i]} < ${ver2[i]}))
         then
-            debug_stop "lower then"
+            # debug_stop "lower then"
             return 1 # lower
         fi
     done
-    debug_stop "equal?"
+    # debug_stop "equal?"
     return 0 # equal
 }
 
@@ -242,6 +242,12 @@ function save_system(){
     #================== System Config =======================================================
     echo "1st: save system config in config.uSys for restoring reason"
     # 1st save system config in config.uSys for restoring reason
+    if [ ! -d "$USB_STICK/openvario" ]; then  # indicats if USB stick is in and mounted
+      # if [ "UPGRADE_TYPE" = "1" ]; then  # only from new to new...
+        SDC_DIR=data/recover_data
+      # fi
+    fi    
+    debug_stop "SDC_DIR  = $SDC_DIR"
     mkdir -p $SDC_DIR
     
     # start with a new 'config.uSys':
