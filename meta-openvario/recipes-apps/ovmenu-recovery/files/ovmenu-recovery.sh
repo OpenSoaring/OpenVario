@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEBUG_STOP="y"
+DEBUG_STOP="n"
 DIALOGRC=/opt/bin/openvario.rc
 
 # Config
@@ -306,7 +306,9 @@ if [ -b "${TARGET}p3" ]; then
   PARTITION3=/sd3
   mkdir -p $PARTITION3
   mount ${TARGET}p3  $PARTITION3
+  sync
   SDC_DIR=$PARTITION3/recover_data
+  DEBUG_LOG=$DIRNAME/debug.log
   # debug_stop "$PARTITION3 is mounted"
 else 
   debug_stop "No $PARTITION3!!"
