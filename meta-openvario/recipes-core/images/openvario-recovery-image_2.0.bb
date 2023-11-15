@@ -4,8 +4,7 @@ LICENSE = "MIT"
 # openvario-base-image.bb is without CheckSum:
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
-# require ov-revision.inc
-PR = "r20"
+require ov-revision.inc
 
 S = "${WORKDIR}/${PN}-${PV}"
 
@@ -32,11 +31,7 @@ do_configure () {
 	dd if=${DEPLOY_DIR_IMAGE}/uImage of=${S}/Image bs=64 skip=1
 	# new initramfs
 	cp -v ${DEPLOY_DIR_IMAGE}/openvario-base-initramfs-${MACHINE}.cpio.gz ${S}/initramfs.cpio.gz
-    if [ -e "${DEPLOY_DIR_IMAGE}/openvario.dtb" ]; then
-      cp -v ${DEPLOY_DIR_IMAGE}/openvario.dtb ${S}
-    else
-      cp -v ${DEPLOY_DIR_IMAGE}/${MACHINE}.dtb ${S}/openvario.dtb
-    fi
+        cp -v ${DEPLOY_DIR_IMAGE}/${MACHINE}.dtb ${S}/openvario.dtb
 }
 
 # do_compile () {
