@@ -1,5 +1,6 @@
 #!/bin/bash
 
+DEBUG_STOP="y"
 DIALOGRC=/opt/bin/openvario.rc
 
 # Config
@@ -27,6 +28,18 @@ date; time  >> $DEBUG_LOG
 
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
+
+function error_stop(){
+    echo "Error-Stop: $1"
+    read -p "Press enter to continue"
+}
+
+function debug_stop(){
+    if [ "$DEBUG_STOP" = "y" ]; then
+      echo "Debug-Stop: $1"
+      read -p "Press enter to continue"
+    fi
+}
 
 main_menu () {
 while true
@@ -281,9 +294,23 @@ function update_system() {
 	/usr/bin/update-system.sh >> /tmp/tail.$$ &
 	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
-
+#==============================================================================
+#==============================================================================
+#==============================================================================
+#                Update - Begin
+debug_stop "Upgrade Start"
 # ??? setfont cp866-8x14.psf.gz
+if [ -b "${TARGET}p3" ]; then
+  PARTITION3=/sd3
+  mkdir -p $PARTITION3
+  mount ${TARGET}p3  $PARTITION3
+  debug_stop "$PARTITION3 mounted??"
+else 
+  debug_stop "No $PARTITION3!!"
+fi
 
+if [ -e $PARTITION3/upgrade.file ]; then
+  read IMAGEFILE < $PARTITION3/upgrade.file
 if [ -e $DIRNAME/upgrade.file ]; then
   read IMAGEFILE < $DIRNAME/upgrade.file
 else
@@ -292,8 +319,19 @@ fi
 echo "UpdateFile: $IMAGEFILE "
 
 # image file name with path!
-IMAGEFILE="$DIRNAME/images/$IMAGEFILE"
+if [ -e $PARTITION3/images/$IMAGEFILE ]; then
+  # move it from sd card to ramdisk!
+  cp "$PARTITION3/images/$IMAGEFILE" ./
+  IMAGEFILE="./$IMAGEFILE"
+  sync
+if [ -e $DIRNAME/images/$IMAGEFILE ]; then
+  IMAGEFILE="$DIRNAME/images/$IMAGEFILE"
+else
+  IMAGEFILE="Not available!"
+fi
+
 echo "Detected image file: '$IMAGEFILE'!"  >> $DEBUG_LOG
+debug_stop "Detected image file: '$IMAGEFILE'!"
 
 # set dmesg minimum kernel level:
 dmesg -n 1
