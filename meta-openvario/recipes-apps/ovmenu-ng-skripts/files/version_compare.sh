@@ -5,11 +5,10 @@ vercomp () {
     then
         return 0 # equal
     fi
-    local IFS=.
     local i ver1 ver2
     # replace '-' with '.' and split it an array
-    read -r -a ver1 <<< ${1//"-"/"."}
-    read -r -a ver2 <<< ${2//"-"/"."}
+    IFS='.' read -ra ver1 <<< "$1"
+    IFS='.' read -ra ver2 <<< "$2"
     for ((i=0; i<4; i++))
     do
         # fill empty fields in ver1 with zeros
