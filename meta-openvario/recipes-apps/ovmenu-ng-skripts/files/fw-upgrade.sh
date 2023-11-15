@@ -40,20 +40,27 @@ BASE_HW="0000"
 BASE_FW_VERSION=0
 
 # partition 1 of SD card is mounted as '/boot'!
-MOUNT_DIR1=/boot
+PART1=/boot
 # partition 2 of SD card is mounted on the root of the system
-MOUNT_DIR2=/
+PART2_ROOT=/home/root
+# partition 3 of SD card is mounted on the root of the system
+PART3=$PART2_ROOT/data
 
 rsync --version > /dev/null
 if [ "$?" -eq "0" ]; then
    RSYNC_COPY="ok"
 fi
 
+#------------------------------------------------------------------------------
+BATCH_PATH=$(dirname $0)
+echo "Batch Path = '$BATCH_PATH'"
+#------------------------------------------------------------------------------
 function error_stop(){
     echo "Error-Stop: $1"
     read -p "Press enter to continue"
 }
 
+#------------------------------------------------------------------------------
 function debug_stop(){
     if [ "$DEBUG_STOP" = "y" ]; then
       echo "Debug-Stop: $1"
@@ -61,8 +68,7 @@ function debug_stop(){
     fi
 }
 
-BATCH_PATH=$(dirname $0)
-echo "Batch Path = '$BATCH_PATH'"
+#------------------------------------------------------------------------------
 vercomp () {
     echo "compare '$1' vs. '$2'"
     echo "---------------------"
@@ -123,6 +129,7 @@ vercomp () {
     return 0 # equal
 }
 
+#------------------------------------------------------------------------------
 function select_image(){
     # images=$OV_DIRNAME/images/O*V*-*.gz
     images=data/images/O*V*-*.gz
@@ -130,6 +137,7 @@ function select_image(){
     let i=0 # define counting variable
     files=()        # define file array 
     files_nice=()   # define array with index + file description for dialogdialog
+#------------------------------------------------------------------------------
     while read -r line; do # process file by file
         let i=$i+1
         files+=($i "$line")
@@ -157,6 +165,36 @@ function select_image(){
         fi
         files_nice+=($i "$temp") # selection index + name
     done < <( ls -1 $images )
+#------------------------------------------------------------------------------
+    images=$OV_DIRNAME/images/O*V*-*.gz
+    while read -r line; do # process file by file
+        let i=$i+1
+        files+=($i "$line")
+        filename=$(basename "$line") 
+        temp1=$(echo $filename | grep -oE '[0-9]{5}')
+        if [ -n "$temp1" ]; then
+            teststr=$(echo $filename | awk -F'-ipk-|.rootfs' '{print $2}')
+            # teststr is now: 17119-openvario-57-lvds[-testing]
+            temp2=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
+        else
+            # the complete (new) filename without extension
+            # temp1=$(echo $filename | awk -F'/|.img' '{print $4}')
+            temp1=${filename}
+        fi
+        # grep the buzzword 'testing'
+        temp3=$(echo $filename | grep -o "testing")
+        
+        if [ -n "$temp2" ]; then
+            temp="$temp1 hw=$temp2"
+        else
+            temp="$temp1"
+        fi
+        if [ -n "$temp3" ]; then
+            temp="$temp ($temp3)"
+        fi
+        files_nice+=($i "$temp (USB)") # selection index + name
+    done < <( ls -1 $images )
+#------------------------------------------------------------------------------
     
     
     if [ -n "$files" ]; then
@@ -231,6 +269,7 @@ function select_image(){
 }
 
 
+#------------------------------------------------------------------------------
 function clear_display(){
     #================== clear display (after diolog) =======================================================
     for ((i=1 ; i<=20 ; i++ )); do 
@@ -238,6 +277,7 @@ function clear_display(){
     done
 }
     
+#------------------------------------------------------------------------------
 function save_system(){
     #================== System Config =======================================================
     echo "1st: save system config in config.uSys for restoring reason"
@@ -251,8 +291,8 @@ function save_system(){
     mkdir -p $SDC_DIR
     
     # start with a new 'config.uSys':
+    rm -f $SDC_DIR/config.uSys
     if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
-        rm -f $SDC_DIR/config.uSys
         if /bin/systemctl --quiet is-enabled dropbear.socket; then
             echo "SSH=\"enabled\""
             echo "SSH=\"enabled\"" >> $SDC_DIR/config.uSys
@@ -282,24 +322,24 @@ function save_system(){
     fi 
     
     # if config.uEnv not exist
-    if [ ! -f $MOUNT_DIR1/config.uEnv ]; then
-        MOUNT_DIR1="/mnt/boot"
-        mkdir -p $MOUNT_DIR1
+    if [ ! -f $PART1/config.uEnv ]; then
+        PART1="/mnt/boot"
+        mkdir -p $PART1
         # $TARGET  = /dev/mmcblk0
-        mount /dev/mmcblk0p1 $MOUNT_DIR1
-        if [ ! -f $MOUNT_DIR1/config.uEnv ]; then
-           error_stop "'$MOUNT_DIR1/config.uEnv' don't exist!?!"
+        mount /dev/mmcblk0p1 $PART1
+        if [ ! -f $PART1/config.uEnv ]; then
+           error_stop "'$PART1/config.uEnv' don't exist!?!"
         fi
     fi
-    source $MOUNT_DIR1/config.uEnv
+    source $PART1/config.uEnv
     # read 1st line in 'image-version-info'
-    VERSION_INFO=$(head -n 1 $MOUNT_DIR1/image-version-info)
+    VERSION_INFO=$(head -n 1 $PART1/image-version-info)
     # fdtfile=openvario-57-lvds.dtb
     if [ -z "$fdtfile" ]; then
       # this means, we have a (very) old version (< 21000 ?)
       echo "'$fdtfile' don't exist!?!"
       echo "What is to do???"
-      # VERSION_INFO=$(head -n 1 $MOUNT_DIR1/image-version-info)
+      # VERSION_INFO=$(head -n 1 $PART1/image-version-info)
       fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $3}')
       if [ -z "$fdtfile" ]; then fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $2}'); fi
       fdtfile=$(echo $fdtfile | awk -F'-201|202' '{print $1}')
@@ -385,6 +425,8 @@ function save_system(){
     # 4 - from old fw to old fw
     # other types are not supported (f.e. old to previous an so on)!
     echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $SDC_DIR/config.uSys
+    echo "BASE_FW_TYPE=\"$BASE_FW_TYPE\"" >> $SDC_DIR/config.uSys
+    echo "TARGET_FW_TYPE=\"$TARGET_FW_TYPE\"" >> $SDC_DIR/config.uSys
     echo "System Save End"
 }
 
@@ -520,10 +562,10 @@ if [ -f "${IMAGEFILE}" ]; then
         # don't delete, better to make 'with rsync --delete' rm -r $SDC_DIR
     fi
     
-    if [ ! -f $MOUNT_DIR1/config.uEnv ]; then
+    if [ ! -f $PART1/config.uEnv ]; then
       # sd partition 1 is not in boot gemounted...
-      MOUNT_DIR1="/mnt/sd1"
-      mkdir -p $MOUNT_DIR1
+      PART1="/mnt/sd1"
+      mkdir -p $PART1
       
     fi
 
@@ -539,35 +581,46 @@ if [ -f "${IMAGEFILE}" ]; then
     echo "  copy command ..."
     # cp is available on all (old) firmware
     # copy only files from interest (no picture, no uImage) 
-    cp -fv  $MOUNT_DIR1/config.uEnv        $SDC_DIR/part1/
-    cp -fv  $MOUNT_DIR1/image-version-info $SDC_DIR/part1/
+    cp -fv  $PART1/config.uEnv        $SDC_DIR/part1/
+    cp -fv  $PART1/image-version-info $SDC_DIR/part1/
     # 17119 don't have a *.dtb file...
-    # cp -fv  $MOUNT_DIR1/*.dtb              $SDC_DIR/part1/
+    # cp -fv  $PART1/*.dtb              $SDC_DIR/part1/
 
-    # 3rd: save XCSoarData from partition 2:
-    echo "3rd: save XCSoarData from partition 2"
-    # mkdir -p $SDC_DIR/part2/XCSoarData
-
-    if [ -n "$RSYNC_COPY" ]; then
-        # mkdir -p $SDC_DIR/part2/xcsoar
-        rsync -ruvtcE --progress $MOUNT_DIR2/home/root/.xcsoar/* $SDC_DIR/part2/xcsoar/ \
-              --delete --exclude cache  --exclude logs
-        rsync -uvtcE --progress $MOUNT_DIR2/home/root/.bash_history $SDC_DIR/part2/
-    else
-        echo "  copy command (rsync not available)..."
-        # this is possible on older fw (17119 for example)
-        rm -fr $SDC_DIR/part2/*
-        mkdir -p $SDC_DIR/part2/xcsoar
-        cp -rfv  $MOUNT_DIR2/home/root/.xcsoar/* $SDC_DIR/part2/xcsoar/
-        cp -fv   $MOUNT_DIR2/home/root/.bash_history $SDC_DIR/part2/
+    # 3rd: save OpenSoarData/XCSoarData from partition 2 (or 3):
+    echo "3rd: save OpenSoarData / XCSoarData from partition 2 or 3"
+    if [ "$BASE_FW_TYPE" = "2" ]; then # Base is new, data on 3rd partition 
+      # new firmware, rsync is available       
+      # no rm, because synchronizing
+      # with "$TARGET_FW_TYPE" = "2" this isn't necessary - but helps to find data
+      mkdir -p $SDC_DIR/part2/OpenSoarData
+      rsync -ruvtcE --progress $PART3/OpenSoarData/* $SDC_DIR/part2/OpenSoarData/ \
+            --delete --exclude cache  --exclude logs
+      rsync -ruvtcE --progress $PART3/XCSoarData/* $SDC_DIR/part2/XCSoarData/ \
+            --delete --exclude cache  --exclude logs
+      rsync -uvtcE --progress $PART2_ROOT/.bash_history $SDC_DIR/part2/
+    else  # Base is old, data coming from '.xcsoar' folder
+      if [ -n "$RSYNC_COPY" ]; then
+          # no rm, because synchronizing
+          mkdir -p $SDC_DIR/part2/xcsoar
+          rsync -ruvtcE --progress $PART2_ROOT/.xcsoar/* $SDC_DIR/part2/xcsoar/ \
+                --delete --exclude cache  --exclude logs
+          rsync -uvtcE --progress $PART2_ROOT/.bash_history $SDC_DIR/part2/
+      else
+          echo "  copy command (rsync not available)..."
+          # this is possible on older fw (17119 for example)
+          rm -fr $SDC_DIR/part2/*
+          mkdir -p $SDC_DIR/part2/xcsoar
+          cp -rfv  $PART2_ROOT/.xcsoar/* $SDC_DIR/part2/xcsoar/
+          cp -fv   $PART2_ROOT/.bash_history $SDC_DIR/part2/
+      fi
     fi
     debug_stop
 
     # HardLink at FAT isn't possible
-    if [ -d "$MOUNT_DIR2/home/root/.glider_club" ]; then
+    if [ -d "$PART2_ROOT/.glider_club" ]; then
         echo "save gliderclub data from partition 2"
         mkdir -p $SDC_DIR/part2/glider_club
-        cp -frv $MOUNT_DIR2/home/root/.glider_club/* $SDC_DIR/part2/glider_club/
+        cp -frv $PART2_ROOT/.glider_club/* $SDC_DIR/part2/glider_club/
     fi
     
     # Synchronize the commands (?)
