@@ -19,6 +19,7 @@ TARGET=/dev/mmcblk0
 # images=$DIRNAME/images/OpenVario-linux*.gz
 # old: images=$DIRNAME/images/OpenVario-linux*.gz
 images=$DIRNAME/images/O*V*-*.gz
+SDC_DIR=$DIRNAME/recover_data
 
 ####################################################################
 echo "Upgrade start"  > $DEBUG_LOG
@@ -161,11 +162,11 @@ function updateall(){
     echo "Upgrade '${IMAGEFILE}' finished"  >> $DEBUG_LOG
     rm -f $DIRNAME/ov-recovery.itb
     # recover XCSoarData:
-    if [ -d "${DIRNAME}/sdcard" ]; then
+    if [ -d "$SDC_DIR" ]; then
         mkdir -p $SDMOUNT
-        if [ -e "${DIRNAME}/sdcard/part1/config.uEnv" ]; then
+        if [ -e "$SDC_DIR/part1/config.uEnv" ]; then
             mount ${TARGET}p1  $SDMOUNT
-            source ${DIRNAME}/sdcard/part1/config.uEnv
+            source $SDC_DIR/part1/config.uEnv
             echo "sdcard/part1/config.uEnv"      >> $DEBUG_LOG
             echo "------------------------"      >> $DEBUG_LOG
             echo "rotation      = $rotation"     >> $DEBUG_LOG
@@ -192,7 +193,7 @@ function updateall(){
               fi
             fi
 
-           source ${DIRNAME}/sdcard/config.uSys
+           source $SDC_DIR/config.uSys
             echo "sdcard/config.uSys"           >> $DEBUG_LOG
             echo "------------------"           >> $DEBUG_LOG
             echo "ROTATION      = $ROTATION"    >> $DEBUG_LOG
@@ -230,29 +231,29 @@ function updateall(){
             ls -l $SDMOUNT/home/root/.xcsoar
             
             rm -rf $SDMOUNT/home/root/.xcsoar/*
-            cp -frv ${DIRNAME}/sdcard/part2/xcsoar/* $SDMOUNT/home/root/.xcsoar/
-            if [ -d "${DIRNAME}/sdcard/part2/glider_club" ]; then
+            cp -frv $SDC_DIR/part2/xcsoar/* $SDMOUNT/home/root/.xcsoar/
+            if [ -d "$SDC_DIR/part2/glider_club" ]; then
               mkdir -p $SDMOUNT/home/root/.glider_club
-              cp -frv ${DIRNAME}/sdcard/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
+              cp -frv $SDC_DIR/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
             fi
         fi
         # restore the bash history:
-        cp -fv  ${DIRNAME}/sdcard/part2/.bash_history $SDMOUNT/home/root/
+        cp -fv  $SDC_DIR/part2/.bash_history $SDMOUNT/home/root/
 
-        if [ -e "${DIRNAME}/sdcard/connman.tar.gz" ]; then
-          tar -zxf ${DIRNAME}/sdcard/connman.tar.gz --directory $SDMOUNT/
+        if [ -e "$SDC_DIR/connman.tar.gz" ]; then
+          tar -zxf $SDC_DIR/connman.tar.gz --directory $SDMOUNT/
         fi
         
-        if [ -e "${DIRNAME}/sdcard/config.uSys" ]; then
-          cp ${DIRNAME}/sdcard/config.uSys $SDMOUNT/home/root/config.uSys
+        if [ -e "$SDC_DIR/config.uSys" ]; then
+          cp $SDC_DIR/config.uSys $SDMOUNT/home/root/config.uSys
         fi
         
         ls -l $SDMOUNT/home/root/.xcsoar
         echo "ready OV upgrade!"
         echo "ready OV upgrade!"  >> $DEBUG_LOG
     else
-        echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"
-        echo "' ${DIRNAME}/sdcard/part2/xcsoar' doesn't exist!"  >> $DEBUG_LOG
+        echo "' $SDC_DIR/part2/xcsoar' doesn't exist!"
+        echo "' $SDC_DIR/part2/xcsoar' doesn't exist!"  >> $DEBUG_LOG
     fi
 
 
@@ -298,25 +299,27 @@ function update_system() {
 #==============================================================================
 #==============================================================================
 #                Update - Begin
-debug_stop "Upgrade Start"
+echo "Upgrade Start"
+# debug_stop "... and begin..."
 # ??? setfont cp866-8x14.psf.gz
 if [ -b "${TARGET}p3" ]; then
   PARTITION3=/sd3
   mkdir -p $PARTITION3
   mount ${TARGET}p3  $PARTITION3
-  debug_stop "$PARTITION3 mounted??"
+  SDC_DIR=$PARTITION3/recover_data
+  # debug_stop "$PARTITION3 is mounted"
 else 
   debug_stop "No $PARTITION3!!"
 fi
 
 if [ -e $PARTITION3/upgrade.file ]; then
   read IMAGEFILE < $PARTITION3/upgrade.file
-if [ -e $DIRNAME/upgrade.file ]; then
+elif [ -e $DIRNAME/upgrade.file ]; then
   read IMAGEFILE < $DIRNAME/upgrade.file
 else
   IMAGEFILE="Not available!"
 fi
-echo "UpdateFile: $IMAGEFILE "
+debug_stop "UpdateFile: $IMAGEFILE "
 
 # image file name with path!
 if [ -e $PARTITION3/images/$IMAGEFILE ]; then
@@ -324,7 +327,7 @@ if [ -e $PARTITION3/images/$IMAGEFILE ]; then
   cp "$PARTITION3/images/$IMAGEFILE" ./
   IMAGEFILE="./$IMAGEFILE"
   sync
-if [ -e $DIRNAME/images/$IMAGEFILE ]; then
+elif [ -e $DIRNAME/images/$IMAGEFILE ]; then
   IMAGEFILE="$DIRNAME/images/$IMAGEFILE"
 else
   IMAGEFILE="Not available!"
@@ -336,8 +339,7 @@ debug_stop "Detected image file: '$IMAGEFILE'!"
 # set dmesg minimum kernel level:
 dmesg -n 1
 
-if [ -e "$IMAGEFILE" ];
-then
+if [ -e "$IMAGEFILE" ]; then
 	echo "Update $IMAGEFILE !!!!"
 	updateall
 else
