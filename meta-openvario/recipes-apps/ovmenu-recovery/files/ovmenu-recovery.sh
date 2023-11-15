@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEBUG_STOP="n"
+DEBUG_STOP="y"
 DIALOGRC=/opt/bin/openvario.rc
 
 # Config
@@ -84,7 +84,7 @@ function backup_image(){
 }
 
 
-function select_image(){
+function select_image_old(){
 	let i=0 # define counting variable
 	declare -a files=() # define working array
 	declare -a files_nice=()
@@ -129,6 +129,91 @@ function select_image(){
 	
 }
 
+function select_image(){
+    #images=data/images/O*V*-*.gz
+
+    let count=0 # define counting variable
+    files=()        # define file array 
+    files_nice=()   # define array with index + file description for dialogdialog
+#------------------------------------------------------------------------------
+    while read -r line; do # process file by file
+        let count=$count+1
+        files+=($count "$line")
+        filename=$(basename "$line") 
+        temp1=$(echo $filename | grep -oE '[0-9]{5}')
+        if [ -n "$temp1" ]; then
+            teststr=$(echo $filename | awk -F'-ipk-|.rootfs' '{print $2}')
+            # teststr is now: 17119-openvario-57-lvds[-testing]
+            temp2=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
+        else
+            # the complete (new) filename without extension
+            # temp1=$(echo $filename | awk -F'/|.img' '{print $4}')
+            temp1=${filename}
+        fi
+        # grep the buzzword 'testing'
+        temp3=$(echo $filename | grep -o "testing")
+        
+        if [ -n "$temp2" ]; then
+            temp="$temp1 hw=$temp2"
+        else
+            temp="$temp1"
+        fi
+        if [ -n "$temp3" ]; then
+            temp="$temp ($temp3)"
+        fi
+        files_nice+=($count "$temp") # selection index + name
+    done < <( ls -1 $images )
+#------------------------------------------------------------------------------
+##    images=$OV_DIRNAME/images/O*V*-*.gz
+##    while read -r line; do # process file by file
+##        let count=$count+1
+##        files+=($count "$line")
+##        filename=$(basename "$line") 
+##        temp1=$(echo $filename | grep -oE '[0-9]{5}')
+##        if [ -n "$temp1" ]; then
+##            teststr=$(echo $filename | awk -F'-ipk-|.rootfs' '{print $2}')
+##            # teststr is now: 17119-openvario-57-lvds[-testing]
+##            temp2=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
+##        else
+##            # the complete (new) filename without extension
+##            # temp1=$(echo $filename | awk -F'/|.img' '{print $4}')
+##            temp1=${filename}
+##        fi
+##        # grep the buzzword 'testing'
+##        temp3=$(echo $filename | grep -o "testing")
+##        
+##        if [ -n "$temp2" ]; then
+##            temp="$temp1 hw=$temp2"
+##        else
+##            temp="$temp1"
+##        fi
+##        if [ -n "$temp3" ]; then
+##            temp="$temp ($temp3)"
+##        fi
+##        files_nice+=($count "$temp (USB)") # selection index + name
+##    done < <( ls -1 $images )
+#------------------------------------------------------------------------------
+    if [ -n "$files" ]; then
+        dialog --backtitle "Selection upgrade image from file list" \
+        --title "Select image" \
+        --menu "Use [UP/DOWN] keys to move, ENTER to select" \
+        18 60 12 "${files_nice[@]}" 2> "${SELECTION}"
+        
+        read SELECTED < ${SELECTION}
+        let INDEX=$SELECTED+$SELECTED-1  # correct pointer in the arrays
+
+        # IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$(<${SELECTION}) p"))
+        IMAGEFILE="${files[$INDEX]}"
+        echo "-------------------------"
+        echo "SELECTED  = ${files_nice[$INDEX]}"
+        echo "IMAGEFILE = $IMAGEFILE"
+        
+    else
+        echo "no image file available"
+        IMAGEFILE=""
+    fi
+    # clear_display
+}
 #update rootfs on mmcblk0
 function updaterootfs(){
 		
@@ -161,7 +246,7 @@ function updateall(){
     # remove the recovery file:
     echo "Upgrade '${IMAGEFILE}' finished"  >> $DEBUG_LOG
     rm -f $DIRNAME/ov-recovery.itb
-    # recover XCSoarData:
+    # recover OpenSoarData:
     if [ -d "$SDC_DIR" ]; then
         mkdir -p $SDMOUNT
         if [ -e "$SDC_DIR/part1/config.uEnv" ]; then
@@ -222,23 +307,42 @@ function updateall(){
             
             umount $SDMOUNT
         fi
+        
 
         mount ${TARGET}p2  $SDMOUNT
-        if [ "$Upgrade" = "OldSystem" ]; then 
-            # removing '$SDMOUNT/home/root/ov-recovery.itb' not necessary because after
-            # overwriting image this file/link isn't available anymore 
-            # rm -f $SDMOUNT/home/root/ov-recovery.itb
-            ls -l $SDMOUNT/home/root/.xcsoar
-            
-            rm -rf $SDMOUNT/home/root/.xcsoar/*
-            cp -frv $SDC_DIR/part2/xcsoar/* $SDMOUNT/home/root/.xcsoar/
-            if [ -d "$SDC_DIR/part2/glider_club" ]; then
-              mkdir -p $SDMOUNT/home/root/.glider_club
-              cp -frv $SDC_DIR/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
-            fi
-        fi
+        # removing '$SDMOUNT/home/root/ov-recovery.itb' not necessary because after
+        # overwriting image this file/link isn't available anymore 
+        # 1 - from new fw to new fw
+        # 2 - from old fw to new fw
+        # 3 - from new fw to old fw
+        # 4 - from old fw to old fw
+        case "$UPDATE_TYPE" in
+        1) # from new to new do nothing, because data still available on partition 3 
+        ;;
+        2) # from old to new
+           # partition 3  is new created and should be filled from USB stick in ovmenu shell
+        ;;
+        3) # from new to old 
+          rm -rf $SDMOUNT/home/root/.xcsoar/*
+          cp -frv $SDC_DIR/part2/XCSoarData/* $SDMOUNT/home/root/.xcsoar/
+          if [ -d "$SDC_DIR/part2/glider_club" ]; then
+            mkdir -p $SDMOUNT/home/root/.glider_club
+            cp -frv $SDC_DIR/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
+          fi
+        ;;
+        4) # from old to old
+          rm -rf $SDMOUNT/home/root/.xcsoar/*
+          cp -frv $SDC_DIR/part2/xcsoar/* $SDMOUNT/home/root/.xcsoar/
+          if [ -d "$SDC_DIR/part2/glider_club" ]; then
+            mkdir -p $SDMOUNT/home/root/.glider_club
+            cp -frv $SDC_DIR/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
+          fi
+        ;;
+        esac
+        
         # restore the bash history:
-        cp -fv  $SDC_DIR/part2/.bash_history $SDMOUNT/home/root/
+        debug_stop "cp -fv  $SDC_DIR/part2/.bash_history $SDMOUNT/home/root/"
+        # cp -fv  $SDC_DIR/part2/.bash_history $SDMOUNT/home/root/
 
         if [ -e "$SDC_DIR/connman.tar.gz" ]; then
           tar -zxf $SDC_DIR/connman.tar.gz --directory $SDMOUNT/
@@ -306,10 +410,11 @@ if [ -b "${TARGET}p3" ]; then
   PARTITION3=/sd3
   mkdir -p $PARTITION3
   mount ${TARGET}p3  $PARTITION3
-  sync
   SDC_DIR=$PARTITION3/recover_data
   DEBUG_LOG=$DIRNAME/debug.log
   # debug_stop "$PARTITION3 is mounted"
+  sync
+  ls $PARTITION3/
 else 
   debug_stop "No $PARTITION3!!"
 fi
