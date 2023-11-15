@@ -3,9 +3,15 @@
 echo "Firmware Upgrade OpenVario"
 echo "=========================="
 
-DEBUG_STOP=""
+DEBUG_STOP="y"
 
 USB_STICK=/usb/usbstick
+
+if [ ! -d "$USB_STICK" ]; then
+  # this could be at 17119 FW..
+  USB_STICK=/usb
+fi
+echo "USB stick will be mounted on '$USB_STICK'"
 
 stat
 
@@ -43,9 +49,14 @@ if [ "$?" -eq "0" ]; then
    RSYNC_COPY="ok"
 fi
 
+function error_stop(){
+    echo "Error-Stop: $1"
+    read -p "Press enter to continue"
+}
+
 function debug_stop(){
-    if [ -n "$DEBUG_STOP" ]; then
-      echo "Debug-Stop"
+    if [ "$DEBUG_STOP" = "y" ]; then
+      echo "Debug-Stop: $1"
       read -p "Press enter to continue"
     fi
 }
@@ -53,17 +64,18 @@ function debug_stop(){
 BATCH_PATH=$(dirname $0)
 echo "Batch Path = '$BATCH_PATH'"
 vercomp () {
-    # echo "$1 vs. $2"
-    # echo "-------------"
+    echo "'$1' vs. '$2'"
+    echo "-------------"
     if [[ $1 == $2 ]]
     then
+        # debug_stop "equal!"
         return 0 # equal
     fi
-    local IFS=.
+    local IFS='.'
     local i ver1 ver2
     # replace '-' with '.' and split it an array
-    read -r -a ver1 <<< ${1//"-"/"."}
-    read -r -a ver2 <<< ${2//"-"/"."}
+    IFS='.' read -ra ver1 <<< "$1"
+    IFS='.' read -ra ver2 <<< "$2"
     for ((i=0; i<4; i++))
     do
         # fill empty fields in ver1 with zeros
@@ -84,6 +96,11 @@ vercomp () {
             ver2[0]=0
     fi
 
+    for ((i=0; i<4; i++))
+    do
+        echo ${ver1[i]}  ${ver2[i]}
+    done
+
     for ((i=0; i<${#ver1[@]}; i++))
     do
         if [[ -z ${ver2[i]} ]]
@@ -93,18 +110,22 @@ vercomp () {
         fi
         if ((${ver1[i]} > ${ver2[i]}))
         then
+            debug_stop "greater then"
             return 2 # greater 
         fi
         if ((${ver1[i]} < ${ver2[i]}))
         then
+            debug_stop "lower then"
             return 1 # lower
         fi
     done
+    debug_stop "equal?"
     return 0 # equal
 }
 
 function select_image(){
-    images=$OV_DIRNAME/images/O*V*-*.gz
+    # images=$OV_DIRNAME/images/O*V*-*.gz
+    images=data/images/O*V*-*.gz
 
     let i=0 # define counting variable
     files=()        # define file array 
@@ -180,7 +201,8 @@ function select_image(){
             esac
         else
             # grep a version in form '##.##.##-##' like '3.0.2-20' 
-            TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
+            # TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
+            TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
             TARGET_FILENAME_TYPE=2
             TARGET_HW=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
             # awk is splitting 'OV-3.0.2.20-CB2-CH57.img.gz' in:
@@ -200,7 +222,11 @@ function select_image(){
             esac
             # fi
         fi
-        echo "selected image file:    $IMAGE_NAME"
+        echo "selected image file:      '$IMAGE_NAME'"
+        echo "TARGET_FW_VERSION:        '$TARGET_FW_VERSION'"
+        echo "TARGET_HW:                '$TARGET_HW'"
+        echo "TARGET_FILENAME_TYPE:     '$TARGET_FILENAME_TYPE'"
+        debug_stop
     fi
 }
 
@@ -256,8 +282,7 @@ function save_system(){
         # $TARGET  = /dev/mmcblk0
         mount /dev/mmcblk0p1 $MOUNT_DIR1
         if [ ! -f $MOUNT_DIR1/config.uEnv ]; then
-           echo "'$MOUNT_DIR1/config.uEnv' don't exist!?!"
-           read -p "Press enter to continue"
+           error_stop "'$MOUNT_DIR1/config.uEnv' don't exist!?!"
         fi
     fi
     source $MOUNT_DIR1/config.uEnv
@@ -268,17 +293,20 @@ function save_system(){
       # this means, we have a (very) old version (< 21000 ?)
       echo "'$fdtfile' don't exist!?!"
       echo "What is to do???"
-      VERSION_INFO=$(head -n 1 $MOUNT_DIR1/image-version-info)
+      # VERSION_INFO=$(head -n 1 $MOUNT_DIR1/image-version-info)
       fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $3}')
       if [ -z "$fdtfile" ]; then fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $2}'); fi
+      fdtfile=$(echo $fdtfile | awk -F'-201|202' '{print $1}')
       fdtfile="openvario-$fdtfile"
       BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]{5}')
-      echo "fdtfile = '$fdtfile'!!!!"
-      read -p "Press enter to continue"
+      debug_stop "fdtfile = '$fdtfile'!!!!"
     else
-      BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
-    
+      # BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
+      BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
     fi
+    if [ -z "$BASE_FW_VERSION" ]; then
+        error_stop "BASE_FW_VERSION is empty!!!!"
+    fi    
     case $(basename "$fdtfile" .dtb) in
         ov-ch57)      BASE_HW="CH57";;
         ov-ch70)      BASE_HW="CH70";;
@@ -286,6 +314,7 @@ function save_system(){
         ov-am70s)     BASE_HW="AM70s";;
         ov-am43)      BASE_HW="AM43";;
 
+        openvario-57lvds)       BASE_HW="CH57";;
         openvario-57-lvds)      BASE_HW="CH57";;
         openvario-7-CH070)      BASE_HW="CH70";;
         openvario-7-PQ070)      BASE_HW="PQ70";;
@@ -294,20 +323,62 @@ function save_system(){
         *)                      BASE_HW="unknown";;
     esac
     echo "HARDWARE=\"$BASE_HW\""
+        echo "selected Base:          '$VERSION_INFO'"
+        echo "BASE_FW_VERSION:        '$BASE_FW_VERSION'"
+        echo "BASE_HW:                '$BASE_HW'"
+        debug_stop
     echo "HARDWARE=\"$BASE_HW\"" >> $SDC_DIR/config.uSys
+    
+    # 0 - equal, 1 - lower, 2 greater
+    echo "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
+    vercomp "${TARGET_FW_VERSION//-/.}" "3.2.19"
+    TARGET_FW_TYPE=$?
+    vercomp   "${BASE_FW_VERSION//-/.}"   "3.2.19"
+    BASE_FW_TYPE=$?
+
+    echo "2) '$BASE_FW_TYPE' => '$TARGET_FW_TYPE'"
+    if [ "$TARGET_FW_TYPE" = "2" ]; then
+      if [ "$BASE_FW_TYPE" = "2" ]; then
+        UPGRADE_TYPE=1  # 1- from new fw to new fw
+      else
+        UPGRADE_TYPE=2  # 2 - from old fw to new fw
+      fi
+    else
+      if [ "$BASE_FW_TYPE" = "2" ]; then
+        UPGRADE_TYPE=3 # 3 - from new fw to old fw
+      else
+        UPGRADE_TYPE=4 # 4 - from old fw to old fw
+      fi
+    fi
+    debug_stop "3) '$BASE_FW_TYPE' => '$TARGET_FW_TYPE' = UPGRADE_TYPE '$UPGRADE_TYPE'"
+
+    # TODO: with which firmware there was the change?
+    vercomp "${TARGET_FW_VERSION//-/.}" "22000"
+    TARGET_ROT_TEST=$?
+    vercomp   "${BASE_FW_VERSION//-/.}"   "22000"
+    BASE_ROT_TEST=$?
+    if [ "$BASE_ROT_TEST" = "$TARGET_ROT_TEST" ]; then
+      echo "FirmWare types identical: $BASE_ROT_TEST vs $TARGET_ROT_TEST!"
+    else
+      echo "FirmWare types different: $BASE_ROT_TEST vs $TARGET_ROT_TEST!"
+      case $rotation in 
+      0) rotation=0;;
+      1) rotation=3;;
+      2) rotation=2;;
+      3) rotation=1;;
+      esac 
+    fi
 
     echo "ROTATION=\"$rotation\""
     echo "ROTATION=\"$rotation\"" >> $SDC_DIR/config.uSys
 
-    #UpgradeType
-    # 0 - from new fw to new fw
-    # 1 - from previous fw to new fw
-    # 2 - from new fw to previous fw
-    # 3 - from previous fw to previous fw
-    # 4 - from old fw (f.e. 17119) to new fw
-    # 5 - from new fw to old fw
+    # UpgradeType:
+    # 1- from new fw to new fw
+    # 2 - from old fw to new fw
+    # 3 - from new fw to old fw
+    # 4 - from old fw to old fw
     # other types are not supported (f.e. old to previous an so on)!
-    echo "UPGRADE_TYPE=\"0\"" >> $SDC_DIR/config.uSys
+    echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $SDC_DIR/config.uSys
     echo "System Save End"
 }
 
@@ -342,7 +413,7 @@ function start_upgrade(){
       INPUT="$?"
       clear_display
       if [ ! "$INPUT" = "0" ]; then
-        echo "Exit!"
+        error_stop "Exit because Escape!"
         exit
       fi 
 
@@ -355,90 +426,68 @@ function start_upgrade(){
     fi 
 
     if [ ! -f "/usr/bin/ov-recovery.itb" ]; then
-      # only copy it if not available:
-      case $UPDATE_TYPE in
-          -1) 
-             echo "This is not possible with UPDATE_TYPE: $UPDATE_TYPE"
-             read -p "Press enter to continue"
-             ;;
-          0|*) # only for debug-test
-             # debug: 
-             read -p "Press enter to continue"
-             ;;
-      esac
+      echo "this is an old firmware"
+      ITB_TARGET=$OV_DIRNAME/ov-recovery.itb
+      ### ITB_TARGET=./ov-recovery.itb
       if [ -f "$OV_DIRNAME/images/$TARGET_HW/ov-recovery.itb" ]; then
-        # hardlink fro FAT (USB-Stick..) is not possible 
-        if [ -n "$RSYNC_COPY" ]; then
-          rsync -auvtcE --progress  $OV_DIRNAME/images/$TARGET_HW/ov-recovery.itb    /usr/bin/ov-recovery.itb
-        else
-          echo "copy 'ov-recovery.itb' in the correct directory..."
-          cp -f  $OV_DIRNAME/images/$TARGET_HW/ov-recovery.itb    /usr/bin/ov-recovery.itb
-        fi
+        # hardlink from FAT (USB-Stick..) is not possible 
+        echo "copy 'ov-recovery.itb' in the correct directory..."
+        cp -fv $OV_DIRNAME/images/$TARGET_HW/ov-recovery.itb   $ITB_TARGET
         echo "'ov-recovery.itb' done"
+      fi
+      if [ ! -f "$ITB_TARGET" ]; then
+            error_stop "'ov-recovery.itb' doesn't exist - no upgrade possible"
+            echo "Exit!"
+            exit
       fi
     else
         echo "'/usr/bin/ov-recovery.itb' is available" # AugTest
-        # read -p "Press enter to continue"  # AugTest
-    fi
-    if [ -f "/usr/bin/ov-recovery.itb" ]; then
         # hardlink from '/home/root/' to '/usr/bin/ov-recovery.itb'
         ln -f /usr/bin/ov-recovery.itb ov-recovery.itb
         echo "ln -f /usr/bin/ov-recovery.itb ov-recovery.itb"
-        # read -p "Press enter to continue" # AugTest
-    else
-        echo "this is an old firmware"
-        ls /usr/bin/ov*  # AugTest
-        read -p "Press enter to continue" # AugTest
+        if [ ! -f "ov-recovery.itb" ]; then
+            error_stop "'ov-recovery.itb' doesn't exist - no upgrade possible"
+            echo "Exit!"
+            exit
+        fi
     fi
-    if [ ! -f "ov-recovery.itb" ]; then
-        echo "'ov-recovery.itb' doesn't exist - no upgrade possible"
-        read -p "Press enter to continue"
-        echo "Exit!"
-        exit
-    fi
-
-    # read -p "Press enter to continue" # AugTest
     
-    vercomp "$TARGET_FW_VERSION" "3.2.19"
-    # 0 - equal, 1 - lower, 2 greater
-    TARGET_FW_TYPE=$?  
-    vercomp "$BASE_FW_VERSION" "3.2.19"
-    # 0 - equal, 1 - lower, 2 greater
-    BASE_FW_TYPE=$?  
-    echo "TARGET_FILENAME_TYPE: $TARGET_FILENAME_TYPE  vs TARGET_FW_VERSION: $TARGET_FW_VERSION / TARGET_HW: $TARGET_HW"
-    if [ "$TARGET_FW_TYPE" = "2" ]; then
-      if [ "$BASE_FW_TYPE" = "2" ]; then
+    
+    debug_stop "AugTest UPGRADE_TYPE = '$UPGRADE_TYPE'"
+    case "$UPGRADE_TYPE" in
+    1)  # - from new fw to new fw
         echo "both FW are a new type!"
-      else
+    ;;
+    2)  # - from old fw to new fw
         echo "Target FW is new but Base FW is old!"
         echo "copy the 1st block (20MB) (boot-sector!)"
-###!!!        gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1024 count=512
-      fi
-    else
-      if [ "$BASE_FW_TYPE" = "2" ]; then
-        # echo "Target FW is old but Base FW is new!"
+        gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1024 count=512
+    ;;
+    3)  # - from new fw to old fw
+        echo "Target FW is old but Base FW is new!"
         dialog --nook --nocancel --pause "This is a change to an old FW file ($TARGET_FW_VERSION)!" 10 30 5 2>&1
         clear_display
-      else
+    ;;
+    4)  # - from old fw to old fw
         echo "both FW are a old type!"
-        echo "copy a bootsector file to the boot sector!)"
         boot_sector_file=$OV_DIRNAME/images/$TARGET_HW/bootsector.bin.gz
         if [ -e "$boot_sector_file" ]; then
-###!!!          gzip -cfd $boot_sector_file | dd of=$TARGET
-          else
-            echo "An upgrade without '$boot_sector_file' is not possible!"
-          fi
-      fi
-    fi
+          echo "copy bootsector file to bootsector"
+          gzip -cfd $boot_sector_file | dd of=$TARGET bs=1024 count=512
+        else
+          error_stop "An upgrade without '$boot_sector_file' is not possible!"
+        fi
+    ;;
+    esac
     
     echo "Boot Recovery preparation with '${IMAGE_NAME}' finished!"
     echo "========================================================"
 
     # Test:!!!!
     debug_stop
-
     shutdown -r now
 }
+
 
 # check if usb dir exist and is mounted!
 if [ ! -d $USB_STICK ]; then
@@ -447,8 +496,7 @@ if [ ! -d $USB_STICK ]; then
   mount /dev/sda1 $USB_STICK
   # or sdb1, sdc1, ...
   if [ ! -d $OV_DIRNAME ]; then
-    echo "'$OV_DIRNAME' don't exist!?!"
-    read -p "Press enter to continue"
+    error_stop "'$OV_DIRNAME' don't exist!?!"
   fi
 
 fi 
@@ -479,14 +527,16 @@ if [ -f "${IMAGEFILE}" ]; then
 
     # 2nd: save boot folder to Backup from partition 1
     echo "2nd: save boot folder to Backup from partition 1"
-    rm -fdr $SDC_DIR/part1
+    # -d is invalid option? rm -fr $SDC_DIR/part1
+    rm -fr $SDC_DIR/part1
     mkdir -p $SDC_DIR/part1
     echo "  copy command ..."
     # cp is available on all (old) firmware
     # copy only files from interest (no picture, no uImage) 
     cp -fv  $MOUNT_DIR1/config.uEnv        $SDC_DIR/part1/
     cp -fv  $MOUNT_DIR1/image-version-info $SDC_DIR/part1/
-    cp -fv  $MOUNT_DIR1/*.dtb              $SDC_DIR/part1/
+    # 17119 don't have a *.dtb file...
+    # cp -fv  $MOUNT_DIR1/*.dtb              $SDC_DIR/part1/
 
     # 3rd: save XCSoarData from partition 2:
     echo "3rd: save XCSoarData from partition 2"
@@ -519,7 +569,11 @@ if [ -f "${IMAGEFILE}" ]; then
 
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGE_NAME !"
-    echo "$IMAGE_NAME" > $OV_DIRNAME/upgrade.file
+    if [ "$BASE_FW_TYPE" = "2" ]; then
+      echo "$IMAGE_NAME" > data/upgrade.file
+    else
+      echo "$IMAGE_NAME" > $OV_DIRNAME/upgrade.file
+    fi
 
     echo "Upgrade step 1 finished!"
     chmod 757 -R $MNT_DIR
