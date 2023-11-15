@@ -40,18 +40,24 @@ if ! mount /dev/mmcblk0p3 $DATADIR; then
 fi
 
 if [ ! -d $DATADIR/OpenSoarData ]; then
-  # the data dir is new and has to be filled
+  # the data dir is new and has to be filled from USB, this stick should be still 
+  # available after upgrade
+  # This is only the case on an upgrade from old to a new system
   mkdir -p $DATADIR/OpenSoarData
   echo "'data/OpenSoarData'is new and has to be filled..."  >> $HOMEDIR/start-debug.log
-  mv -v $HOMEDIR/.xcsoar/* $DATADIR/OpenSoarData  >> $HOMEDIR/start-debug.log
-  rm -f $HOMEDIR/.xcsoar
+  # mv -v $HOMEDIR/.xcsoar/* $DATADIR/OpenSoarData  >> $HOMEDIR/start-debug.log
+  rsync -ruvtcE --progress $SDC_DIR/part2/xcsoar/* $DATADIR/OpenSoarData/ \
+            --delete --exclude cache  --exclude logs
+  echo "rsync $SDC_DIR/part2/xcsoar/* $DATADIR/OpenSoarData/ "  >> $HOMEDIR/start-debug.log
+  # rm -f $HOMEDIR/.xcsoar
 fi
 if [ ! -d $DATADIR/XCSoarData ]; then
   # the data dir is new and has to be filled
   mkdir -p $DATADIR/XCSoarData
   echo "'data/XCSoarData'is new and has to be filled..."  >> $HOMEDIR/start-debug.log
-  # at 1st make a copy from 'OpenSoarData'
-  cp -vrf $DATADIR/OpenSoarData/* $DATADIR/XCSoarData  >> $HOMEDIR/start-debug.log
+  rsync -ruvtcE --progress $SDC_DIR/part2/xcsoar/* $DATADIR/XCSoarData/ \
+            --delete --exclude cache  --exclude logs
+  echo "rsync $SDC_DIR/part2/xcsoar/* $DATADIR/XCSoarData/ "  >> $HOMEDIR/start-debug.log
 fi
 echo "startup is ready..."  >> $HOMEDIR/start-debug.log
 
