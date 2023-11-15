@@ -3,7 +3,7 @@
 echo "Firmware Upgrade OpenVario"
 echo "=========================="
 
-DEBUG_STOP="y"
+DEBUG_STOP="n"
 
 USB_STICK=/usb/usbstick
 
