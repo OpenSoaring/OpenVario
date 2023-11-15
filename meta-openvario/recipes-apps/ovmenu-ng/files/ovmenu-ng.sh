@@ -39,12 +39,19 @@ if ! mount /dev/mmcblk0p3 $DATADIR; then
   fi
 fi
 
+if [ ! -d $DATADIR/OpenSoarData ]; then
+  # the data dir is new and has to be filled
+  mkdir -p $DATADIR/OpenSoarData
+  echo "'data/OpenSoarData'is new and has to be filled..."  >> $HOMEDIR/start-debug.log
+  mv -v $HOMEDIR/.xcsoar/* $DATADIR/OpenSoarData  >> $HOMEDIR/start-debug.log
+  rm -f $HOMEDIR/.xcsoar
+fi
 if [ ! -d $DATADIR/XCSoarData ]; then
   # the data dir is new and has to be filled
   mkdir -p $DATADIR/XCSoarData
   echo "'data/XCSoarData'is new and has to be filled..."  >> $HOMEDIR/start-debug.log
-  mv -v $HOMEDIR/.xcsoar/* $DATADIR/XCSoarData  >> $HOMEDIR/start-debug.log
-  rm -f $HOMEDIR/.xcsoar
+  # at 1st make a copy from 'OpenSoarData'
+  cp -vrf $DATADIR/OpenSoarData/* $DATADIR/XCSoarData  >> $HOMEDIR/start-debug.log
 fi
 echo "startup is ready..."  >> $HOMEDIR/start-debug.log
 
@@ -179,9 +186,8 @@ function submenu_system() {
     --title "[ S Y S T E M ]" \
     --begin 3 4 \
     --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
-    Upgrade_Firmware   "Update complete system firmware" \
-    Update_System   "Update system software" \
-    Update_Maps   "Update Maps files" \
+    "Upgrade FW"   "Update complete system firmware" \
+    "Update Packg" "Update system software" \
     Calibrate_Sensors   "Calibrate Sensors" \
     Calibrate_Touch   "Calibrate Touch" \
     Settings   "System Settings" \
@@ -192,14 +198,11 @@ function submenu_system() {
 
     # make decsion
     case $menuitem in
-        Upgrade_Firmware)
+        "Upgrade FW")
             upgrade_firmware
             ;;
-        Update_System)
+        "Update Packg")
             update_system
-            ;;
-        Update_Maps)
-            update_maps
             ;;
         Calibrate_Sensors)
             calibrate_sensors
@@ -232,7 +235,6 @@ function submenu_settings() {
     --menu "You can use the UP/DOWN arrow keys" 15 50 5 \
     Display_Rotation     "Set rotation of the display" \
     LCD_Brightness        "Set display brightness" \
-    XCSoar_Language     "Set language used for XCSoar" \
     SSH            "Enable or disable SSH" \
     Back   "Back to Main" 2>"${INPUT}"
 
@@ -246,9 +248,6 @@ function submenu_settings() {
         LCD_Brightness)
             submenu_lcd_brightness
             ;;
-        XCSoar_Language)
-            submenu_xcsoar_lang
-            ;;
         SSH)
             submenu_ssh
             ;;
@@ -256,39 +255,6 @@ function submenu_settings() {
     esac
 }
 
-function submenu_xcsoar_lang() {
-    if test -n "$LANG"; then
-        XCSOAR_LANG="$LANG"
-    else
-        XCSOAR_LANG="system"
-    fi
-
-    dialog --nocancel --backtitle "OpenVario" \
-        --title "[ S Y S T E M ]" \
-        --begin 3 4 \
-        --menu "Actual Setting is $XCSOAR_LANG \nSelect Language:" 15 50 12 \
-         system "Default system" \
-         de_DE.UTF-8 "German" \
-         fr_FR.UTF-8 "France" \
-         it_IT.UTF-8 "Italian" \
-         hu_HU.UTF-8 "Hungary" \
-         pl_PL.UTF-8 "Poland" \
-         cs_CZ.UTF-8 "Czech" \
-         sk_SK.UTF-8 "Slowak" \
-         lt_LT.UTF-8 "Lithuanian" \
-         ru_RU.UTF-8 "Russian" \
-         es_ES.UTF-8 "Espanol" \
-         nl_NL.UTF-8 "Dutch" \
-         2>"${INPUT}"
-
-    menuitem=$(<"${INPUT}")
-
-    # update config
-    localectl set-locale "$menuitem"
-    sync
-
-    export LANG="$menuitem"
-}
 
 function submenu_ssh() {
     if /bin/systemctl --quiet is-enabled dropbear.socket; then
@@ -458,38 +424,30 @@ function calibrate_touch() {
     dialog --msgbox "Calibration OK!" 10 50
 }
 
-# Copy /usb/usbstick/openvario/maps to /home/root/.xcsoar
-# Copy only xcsoar-maps*.ipk and *.xcm files
-function update_maps() {
-    echo "Updating Maps ..." > /tmp/tail.$$
-    /usr/bin/update-maps.sh >> /tmp/tail.$$ 2>/dev/null &
-    dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
-}
-
-# Copy /home/root/.xcsoar to /usb/usbstick/openvario/download/xcsoar
+# Copy /home/root/data/OpenSoarData to /usb/usbstick/openvario/download/OpenSoarData
 function download_files() {
     echo "Downloading files ..." > /tmp/tail.$$
     /usr/bin/download-all.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
-# Copy /home/root/.xcsoar/logs to /usb/usbstick/openvario/igc
+# Copy /home/root/OpenSoarData/logs to /usb/usbstick/openvario/igc
 # Copy only *.igc files
 function download_igc_files() {
     /usr/bin/download-igc.sh
 }
 
-# Copy /usb/usbstick/openvario/upload to /home/root/.xcsoar
+# Copy /usb/usbstick/openvario/upload to /home/root/data/OpenSoarData
 function upload_files(){
     echo "Uploading files ..." > /tmp/tail.$$
-    /usr/bin/upload-xcsoar.sh >> /tmp/tail.$$ &
+    /usr/bin/upload-opensoar.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
-# Reset /usb/usbstick/openvario/upload to /home/root/.xcsoar
+# Reset /usb/usbstick/openvario/upload to /home/root/data/OpenSoarData
 function reset_data(){
     echo "Uploading data files ..." > /tmp/tail.$$
-    /usr/bin/reset-xcsoar-data.sh >> /tmp/tail.$$ &
+    /usr/bin/reset-opensoar-data.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
@@ -521,17 +479,17 @@ function check_exit_code() {
 # datapath with short name: better visibility im OpenSoar/XCSoar
 function start_opensoar_club() {
     # reset the profile to standard profile
-    cp $DATADIR/.glider_club/GliderClub_Std.prf $DATADIR/XCSoarData/GliderClub.prf
+    cp $DATADIR/.glider_club/GliderClub_Std.prf $DATADIR/OpenSoarData/GliderClub.prf
     # start the GliderClub version of opensoar
-    /usr/bin/OpenSoar -fly -profile=$DATADIR/XCSoarData/GliderClub.prf \
-      -datapath=data/XCSoarData/
+    /usr/bin/OpenSoar -fly -profile=$DATADIR/OpenSoarData/GliderClub.prf \
+      -datapath=data/OpenSoarData/
     check_exit_code $?
     sync
 }
 
 
 function start_opensoar() {
-    /usr/bin/OpenSoar -fly -datapath=data/XCSoarData/
+    /usr/bin/OpenSoar -fly -datapath=data/OpenSoarData/
     check_exit_code $?
     sync
 }
