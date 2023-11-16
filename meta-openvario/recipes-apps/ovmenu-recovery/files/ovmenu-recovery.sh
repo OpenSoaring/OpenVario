@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEBUG_STOP="y"
+DEBUG_STOP="n"
 DIALOGRC=/opt/bin/openvario.rc
 
 # Config
@@ -78,9 +78,8 @@ function backup_image(){
   # dd if=/dev/mmcblk0 bs=1M count=1024 | gzip > /$DIRNAME/backup/$datestring.img.gz
   
   # test backup 50MB (Boot areal + 10 MB)
-  dd if=/dev/mmcblk0 bs=1M count=50 | gzip > /$DIRNAME/backup/$datestring.img.gz | dialog --gauge "Writing Image ... " 10 50 0
-  
-  echo "Backup finished"
+  dd if=/dev/mmcblk0 bs=1M count=4096 | gzip > /$DIRNAME/backup/$datestring.img.gz | dialog --gauge "Backup Image ... " 10 50 0
+ echo "Backup finished"
 }
 
 
@@ -124,7 +123,10 @@ function select_image_old(){
 	# make decsion 
 	case $menuitem in
 		UpdateuBoot) updateuboot;;
-		UpdateAll) updateall;;
+		UpdateAll) 
+        updateall
+        recover_system
+        ;;
 	esac
 	
 }
@@ -246,6 +248,9 @@ function updateall(){
     # remove the recovery file:
     echo "Upgrade '${IMAGEFILE}' finished"  >> $DEBUG_LOG
     rm -f $DIRNAME/ov-recovery.itb
+}
+
+function recover_system(){
     # recover OpenSoarData:
     if [ -d "$SDC_DIR" ]; then
         mkdir -p $SDMOUNT
@@ -341,8 +346,7 @@ function updateall(){
         esac
         
         # restore the bash history:
-        debug_stop "cp -fv  $SDC_DIR/part2/.bash_history $SDMOUNT/home/root/"
-        # cp -fv  $SDC_DIR/part2/.bash_history $SDMOUNT/home/root/
+        cp -fv  $SDC_DIR/part2/.bash_history $SDMOUNT/home/root/
 
         if [ -e "$SDC_DIR/connman.tar.gz" ]; then
           tar -zxf $SDC_DIR/connman.tar.gz --directory $SDMOUNT/
@@ -449,6 +453,7 @@ dmesg -n 1
 if [ -e "$IMAGEFILE" ]; then
 	echo "Update $IMAGEFILE !!!!"
 	updateall
+    recover_system
 else
 	main_menu
 fi
