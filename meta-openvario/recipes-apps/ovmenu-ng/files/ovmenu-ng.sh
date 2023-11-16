@@ -15,9 +15,9 @@ if [ ! -e /dev/mmcblk0p3 ]; then
   source /usr/bin/create_datapart.sh
 
   echo "Debug-Stop: 3rd SD card partition created" >> $HOMEDIR/start-debug.log
-  if [ -f $HOMEDIR/_config.uSys ]; then
+  if [ -f $HOMEDIR/_upgrade.cfg ]; then
     # reactivate the previous system data
-    mv -f $HOMEDIR/_config.uSys $HOMEDIR/config.uSys
+    mv -f $HOMEDIR/_upgrade.cfg $HOMEDIR/upgrade.cfg
   fi 
       ### read -p "Press enter to continue"
   if [ ! -e /dev/mmcblk0p3 ]; then
@@ -538,13 +538,13 @@ function do_shell(){
     fi
 }
 
-# set system configs if config.uSys is available (from Upgrade)
+# set system configs if upgrade.cfg is available (from Upgrade)
 cd ~/
-if [ -f config.uSys ]; then
+if [ -f upgrade.cfg ]; then
   echo "Update system config" > sysconfig.txt
   /usr/bin/update-system-config.sh
-elif [ ! -f _config.uSys ]; then
-  echo "config.uSys not found" > sysconfig.txt
+elif [ ! -f _upgrade.cfg ]; then
+  echo "upgrade.cfg not found" > sysconfig.txt
 else
   echo "only backup config found !!!!!" > sysconfig.txt
 fi
