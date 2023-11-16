@@ -134,13 +134,13 @@ function select_image(){
     # images=$OV_DIRNAME/images/O*V*-*.gz
     images=data/images/O*V*-*.gz
 
-    let i=0 # define counting variable
+    let count=0 # define counting variable
     files=()        # define file array 
     files_nice=()   # define array with index + file description for dialogdialog
 #------------------------------------------------------------------------------
     while read -r line; do # process file by file
-        let i=$i+1
-        files+=($i "$line")
+        let count=$count+1
+        files+=($count "$line")
         filename=$(basename "$line") 
         temp1=$(echo $filename | grep -oE '[0-9]{5}')
         if [ -n "$temp1" ]; then
@@ -163,13 +163,13 @@ function select_image(){
         if [ -n "$temp3" ]; then
             temp="$temp ($temp3)"
         fi
-        files_nice+=($i "$temp") # selection index + name
+        files_nice+=($count "$temp") # selection index + name
     done < <( ls -1 $images )
 #------------------------------------------------------------------------------
     images=$OV_DIRNAME/images/O*V*-*.gz
     while read -r line; do # process file by file
-        let i=$i+1
-        files+=($i "$line")
+        let count=$count+1
+        files+=($count "$line")
         filename=$(basename "$line") 
         temp1=$(echo $filename | grep -oE '[0-9]{5}')
         if [ -n "$temp1" ]; then
@@ -192,20 +192,24 @@ function select_image(){
         if [ -n "$temp3" ]; then
             temp="$temp ($temp3)"
         fi
-        files_nice+=($i "$temp (USB)") # selection index + name
+        files_nice+=($count "$temp (USB)") # selection index + name
     done < <( ls -1 $images )
 #------------------------------------------------------------------------------
-    
-    
     if [ -n "$files" ]; then
-        # Search for images
-        # FILE=$(
         dialog --backtitle "Selection upgrade image from file list" \
         --title "Select image" \
         --menu "Use [UP/DOWN] keys to move, ENTER to select" \
         18 60 12 "${files_nice[@]}" 2> "${SELECTION}"
         
-        IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$(<${SELECTION}) p"))
+        read SELECTED < ${SELECTION}
+        let INDEX=$SELECTED+$SELECTED-1  # correct pointer in the arrays
+
+        # IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$(<${SELECTION}) p"))
+        IMAGEFILE="${files[$INDEX]}"
+        echo "-------------------------"
+        echo "SELECTED  = ${files_nice[$INDEX]}"
+        echo "IMAGEFILE = $IMAGEFILE"
+        
     else
         echo "no image file available"
         IMAGEFILE=""
