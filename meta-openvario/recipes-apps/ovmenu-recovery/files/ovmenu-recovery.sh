@@ -21,15 +21,6 @@ TARGET=/dev/mmcblk0
 images=$DIRNAME/images/O*V*-*.gz
 SDC_DIR=$DIRNAME/recover_data
 
-####################################################################
-echo "Upgrade start"  > $DEBUG_LOG
-date  >> $DEBUG_LOG
-time  >> $DEBUG_LOG
-date; time  >> $DEBUG_LOG
-
-# trap and delete temp files
-trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
-
 function error_stop(){
     echo "Error-Stop: $1"
     read -p "Press enter to continue"
@@ -284,7 +275,7 @@ function recover_system(){
               fi
             fi
 
-           source $SDC_DIR/upgrade.cfg
+            source $SDC_DIR/upgrade.cfg
             echo "sdcard/upgrade.cfg"           >> $DEBUG_LOG
             echo "------------------"           >> $DEBUG_LOG
             echo "ROTATION      = $ROTATION"    >> $DEBUG_LOG
@@ -409,14 +400,18 @@ function update_system() {
 #==============================================================================
 #                Update - Begin
 echo "Upgrade Start"
+####################################################################
+
+# trap and delete temp files
+trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
+
 # debug_stop "... and begin..."
 # ??? setfont cp866-8x14.psf.gz
 if [ -b "${TARGET}p3" ]; then
   PARTITION3=/sd3
   mkdir -p $PARTITION3
   mount ${TARGET}p3  $PARTITION3
-  SDC_DIR=$PARTITION3/recover_data
-  DEBUG_LOG=$DIRNAME/debug.log
+  DEBUG_LOG=$PARTITION3/debug.log
   # debug_stop "$PARTITION3 is mounted"
   sync
   ls $PARTITION3/
@@ -424,18 +419,29 @@ else
   debug_stop "No $PARTITION3!!"
 fi
 
-if [ -e $PARTITION3/upgrade.file ]; then
-  read IMAGEFILE < $PARTITION3/upgrade.file
-elif [ -e $DIRNAME/upgrade.file ]; then
-  read IMAGEFILE < $DIRNAME/upgrade.file
+# DEBUG_LOG=$DIRNAME/debug.log
+echo "Upgrade start"  > $DEBUG_LOG
+date  >> $DEBUG_LOG
+time  >> $DEBUG_LOG
+date; time  >> $DEBUG_LOG
+
+
+if [ -e $PARTITION3/recover_data/upgrade.cfg ]; then
+  SDC_DIR=$PARTITION3/recover_data
+  source $SDC_DIR/upgrade.cfg
+elif [ -e $SDC_DIR/upgrade.cfg ]; then
+  source $SDC_DIR/upgrade.cfg
 else
   IMAGEFILE="Not available!"
 fi
-debug_stop "UpdateFile: $IMAGEFILE "
+
+echo "AugTest: Upgrade-Config: $SDC_DIR/upgrade.cfg "
+debug_stop "Upgrade-Image: $IMAGEFILE "
 
 # image file name with path!
 if [ -e $PARTITION3/images/$IMAGEFILE ]; then
   # move it from sd card to ramdisk!
+  # NO LINK: later mmcblk0 is overwritten
   cp "$PARTITION3/images/$IMAGEFILE" ./
   IMAGEFILE="./$IMAGEFILE"
   sync
