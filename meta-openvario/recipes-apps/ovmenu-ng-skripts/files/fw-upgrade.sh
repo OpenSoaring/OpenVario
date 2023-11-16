@@ -379,7 +379,10 @@ function save_system(){
         echo "BASE_FW_VERSION:        '$BASE_FW_VERSION'"
         echo "BASE_HW:                '$BASE_HW'"
         debug_stop
-    echo "HARDWARE=\"$BASE_HW\"" >> $SDC_DIR/upgrade.cfg
+    echo "HARDWARE_BASE=\"$BASE_HW\"" >> $SDC_DIR/upgrade.cfg
+    echo "FIRMWARE_BASE=\"$BASE_FW_VERSION\"" >> $SDC_DIR/upgrade.cfg
+    echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $SDC_DIR/upgrade.cfg
+    echo "FIRMWARE_TARGET=\"$TARGET_FW_VERSION\"" >> $SDC_DIR/upgrade.cfg
     
     # 0 - equal, 1 - lower, 2 greater
     echo "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
