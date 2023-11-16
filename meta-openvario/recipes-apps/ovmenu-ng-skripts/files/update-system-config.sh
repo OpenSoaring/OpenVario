@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [ -e "./config.uSys" ]
+if [ -e "./upgrade.cfg" ]
 then
-    echo "'config.uSys' exist!!"
-    source ./config.uSys
+    echo "'upgrade.cfg' exist!!"
+    source ./upgrade.cfg
     
     # ==================== SSH ===============================
     if [ ! "$SSH" == "" ]; then 
@@ -28,7 +28,7 @@ then
         echo " [####======] Brightness set to '$BRIGHTNESS'"
     fi
     # ==================== End ===============================
-    mv ./config.uSys ./_config.uSys
+    mv ./upgrade.cfg ./_upgrade.cfg
     exit
 fi
 
