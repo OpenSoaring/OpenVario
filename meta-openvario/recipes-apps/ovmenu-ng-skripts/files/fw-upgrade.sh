@@ -1,24 +1,10 @@
 #!/bin/bash
 
-echo "Firmware Upgrade OpenVario"
-echo "=========================="
-
 DEBUG_STOP="n"
 
 USB_STICK=/usb/usbstick
-
-if [ ! -d "$USB_STICK" ]; then
-  # this could be at 17119 FW..
-  USB_STICK=/usb
-fi
-echo "USB stick will be mounted on '$USB_STICK'"
-
-stat
-
 DIALOG_CANCEL=1
 SELECTION=/tmp/output.sh.$$
-
-# the OV dirname at USB stick
 OV_DIRNAME=$USB_STICK/openvario
 
 # timestamp > OV-3.0.1-19-CB2-XXXX.img.gz
@@ -38,6 +24,7 @@ TARGET_FILENAME_TYPE=0
 TARGET_FW_VERSION=0
 BASE_HW="0000"
 BASE_FW_VERSION=0
+UPGRADE_TYPE=0
 
 # partition 1 of SD card is mounted as '/boot'!
 PART1=/boot
@@ -45,15 +32,7 @@ PART1=/boot
 PART2_ROOT=/home/root
 # partition 3 of SD card is mounted on the root of the system
 PART3=$PART2_ROOT/data
-
-rsync --version > /dev/null
-if [ "$?" -eq "0" ]; then
-   RSYNC_COPY="ok"
-fi
-
-#------------------------------------------------------------------------------
 BATCH_PATH=$(dirname $0)
-echo "Batch Path = '$BATCH_PATH'"
 #------------------------------------------------------------------------------
 function error_stop(){
     echo "Error-Stop: $1"
@@ -270,6 +249,27 @@ function select_image(){
         echo "TARGET_FILENAME_TYPE:     '$TARGET_FILENAME_TYPE'"
         debug_stop
     fi
+    # 0 - equal, 1 - lower, 2 greater
+    echo "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
+    vercomp "${TARGET_FW_VERSION//-/.}" "3.2.19"
+    TARGET_FW_TYPE=$?
+    vercomp   "${BASE_FW_VERSION//-/.}"   "3.2.19"
+    BASE_FW_TYPE=$?
+    echo "2) '$BASE_FW_TYPE' => '$TARGET_FW_TYPE'"
+    if [ "$TARGET_FW_TYPE" = "2" ]; then
+      if [ "$BASE_FW_TYPE" = "2" ]; then
+        UPGRADE_TYPE=1  # 1- from new fw to new fw
+      else
+        UPGRADE_TYPE=2  # 2 - from old fw to new fw
+      fi
+    else
+      if [ "$BASE_FW_TYPE" = "2" ]; then
+        UPGRADE_TYPE=3 # 3 - from new fw to old fw
+      else
+        UPGRADE_TYPE=4 # 4 - from old fw to old fw
+      fi
+    fi
+    debug_stop "3) '$BASE_FW_TYPE' => '$TARGET_FW_TYPE' = UPGRADE_TYPE '$UPGRADE_TYPE'"
 }
 
 
@@ -280,53 +280,10 @@ function clear_display(){
         echo ""
     done
 }
-    
+   
+
 #------------------------------------------------------------------------------
-function save_system(){
-    #================== System Config =======================================================
-    echo "1st: save system config in upgrade.cfg for restoring reason"
-    # 1st save system config in upgrade.cfg for restoring reason
-      if [ "UPGRADE_TYPE" = "1" ]; then  # only from new to new...
-        SDC_DIR=data/recover_data
-      else
-        if [ -d "$USB_STICK/openvario" ]; then  # indicats if USB stick is in and mounted
-          SDC_DIR=$USB_STICK/openvario/recover_data
-        fi    
-      fi
-    debug_stop "SDC_DIR  = $SDC_DIR"
-    mkdir -p $SDC_DIR
-    
-    # start with a new 'upgrade.cfg':
-    rm -f $SDC_DIR/upgrade.cfg
-    if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
-        if /bin/systemctl --quiet is-enabled dropbear.socket; then
-            echo "SSH=\"enabled\""
-            echo "SSH=\"enabled\"" >> $SDC_DIR/upgrade.cfg
-        elif /bin/systemctl --quiet is-active dropbear.socket; then
-            echo "SSH=\"temporary\""
-            echo "SSH=\"temporary\"" >> $SDC_DIR/upgrade.cfg
-        else
-            echo "SSH=\"disabled\""
-            echo "SSH=\"disabled\"" >> $SDC_DIR/upgrade.cfg
-        fi
-    else
-        # if there no dropbear.preset found -> enable the SSH like in this
-        # old fw version!
-        echo "SSH=\"enabled\""
-        echo "SSH=\"enabled\"" >> $SDC_DIR/upgrade.cfg
-    fi
-
-    tar cvf - /var/lib/connman | gzip >$SDC_DIR/connman.tar.gz
-
-    brightness=$(</sys/class/backlight/lcd/brightness)
-    if [ -n brightness ]; then
-      echo "BRIGHTNESS=\"$brightness\""
-      echo "BRIGHTNESS=\"$brightness\"" >> $SDC_DIR/upgrade.cfg
-    else
-      echo "'brightness' doesn't exist"
-      echo "BRIGHTNESS=\"9\"" >> $SDC_DIR/upgrade.cfg    
-    fi 
-    
+function detect_base() {
     # if config.uEnv not exist
     if [ ! -f $PART1/config.uEnv ]; then
         PART1="/mnt/boot"
@@ -338,6 +295,7 @@ function save_system(){
         fi
     fi
     source $PART1/config.uEnv
+
     # read 1st line in 'image-version-info'
     VERSION_INFO=$(head -n 1 $PART1/image-version-info)
     # fdtfile=openvario-57-lvds.dtb
@@ -379,33 +337,59 @@ function save_system(){
         echo "BASE_FW_VERSION:        '$BASE_FW_VERSION'"
         echo "BASE_HW:                '$BASE_HW'"
         debug_stop
+}   
+#------------------------------------------------------------------------------
+function save_system(){
+    #================== System Config =======================================================
+    echo "1st: save system config in upgrade.cfg for restoring reason"
+    # 1st save system config in upgrade.cfg for restoring reason
+      if [ "$UPGRADE_TYPE" = "1" ]; then  # only from new to new...
+        SDC_DIR=data/recover_data
+      else
+        if [ -d "$USB_STICK/openvario" ]; then  # recognizes if USB stick is in and mounted
+          SDC_DIR=$USB_STICK/openvario/recover_data
+        fi    
+      fi
+    debug_stop "SDC_DIR  = $SDC_DIR"
+    mkdir -p $SDC_DIR
+    
+    # start with a new 'upgrade.cfg':
+    rm -f $SDC_DIR/upgrade.cfg
+    if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
+        if /bin/systemctl --quiet is-enabled dropbear.socket; then
+            echo "SSH=\"enabled\""
+            echo "SSH=\"enabled\"" >> $SDC_DIR/upgrade.cfg
+        elif /bin/systemctl --quiet is-active dropbear.socket; then
+            echo "SSH=\"temporary\""
+            echo "SSH=\"temporary\"" >> $SDC_DIR/upgrade.cfg
+        else
+            echo "SSH=\"disabled\""
+            echo "SSH=\"disabled\"" >> $SDC_DIR/upgrade.cfg
+        fi
+    else
+        # if there no dropbear.preset found -> enable the SSH like in this
+        # old fw version!
+        echo "SSH=\"enabled\""
+        echo "SSH=\"enabled\"" >> $SDC_DIR/upgrade.cfg
+    fi
+
+    tar cvf - /var/lib/connman | gzip >$SDC_DIR/connman.tar.gz
+
+    brightness=$(</sys/class/backlight/lcd/brightness)
+    if [ -n brightness ]; then
+      echo "BRIGHTNESS=\"$brightness\""
+      echo "BRIGHTNESS=\"$brightness\"" >> $SDC_DIR/upgrade.cfg
+    else
+      echo "'brightness' doesn't exist"
+      echo "BRIGHTNESS=\"9\"" >> $SDC_DIR/upgrade.cfg    
+    fi 
+    
     echo "HARDWARE_BASE=\"$BASE_HW\"" >> $SDC_DIR/upgrade.cfg
     echo "FIRMWARE_BASE=\"$BASE_FW_VERSION\"" >> $SDC_DIR/upgrade.cfg
     echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $SDC_DIR/upgrade.cfg
+    echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $SDC_DIR/upgrade.cfg
     echo "FIRMWARE_TARGET=\"$TARGET_FW_VERSION\"" >> $SDC_DIR/upgrade.cfg
     
-    # 0 - equal, 1 - lower, 2 greater
-    echo "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
-    vercomp "${TARGET_FW_VERSION//-/.}" "3.2.19"
-    TARGET_FW_TYPE=$?
-    vercomp   "${BASE_FW_VERSION//-/.}"   "3.2.19"
-    BASE_FW_TYPE=$?
-
-    echo "2) '$BASE_FW_TYPE' => '$TARGET_FW_TYPE'"
-    if [ "$TARGET_FW_TYPE" = "2" ]; then
-      if [ "$BASE_FW_TYPE" = "2" ]; then
-        UPGRADE_TYPE=1  # 1- from new fw to new fw
-      else
-        UPGRADE_TYPE=2  # 2 - from old fw to new fw
-      fi
-    else
-      if [ "$BASE_FW_TYPE" = "2" ]; then
-        UPGRADE_TYPE=3 # 3 - from new fw to old fw
-      else
-        UPGRADE_TYPE=4 # 4 - from old fw to old fw
-      fi
-    fi
-    debug_stop "3) '$BASE_FW_TYPE' => '$TARGET_FW_TYPE' = UPGRADE_TYPE '$UPGRADE_TYPE'"
 
     # TODO: with which firmware there was the change?
     vercomp "${TARGET_FW_VERSION//-/.}" "22000"
@@ -439,6 +423,7 @@ function save_system(){
     echo "System Save End"
 }
 
+#------------------------------------------------------------------------------
 function start_upgrade(){
     # IMAGE_NAME=$(basename $IMAGEFILE)
 #    echo "Start Upgrading with '$IMAGE_NAME'..."
@@ -545,20 +530,45 @@ function start_upgrade(){
     shutdown -r now
 }
 
+#==============================================================================
+#==============================================================================
+#==============================================================================
+echo "Firmware Upgrade OpenVario"
+echo "=========================="
+
+echo "Batch Path = '$BATCH_PATH'"
+detect_base
+
+if [ ! -d "$USB_STICK" ]; then
+  # this could be at 17119 FW..
+  USB_STICK=/usb
+fi
+
+stat
+
+# the OV dirname at USB stick
+
+rsync --version > /dev/null
+if [ "$?" -eq "0" ]; then
+   RSYNC_COPY="ok"
+fi
+
 
 # check if usb dir exist and is mounted!
-if [ ! -d $USB_STICK ]; then
-  USB_STICK=/mnt/usb
-  mkdir -p $USB_STICK
-  mount /dev/sda1 $USB_STICK
-  # or sdb1, sdc1, ...
-  if [ ! -d $OV_DIRNAME ]; then
-    error_stop "'$OV_DIRNAME' don't exist!?!"
-  fi
+if [ -b "/dev/sda1" ]; then
+  if [ ! -d $USB_STICK ]; then
+    USB_STICK=/mnt/usb
+    echo "USB stick will be mounted on '$USB_STICK'"
+    mkdir -p $USB_STICK
+    mount /dev/sda1 $USB_STICK
+    # or sdb1, sdc1, ...
+    if [ ! -d $OV_DIRNAME ]; then
+      error_stop "'$OV_DIRNAME' don't exist!?!"
+    fi
+  fi 
+fi
 
-fi 
-
-
+#------------------------------------------------------------------------------
 # Selecting image file:
 select_image
 
@@ -571,12 +581,6 @@ if [ -f "${IMAGEFILE}" ]; then
         # don't delete, better to make 'with rsync --delete' rm -r $SDC_DIR
     fi
     
-    if [ ! -f $PART1/config.uEnv ]; then
-      # sd partition 1 is not in boot gemounted...
-      PART1="/mnt/sd1"
-      mkdir -p $PART1
-      
-    fi
 
     # 1st: Save the system
     save_system
@@ -637,11 +641,12 @@ if [ -f "${IMAGEFILE}" ]; then
 
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGE_NAME !"
-    if [ "$BASE_FW_TYPE" = "2" ]; then
-      echo "$IMAGE_NAME" > data/upgrade.file
-    else
-      echo "$IMAGE_NAME" > $OV_DIRNAME/upgrade.file
-    fi
+    echo "IMAGEFILE=$IMAGE_NAME" >> $SDC_DIR/upgrade.cfg
+###    if [ "$BASE_FW_TYPE" = "2" ]; then
+###      # echo "$IMAGE_NAME" > data/upgrade.file
+###    else
+###      echo "IMAGENAME=$IMAGE_NAME" >> 
+###    fi
 
     echo "Upgrade step 1 finished!"
     chmod 757 -R $MNT_DIR
