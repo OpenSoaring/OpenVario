@@ -286,11 +286,13 @@ function save_system(){
     #================== System Config =======================================================
     echo "1st: save system config in config.uSys for restoring reason"
     # 1st save system config in config.uSys for restoring reason
-    if [ ! -d "$USB_STICK/openvario" ]; then  # indicats if USB stick is in and mounted
-      # if [ "UPGRADE_TYPE" = "1" ]; then  # only from new to new...
+      if [ "UPGRADE_TYPE" = "1" ]; then  # only from new to new...
         SDC_DIR=data/recover_data
-      # fi
-    fi    
+      else
+        if [ -d "$USB_STICK/openvario" ]; then  # indicats if USB stick is in and mounted
+          SDC_DIR=$USB_STICK/openvario/recover_data
+        fi    
+      fi
     debug_stop "SDC_DIR  = $SDC_DIR"
     mkdir -p $SDC_DIR
     
