@@ -78,7 +78,8 @@ function backup_image(){
   # dd if=/dev/mmcblk0 bs=1M count=1024 | gzip > /$DIRNAME/backup/$datestring.img.gz
   
   # test backup 50MB (Boot areal + 10 MB)
-  dd if=/dev/mmcblk0 bs=1M count=4096 | gzip > /$DIRNAME/backup/$datestring.img.gz | dialog --gauge "Backup Image ... " 10 50 0
+  dd if=/dev/mmcblk0 bs=1M count=50 | gzip > /$DIRNAME/backup/$datestring.img.gz | dialog --gauge "Backup Image ... " 10 50 0
+#  (pv -n ${IMAGEFILE} | gunzip -c | dd bs=1024 skip=1024 | dd of=$TARGET bs=1024 seek=1024) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
  echo "Backup finished"
 }
 
@@ -283,8 +284,8 @@ function recover_system(){
               fi
             fi
 
-           source $SDC_DIR/config.uSys
-            echo "sdcard/config.uSys"           >> $DEBUG_LOG
+           source $SDC_DIR/upgrade.cfg
+            echo "sdcard/upgrade.cfg"           >> $DEBUG_LOG
             echo "------------------"           >> $DEBUG_LOG
             echo "ROTATION      = $ROTATION"    >> $DEBUG_LOG
             echo "BRIGHTNESS    = $BRIGHTNESS"  >> $DEBUG_LOG
@@ -352,8 +353,8 @@ function recover_system(){
           tar -zxf $SDC_DIR/connman.tar.gz --directory $SDMOUNT/
         fi
         
-        if [ -e "$SDC_DIR/config.uSys" ]; then
-          cp $SDC_DIR/config.uSys $SDMOUNT/home/root/config.uSys
+        if [ -e "$SDC_DIR/upgrade.cfg" ]; then
+          cp $SDC_DIR/upgrade.cfg $SDMOUNT/home/root/upgrade.cfg
         fi
         
         ls -l $SDMOUNT/home/root/.xcsoar
