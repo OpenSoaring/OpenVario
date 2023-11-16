@@ -284,8 +284,8 @@ function clear_display(){
 #------------------------------------------------------------------------------
 function save_system(){
     #================== System Config =======================================================
-    echo "1st: save system config in config.uSys for restoring reason"
-    # 1st save system config in config.uSys for restoring reason
+    echo "1st: save system config in upgrade.cfg for restoring reason"
+    # 1st save system config in upgrade.cfg for restoring reason
       if [ "UPGRADE_TYPE" = "1" ]; then  # only from new to new...
         SDC_DIR=data/recover_data
       else
@@ -296,24 +296,24 @@ function save_system(){
     debug_stop "SDC_DIR  = $SDC_DIR"
     mkdir -p $SDC_DIR
     
-    # start with a new 'config.uSys':
-    rm -f $SDC_DIR/config.uSys
+    # start with a new 'upgrade.cfg':
+    rm -f $SDC_DIR/upgrade.cfg
     if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
         if /bin/systemctl --quiet is-enabled dropbear.socket; then
             echo "SSH=\"enabled\""
-            echo "SSH=\"enabled\"" >> $SDC_DIR/config.uSys
+            echo "SSH=\"enabled\"" >> $SDC_DIR/upgrade.cfg
         elif /bin/systemctl --quiet is-active dropbear.socket; then
             echo "SSH=\"temporary\""
-            echo "SSH=\"temporary\"" >> $SDC_DIR/config.uSys
+            echo "SSH=\"temporary\"" >> $SDC_DIR/upgrade.cfg
         else
             echo "SSH=\"disabled\""
-            echo "SSH=\"disabled\"" >> $SDC_DIR/config.uSys
+            echo "SSH=\"disabled\"" >> $SDC_DIR/upgrade.cfg
         fi
     else
         # if there no dropbear.preset found -> enable the SSH like in this
         # old fw version!
         echo "SSH=\"enabled\""
-        echo "SSH=\"enabled\"" >> $SDC_DIR/config.uSys
+        echo "SSH=\"enabled\"" >> $SDC_DIR/upgrade.cfg
     fi
 
     tar cvf - /var/lib/connman | gzip >$SDC_DIR/connman.tar.gz
@@ -321,10 +321,10 @@ function save_system(){
     brightness=$(</sys/class/backlight/lcd/brightness)
     if [ -n brightness ]; then
       echo "BRIGHTNESS=\"$brightness\""
-      echo "BRIGHTNESS=\"$brightness\"" >> $SDC_DIR/config.uSys
+      echo "BRIGHTNESS=\"$brightness\"" >> $SDC_DIR/upgrade.cfg
     else
       echo "'brightness' doesn't exist"
-      echo "BRIGHTNESS=\"9\"" >> $SDC_DIR/config.uSys    
+      echo "BRIGHTNESS=\"9\"" >> $SDC_DIR/upgrade.cfg    
     fi 
     
     # if config.uEnv not exist
@@ -379,7 +379,7 @@ function save_system(){
         echo "BASE_FW_VERSION:        '$BASE_FW_VERSION'"
         echo "BASE_HW:                '$BASE_HW'"
         debug_stop
-    echo "HARDWARE=\"$BASE_HW\"" >> $SDC_DIR/config.uSys
+    echo "HARDWARE=\"$BASE_HW\"" >> $SDC_DIR/upgrade.cfg
     
     # 0 - equal, 1 - lower, 2 greater
     echo "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
@@ -422,7 +422,7 @@ function save_system(){
     fi
 
     echo "ROTATION=\"$rotation\""
-    echo "ROTATION=\"$rotation\"" >> $SDC_DIR/config.uSys
+    echo "ROTATION=\"$rotation\"" >> $SDC_DIR/upgrade.cfg
 
     # UpgradeType:
     # 1- from new fw to new fw
@@ -430,9 +430,9 @@ function save_system(){
     # 3 - from new fw to old fw
     # 4 - from old fw to old fw
     # other types are not supported (f.e. old to previous an so on)!
-    echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $SDC_DIR/config.uSys
-    echo "BASE_FW_TYPE=\"$BASE_FW_TYPE\"" >> $SDC_DIR/config.uSys
-    echo "TARGET_FW_TYPE=\"$TARGET_FW_TYPE\"" >> $SDC_DIR/config.uSys
+    echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $SDC_DIR/upgrade.cfg
+    echo "BASE_FW_TYPE=\"$BASE_FW_TYPE\"" >> $SDC_DIR/upgrade.cfg
+    echo "TARGET_FW_TYPE=\"$TARGET_FW_TYPE\"" >> $SDC_DIR/upgrade.cfg
     echo "System Save End"
 }
 
