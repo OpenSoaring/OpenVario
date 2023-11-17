@@ -252,24 +252,24 @@ function select_image(){
     # 0 - equal, 1 - lower, 2 greater
     echo "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
     vercomp "${TARGET_FW_VERSION//-/.}" "3.2.19"
-    TARGET_FW_TYPE=$?
+    FW_TYPE_TARGET=$?
     vercomp   "${BASE_FW_VERSION//-/.}"   "3.2.19"
-    BASE_FW_TYPE=$?
-    echo "2) '$BASE_FW_TYPE' => '$TARGET_FW_TYPE'"
-    if [ "$TARGET_FW_TYPE" = "2" ]; then
-      if [ "$BASE_FW_TYPE" = "2" ]; then
+    FW_TYPE_BASE=$?
+    echo "2) '$FW_TYPE_BASE' => '$FW_TYPE_TARGET'"
+    if [ "$FW_TYPE_TARGET" = "2" ]; then
+      if [ "$FW_TYPE_BASE" = "2" ]; then
         UPGRADE_TYPE=1  # 1- from new fw to new fw
       else
         UPGRADE_TYPE=2  # 2 - from old fw to new fw
       fi
     else
-      if [ "$BASE_FW_TYPE" = "2" ]; then
+      if [ "$FW_TYPE_BASE" = "2" ]; then
         UPGRADE_TYPE=3 # 3 - from new fw to old fw
       else
         UPGRADE_TYPE=4 # 4 - from old fw to old fw
       fi
     fi
-    debug_stop "3) '$BASE_FW_TYPE' => '$TARGET_FW_TYPE' = UPGRADE_TYPE '$UPGRADE_TYPE'"
+    debug_stop "3) '$FW_TYPE_BASE' => '$FW_TYPE_TARGET' = UPGRADE_TYPE '$UPGRADE_TYPE'"
 }
 
 
@@ -386,9 +386,18 @@ function save_system(){
     
     echo "HARDWARE_BASE=\"$BASE_HW\"" >> $SDC_DIR/upgrade.cfg
     echo "FIRMWARE_BASE=\"$BASE_FW_VERSION\"" >> $SDC_DIR/upgrade.cfg
-    echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $SDC_DIR/upgrade.cfg
+    echo "FW_TYPE_BASE=\"$FW_TYPE_BASE\"" >> $SDC_DIR/upgrade.cfg
+    # echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $SDC_DIR/upgrade.cfg
     echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $SDC_DIR/upgrade.cfg
     echo "FIRMWARE_TARGET=\"$TARGET_FW_VERSION\"" >> $SDC_DIR/upgrade.cfg
+    echo "FW_TYPE_TARGET=\"$FW_TYPE_TARGET\"" >> $SDC_DIR/upgrade.cfg
+    # UpgradeType:
+    # 1- from new fw to new fw
+    # 2 - from old fw to new fw
+    # 3 - from new fw to old fw
+    # 4 - from old fw to old fw
+    # other types are not supported (f.e. old to previous an so on)!
+    echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $SDC_DIR/upgrade.cfg
     
 
     # TODO: with which firmware there was the change?
@@ -410,16 +419,6 @@ function save_system(){
 
     echo "ROTATION=\"$rotation\""
     echo "ROTATION=\"$rotation\"" >> $SDC_DIR/upgrade.cfg
-
-    # UpgradeType:
-    # 1- from new fw to new fw
-    # 2 - from old fw to new fw
-    # 3 - from new fw to old fw
-    # 4 - from old fw to old fw
-    # other types are not supported (f.e. old to previous an so on)!
-    echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $SDC_DIR/upgrade.cfg
-    echo "BASE_FW_TYPE=\"$BASE_FW_TYPE\"" >> $SDC_DIR/upgrade.cfg
-    echo "TARGET_FW_TYPE=\"$TARGET_FW_TYPE\"" >> $SDC_DIR/upgrade.cfg
     echo "System Save End"
 }
 
@@ -601,10 +600,10 @@ if [ -f "${IMAGEFILE}" ]; then
 
     # 3rd: save OpenSoarData/XCSoarData from partition 2 (or 3):
     echo "3rd: save OpenSoarData / XCSoarData from partition 2 or 3"
-    if [ "$BASE_FW_TYPE" = "2" ]; then # Base is new, data on 3rd partition 
+    if [ "$FW_TYPE_BASE" = "2" ]; then # Base is new, data on 3rd partition 
       # new firmware, rsync is available       
       # no rm, because synchronizing
-      # with "$TARGET_FW_TYPE" = "2" this isn't necessary - but helps to find data
+      # with "$FW_TYPE_TARGET" = "2" this isn't necessary - but helps to find data
       mkdir -p $SDC_DIR/part2/OpenSoarData
       rsync -ruvtcE --progress $PART3/OpenSoarData/* $SDC_DIR/part2/OpenSoarData/ \
             --delete --exclude cache  --exclude logs
@@ -642,7 +641,7 @@ if [ -f "${IMAGEFILE}" ]; then
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGE_NAME !"
     echo "IMAGEFILE=$IMAGE_NAME" >> $SDC_DIR/upgrade.cfg
-###    if [ "$BASE_FW_TYPE" = "2" ]; then
+###    if [ "$FW_TYPE_BASE" = "2" ]; then
 ###      # echo "$IMAGE_NAME" > data/upgrade.file
 ###    else
 ###      echo "IMAGENAME=$IMAGE_NAME" >> 
