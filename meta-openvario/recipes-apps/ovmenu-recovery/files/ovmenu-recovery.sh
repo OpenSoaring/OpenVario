@@ -1,14 +1,15 @@
 #!/bin/bash
 
 DEBUG_STOP="n"
+VERBOSE=n
 DIALOGRC=/opt/bin/openvario.rc
 
 # Config
 TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIRNAME=/mnt/openvario
-#SDMOUNT=/mnt/sd
 SDMOUNT=/sd
+PARTITION3=""
 
 DEBUG_LOG=$DIRNAME/debug.log
 
@@ -19,13 +20,22 @@ TARGET=/dev/mmcblk0
 # images=$DIRNAME/images/OpenVario-linux*.gz
 # old: images=$DIRNAME/images/OpenVario-linux*.gz
 images=$DIRNAME/images/O*V*-*.gz
-SDC_DIR=$DIRNAME/recover_data
+RECOVER_DIR=/home/root/recover_data
 
+#------------------------------------------------------------------------------
+function printv(){
+    if [ "$VERBOSE" = "y" ]; then
+      echo "$1"
+    fi
+}
+
+#------------------------------------------------------------------------------
 function error_stop(){
     echo "Error-Stop: $1"
     read -p "Press enter to continue"
 }
 
+#------------------------------------------------------------------------------
 function debug_stop(){
     if [ "$DEBUG_STOP" = "y" ]; then
       echo "Debug-Stop: $1"
@@ -33,35 +43,36 @@ function debug_stop(){
     fi
 }
 
+#------------------------------------------------------------------------------
 main_menu () {
 while true
 do
-	### display main menu ###
-	dialog --clear --nocancel --backtitle "OpenVario Recovery Tool" \
-	--title "[ M A I N - M E N U ]" \
-	--menu "You can use the UP/DOWN arrow keys" 15 50 6 \
-	Flash_SDCard   "Write image to SD Card" \
-	Backup-Image   "Backup complete Image" \
-	Reboot   "Reboot" \
-	Exit "Exit to shell" \
-	ShutDown "ShutDown... " \
+  ### display main menu ###
+  dialog --clear --nocancel --backtitle "OpenVario Recovery Tool" \
+  --title "[ M A I N - M E N U ]" \
+  --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
+  Flash_SDCard   "Write image to SD Card" \
+  Backup-Image   "Backup complete Image" \
+  Reboot   "Reboot" \
+  Exit "Exit to shell" \
+  ShutDown "ShutDown... " \
     2>"${INPUT}"
-	 
-	menuitem=$(<"${INPUT}")
+   
+  menuitem=$(<"${INPUT}")
  
-	# make decsion 
+  # make decsion 
 case $menuitem in
-	Flash_SDCard) select_image;;
-	Backup-Image) backup_image;;
-	Reboot) /opt/bin/reboot.sh;;
-	Exit) /bin/bash;;
-	ShutDown) shutdown -h now;;
+  Flash_SDCard) select_image;;
+  Backup-Image) backup_image;;
+  Reboot) /opt/bin/reboot.sh;;
+  Exit) /bin/bash;;
+  ShutDown) shutdown -h now;;
 esac
 
 done
 }
 
-	
+  
 function backup_image(){
   datestring=$(date +%F)
   mkdir -p /$DIRNAME/backup
@@ -76,51 +87,51 @@ function backup_image(){
 
 
 function select_image_old(){
-	let i=0 # define counting variable
-	declare -a files=() # define working array
-	declare -a files_nice=()
-	for line in $images; do
-		let i=$i+1
-		files+=($i "$line")
-		filename=$(basename "$line") 
-		files_nice+=($i "$filename")
-	done
+  let i=0 # define counting variable
+  declare -a files=() # define working array
+  declare -a files_nice=()
+  for line in $images; do
+    let i=$i+1
+    files+=($i "$line")
+    filename=$(basename "$line") 
+    files_nice+=($i "$filename")
+  done
 
-	if [ -n "$files" ]; then
-		# Search for images
-		FILE=$(dialog --backtitle "${TITLE}" \
-		--title "Select image" \
-		--menu "Use [UP/DOWN] keys to move, ENTER to select" \
-		18 60 12 \
-		"${files_nice[@]}" 3>&2 2>&1 1>&3) 
-	else
-		dialog --backtitle "${TITLE}" \
-		--title "Select image" \
-		--msgbox "\n\nNo image file found with \n'$images'!!" 10 40
-		return
-	fi
-	IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$FILE p"))
-	
-	# Show Image write options
-	dialog --backtitle "${TITLE}" \
-	--title "Select update method" \
-	--menu "Use [UP/DOWN] keys to move, ENTER to select" \
-	18 60 12 \
-	"UpdateAll"	 "Update complete SD Card" \
-	"UpdateuBoot"	 "Update Bootloader only" \
-	2>"${INPUT}"
-	
-	menuitem=$(<"${INPUT}")
+  if [ -n "$files" ]; then
+    # Search for images
+    FILE=$(dialog --backtitle "${TITLE}" \
+    --title "Select image" \
+    --menu "Use [UP/DOWN] keys to move, ENTER to select" \
+    18 60 12 \
+    "${files_nice[@]}" 3>&2 2>&1 1>&3) 
+  else
+    dialog --backtitle "${TITLE}" \
+    --title "Select image" \
+    --msgbox "\n\nNo image file found with \n'$images'!!" 10 40
+    return
+  fi
+  IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$FILE p"))
+  
+  # Show Image write options
+  dialog --backtitle "${TITLE}" \
+  --title "Select update method" \
+  --menu "Use [UP/DOWN] keys to move, ENTER to select" \
+  18 60 12 \
+  "UpdateAll"   "Update complete SD Card" \
+  "UpdateuBoot"   "Update Bootloader only" \
+  2>"${INPUT}"
+  
+  menuitem=$(<"${INPUT}")
  
-	# make decsion 
-	case $menuitem in
-		UpdateuBoot) updateuboot;;
-		UpdateAll) 
+  # make decsion 
+  case $menuitem in
+    UpdateuBoot) updateuboot;;
+    UpdateAll) 
         updateall
         recover_system
         ;;
-	esac
-	
+  esac
+  
 }
 
 function select_image(){
@@ -210,26 +221,27 @@ function select_image(){
 }
 #update rootfs on mmcblk0
 function updaterootfs(){
-		
-	(pv -n ${IMAGEFILE} | gunzip -c | dd bs=1024 skip=1024 | dd of=$TARGET bs=1024 seek=1024) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
-		
+    
+  (pv -n ${IMAGEFILE} | gunzip -c | dd bs=1024 skip=1024 | dd of=$TARGET bs=1024 seek=1024) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
+    
 }
 
 function notimplemented(){
 
-	dialog --backtitle "${TITLE}" \
-			--msgbox "Not implemented yet !!" 10 60
+  dialog --backtitle "${TITLE}" \
+      --msgbox "Not implemented yet !!" 10 60
 }
 
 #update uboot
 function updateuboot(){
-		
-	#gunzip -c $(cat selected_image.$$) | dd of=$TARGET bs=1024 count=1024	
-	(pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=1024 count=1024) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
-		
+    
+  #gunzip -c $(cat selected_image.$$) | dd of=$TARGET bs=1024 count=1024  
+  (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=1024 count=1024) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
+    
 }
 
 #update updateall
+#------------------------------------------------------------------------------
 function updateall(){
     sync
     echo "Upgrade with '${IMAGEFILE}'"  >> $DEBUG_LOG
@@ -242,13 +254,14 @@ function updateall(){
     rm -f $DIRNAME/ov-recovery.itb
 }
 
+#------------------------------------------------------------------------------
 function recover_system(){
     # recover OpenSoarData:
-    if [ -d "$SDC_DIR" ]; then
+    if [ -d "$RECOVER_DIR" ]; then
         mkdir -p $SDMOUNT
-        if [ -e "$SDC_DIR/part1/config.uEnv" ]; then
+        if [ -e "$RECOVER_DIR/part1/config.uEnv" ]; then
             mount ${TARGET}p1  $SDMOUNT
-            source $SDC_DIR/part1/config.uEnv
+            source $RECOVER_DIR/part1/config.uEnv
             echo "sdcard/part1/config.uEnv"      >> $DEBUG_LOG
             echo "------------------------"      >> $DEBUG_LOG
             echo "rotation      = $rotation"     >> $DEBUG_LOG
@@ -275,7 +288,7 @@ function recover_system(){
               fi
             fi
 
-            source $SDC_DIR/upgrade.cfg
+            source $RECOVER_DIR/upgrade.cfg
             echo "sdcard/upgrade.cfg"           >> $DEBUG_LOG
             echo "------------------"           >> $DEBUG_LOG
             echo "ROTATION      = $ROTATION"    >> $DEBUG_LOG
@@ -307,53 +320,41 @@ function recover_system(){
         
 
         mount ${TARGET}p2  $SDMOUNT
-        # removing '$SDMOUNT/home/root/ov-recovery.itb' not necessary because after
-        # overwriting image this file/link isn't available anymore 
-        # 1 - from new fw to new fw
-        # 2 - from old fw to new fw
-        # 3 - from new fw to old fw
-        # 4 - from old fw to old fw
-        case "$UPDATE_TYPE" in
-        1) # from new to new do nothing, because data still available on partition 3 
-        ;;
-        2) # from old to new
-           # partition 3  is new created and should be filled from USB stick in ovmenu shell
-        ;;
-        3) # from new to old 
-          rm -rf $SDMOUNT/home/root/.xcsoar/*
-          cp -frv $SDC_DIR/part2/XCSoarData/* $SDMOUNT/home/root/.xcsoar/
-          if [ -d "$SDC_DIR/part2/glider_club" ]; then
-            mkdir -p $SDMOUNT/home/root/.glider_club
-            cp -frv $SDC_DIR/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
-          fi
-        ;;
-        4) # from old to old
-          rm -rf $SDMOUNT/home/root/.xcsoar/*
-          cp -frv $SDC_DIR/part2/xcsoar/* $SDMOUNT/home/root/.xcsoar/
-          if [ -d "$SDC_DIR/part2/glider_club" ]; then
-            mkdir -p $SDMOUNT/home/root/.glider_club
-            cp -frv $SDC_DIR/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
-          fi
-        ;;
-        esac
-        
-        # restore the bash history:
-        cp -fv  $SDC_DIR/part2/.bash_history $SDMOUNT/home/root/
+          # 1 - from new fw to new fw
+          # 2 - from old fw to new fw
+          # 3 - from new fw to old fw
+          # 4 - from old fw to old fw
+        if [ "$UPGRADE_TYPE" = "1" ]; then  # new to new
+          echo "nothing to restore"
+        # elif [ "$UPGRADE_TYPE" = "2" ]; then  # old to new
+          # do now the same as with the old target yet
+          # later: copy the zip file only (if exist)...           
+        else 
+            rm -rf $SDMOUNT/home/root/.xcsoar/*  # delete the image data
+            cp -frv $RECOVER_DIR/part2/xcsoar/* $SDMOUNT/home/root/.xcsoar/
+        fi
 
-        if [ -e "$SDC_DIR/connman.tar.gz" ]; then
-          tar -zxf $SDC_DIR/connman.tar.gz --directory $SDMOUNT/
+        if [ -d "$RECOVER_DIR/part2/glider_club" ]; then
+            mkdir -p $SDMOUNT/home/root/.glider_club
+            cp -frv $RECOVER_DIR/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
+        fi
+        # restore the bash history:
+        cp -fv  $RECOVER_DIR/part2/.bash_history $SDMOUNT/home/root/
+        
+        if [ -e "$RECOVER_DIR/connman.tar.gz" ]; then
+          tar -zxf $RECOVER_DIR/connman.tar.gz --directory $SDMOUNT/
         fi
         
-        if [ -e "$SDC_DIR/upgrade.cfg" ]; then
-          cp $SDC_DIR/upgrade.cfg $SDMOUNT/home/root/upgrade.cfg
+        if [ -e "$RECOVER_DIR/upgrade.cfg" ]; then
+          cp $RECOVER_DIR/upgrade.cfg $SDMOUNT/home/root/upgrade.cfg
         fi
         
         ls -l $SDMOUNT/home/root/.xcsoar
         echo "ready OV upgrade!"
         echo "ready OV upgrade!"  >> $DEBUG_LOG
     else
-        echo "' $SDC_DIR/part2/xcsoar' doesn't exist!"
-        echo "' $SDC_DIR/part2/xcsoar' doesn't exist!"  >> $DEBUG_LOG
+        echo "' $RECOVER_DIR/part2/xcsoar' doesn't exist!"
+        echo "' $RECOVER_DIR/part2/xcsoar' doesn't exist!"  >> $DEBUG_LOG
     fi
 
 
@@ -390,10 +391,62 @@ function recover_system(){
     /opt/bin/reboot.sh
 }
 
+#------------------------------------------------------------------------------
 function update_system() {
-	echo "Updating System ..." > /tmp/tail.$$
-	/usr/bin/update-system.sh >> /tmp/tail.$$ &
-	dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
+  echo "Updating System ..." > /tmp/tail.$$
+  /usr/bin/update-system.sh >> /tmp/tail.$$ &
+  dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
+}
+
+#------------------------------------------------------------------------------
+function save_old_system() {
+    # 2nd: save boot folder to Backup from partition 1
+    echo "2nd: save boot folder to Backup from partition 1"
+    # -d is invalid option? rm -fr $RECOVER_DIR/part1
+
+    echo "  copy command ..."
+    mkdir -p $SDMOUNT
+    mkdir -p $RECOVER_DIR/part1
+    mount ${TARGET}p1  $SDMOUNT
+    # cp is available on all (old) firmware
+    # copy only files from interest (no picture, no uImage) 
+    cp -fv  $SDMOUNT/config.uEnv        $RECOVER_DIR/part1/
+    cp -fv  $SDMOUNT/image-version-info $RECOVER_DIR/part1/
+    # 17119 don't have a *.dtb file...
+    # cp -fv  $SDMOUNT/*.dtb              $RECOVER_DIR/part1/
+    umount $SDMOUNT
+
+    # 3rd: save OpenSoarData/XCSoarData from partition 2 (or 3):
+    echo "3rd: save OpenSoarData / XCSoarData from partition 2 or 3"
+    mount ${TARGET}p2  $SDMOUNT
+    PART2_ROOT=$SDMOUNT/home/root
+    # if [ "$FW_TYPE_BASE" = "2" ]; then # Base is new, data on 3rd partition 
+    mkdir -p $RECOVER_DIR/part2/xcsoar
+    if [ "$UPGRADE_TYPE" = "3" ]; then # Base is new, Target is old
+      if [ -d "$PARTITION3/OpenSoarData" ]; then
+          cp -rfv  $PARTITION3/OpenSoarData/* $RECOVER_DIR/part2/xcsoar/
+          # alternative: cp -rfv  $PARTITION3/XCSoarData/* $RECOVER_DIR/part2/xcsoar/
+      else
+        error_stop "Wrong system: Partition 3 not available!"
+      fi
+    elif [ "$FW_TYPE_BASE" = "1" ]; then  # Base is old, data coming from '.xcsoar' folder
+          cp -rfv  $PART2_ROOT/.xcsoar/* $RECOVER_DIR/part2/xcsoar/
+    else
+        debug_stop "Nothing to do for new firmwares!"
+    fi
+    cp -fv   $PART2_ROOT/.bash_history $RECOVER_DIR/part2/
+
+    # HardLink at FAT isn't possible
+    if [ -d "$PART2_ROOT/.glider_club" ]; then
+        echo "save gliderclub data from partition 2"
+        mkdir -p $RECOVER_DIR/part2/glider_club
+        cp -frv $PART2_ROOT/.glider_club/* $RECOVER_DIR/part2/glider_club/
+    fi
+    
+    debug_stop "saving finished"
+    # Synchronize the commands (?)
+    sync
+    umount $SDMOUNT
 }
 #==============================================================================
 #==============================================================================
@@ -405,17 +458,27 @@ echo "Upgrade Start"
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 
+# delete ov-recovery.itb independent from success!
 # debug_stop "... and begin..."
 # ??? setfont cp866-8x14.psf.gz
+
+mkdir -p $SDMOUNT
+mount ${TARGET}p2  $SDMOUNT
+rm -f $SDMOUNT/home/root/ov-recovery.itb
+if [ -f "$SDMOUNT/home/root/upgrade.cfg" ]; then
+  cp -fv "$SDMOUNT/home/root/upgrade.cfg" "/home/root/upgrade.cfg"
+fi 
+
 if [ -b "${TARGET}p3" ]; then
-  PARTITION3=/sd3
+  PARTITION3=/mmc3
   mkdir -p $PARTITION3
   mount ${TARGET}p3  $PARTITION3
   DEBUG_LOG=$PARTITION3/debug.log
-  # debug_stop "$PARTITION3 is mounted"
+  debug_stop "$PARTITION3 is mounted"
   sync
   ls $PARTITION3/
 else 
+  PARTITION3=""  # empty
   debug_stop "No $PARTITION3!!"
 fi
 
@@ -426,16 +489,22 @@ time  >> $DEBUG_LOG
 date; time  >> $DEBUG_LOG
 
 
-if [ -e $PARTITION3/recover_data/upgrade.cfg ]; then
-  SDC_DIR=$PARTITION3/recover_data
-  source $SDC_DIR/upgrade.cfg
-elif [ -e $SDC_DIR/upgrade.cfg ]; then
-  source $SDC_DIR/upgrade.cfg
+if [ -d $SDMOUNT/home/root/recover_data ]; then
+  cp -rfv $SDMOUNT/home/root/recover_data /home/root 
+  debug_stop "'copy recover_data' done!"
+fi
+umount $SDMOUNT
+
+if [ -e $RECOVER_DIR/upgrade.cfg ]; then
+  source $RECOVER_DIR/upgrade.cfg
+elif [ -e $PARTITION3/recover_data/upgrade.cfg ]; then
+  source $PARTITION3/upgrade.cfg
 else
+  error_stop "'upgrade.cfg' is not available!"
   IMAGEFILE="Not available!"
 fi
 
-echo "AugTest: Upgrade-Config: $SDC_DIR/upgrade.cfg "
+echo "AugTest: Upgrade-Config: $RECOVER_DIR/upgrade.cfg "
 debug_stop "Upgrade-Image: $IMAGEFILE "
 
 # image file name with path!
@@ -458,11 +527,15 @@ debug_stop "Detected image file: '$IMAGEFILE'!"
 dmesg -n 1
 
 if [ -e "$IMAGEFILE" ]; then
-	echo "Update $IMAGEFILE !!!!"
-	updateall
-    recover_system
+  echo "Update $IMAGEFILE !!!!"
+  save_old_system
+  if [ -n "$PARTITION3" ]; then
+    umount $PARTITION3
+  fi 
+  updateall
+  recover_system
 else
-	main_menu
+  main_menu
 fi
 
 #=====================================================================================
