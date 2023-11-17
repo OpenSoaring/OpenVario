@@ -1,18 +1,16 @@
 inherit image_types
 require VERSION.inc
 
-#
 # Create an image that can by written onto a SD card using dd.
 # Originally written for rasberrypi adapt for the needs of allwinner sunxi based boards
 #
 # The disk layout used is:
-#
+#-------------------------
 # 0x000000    0                      -> 8*1024                           - reserverd
 # 0x002000    8*1024                 ->                                  - arm combined spl/u-boot or aarch64 spl
 # 0x00A000    40*1024                ->                                  - aarch64 u-boot
 # 0x200000    2048*1024              -> BOOT_SPACE                       - bootloader and kernel
-#
-#
+#-------------------------
 
 # Use an uncompressed ext4 by default as rootfs
 SDIMG_ROOTFS_TYPE ?= "ext4"
@@ -139,10 +137,6 @@ IMAGE_CMD:openvario-sdimg () {
 
     # create a relative link to new created image
     ln -sfr ${SDIMG}.gz ${SDIMG_LINK}.gz
-
-    # create a relative link to last created image directly for a sd card writer
-    # rm -f last-ov.gz
-    # ln -sfr ${SDIMG}.gz last-ov.gz
 
     # write output filename to file for upload
     echo ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME} > ${DEPLOY_DIR_IMAGE}/image_name    
