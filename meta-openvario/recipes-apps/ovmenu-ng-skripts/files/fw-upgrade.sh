@@ -12,7 +12,7 @@ OV_DIRNAME=$USB_STICK/openvario
 TIMESTAMP_3_19=1695000000
 
 # temporary directories at USB stick to save the setting informations
-SDC_DIR=$OV_DIRNAME/recover_data
+RECOVER_DIR=/home/root/recover_data
 MNT_DIR="mnt"
 # MNT_DIR=$OV_DIRNAME/usb
 
@@ -222,8 +222,15 @@ function select_image(){
             esac
         else
             # grep a version in form '##.##.##-##' like '3.0.2-20' 
-            # TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
-            TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
+            TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
+            if [ -z "$TARGET_FW_VERSION" ]; then
+              # ... or in form '##.##.##.##' like '3.2.20.1' 
+              TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+')
+            fi
+            if [ -z "$TARGET_FW_VERSION" ]; then
+              # ... or in form '##.##.##' like '3.0.2' 
+              TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
+            fi
             TARGET_FILENAME_TYPE=2
             TARGET_HW=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
             # awk is splitting 'OV-3.0.2.20-CB2-CH57.img.gz' in:
@@ -343,62 +350,40 @@ function save_system(){
     #================== System Config =======================================================
     echo "1st: save system config in upgrade.cfg for restoring reason"
     # 1st save system config in upgrade.cfg for restoring reason
-      if [ "$UPGRADE_TYPE" = "1" ]; then  # only from new to new...
-        SDC_DIR=data/recover_data
-      else
-        if [ -d "$USB_STICK/openvario" ]; then  # recognizes if USB stick is in and mounted
-          SDC_DIR=$USB_STICK/openvario/recover_data
-        fi    
-      fi
-    debug_stop "SDC_DIR  = $SDC_DIR"
-    mkdir -p $SDC_DIR
+    
+    debug_stop "RECOVER_DIR  = $RECOVER_DIR"
+    mkdir -p $RECOVER_DIR
     
     # start with a new 'upgrade.cfg':
-    rm -f $SDC_DIR/upgrade.cfg
+    rm -f $RECOVER_DIR/upgrade.cfg
     if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
         if /bin/systemctl --quiet is-enabled dropbear.socket; then
             echo "SSH=\"enabled\""
-            echo "SSH=\"enabled\"" >> $SDC_DIR/upgrade.cfg
+            echo "SSH=\"enabled\"" >> $RECOVER_DIR/upgrade.cfg
         elif /bin/systemctl --quiet is-active dropbear.socket; then
             echo "SSH=\"temporary\""
-            echo "SSH=\"temporary\"" >> $SDC_DIR/upgrade.cfg
+            echo "SSH=\"temporary\"" >> $RECOVER_DIR/upgrade.cfg
         else
             echo "SSH=\"disabled\""
-            echo "SSH=\"disabled\"" >> $SDC_DIR/upgrade.cfg
+            echo "SSH=\"disabled\"" >> $RECOVER_DIR/upgrade.cfg
         fi
     else
         # if there no dropbear.preset found -> enable the SSH like in this
         # old fw version!
         echo "SSH=\"enabled\""
-        echo "SSH=\"enabled\"" >> $SDC_DIR/upgrade.cfg
+        echo "SSH=\"enabled\"" >> $RECOVER_DIR/upgrade.cfg
     fi
 
-    tar cvf - /var/lib/connman | gzip >$SDC_DIR/connman.tar.gz
+    tar cvf - /var/lib/connman | gzip >$RECOVER_DIR/connman.tar.gz
 
     brightness=$(</sys/class/backlight/lcd/brightness)
     if [ -n brightness ]; then
       echo "BRIGHTNESS=\"$brightness\""
-      echo "BRIGHTNESS=\"$brightness\"" >> $SDC_DIR/upgrade.cfg
+      echo "BRIGHTNESS=\"$brightness\"" >> $RECOVER_DIR/upgrade.cfg
     else
       echo "'brightness' doesn't exist"
-      echo "BRIGHTNESS=\"9\"" >> $SDC_DIR/upgrade.cfg    
+      echo "BRIGHTNESS=\"9\"" >> $RECOVER_DIR/upgrade.cfg    
     fi 
-    
-    echo "HARDWARE_BASE=\"$BASE_HW\"" >> $SDC_DIR/upgrade.cfg
-    echo "FIRMWARE_BASE=\"$BASE_FW_VERSION\"" >> $SDC_DIR/upgrade.cfg
-    echo "FW_TYPE_BASE=\"$FW_TYPE_BASE\"" >> $SDC_DIR/upgrade.cfg
-    # echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $SDC_DIR/upgrade.cfg
-    echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $SDC_DIR/upgrade.cfg
-    echo "FIRMWARE_TARGET=\"$TARGET_FW_VERSION\"" >> $SDC_DIR/upgrade.cfg
-    echo "FW_TYPE_TARGET=\"$FW_TYPE_TARGET\"" >> $SDC_DIR/upgrade.cfg
-    # UpgradeType:
-    # 1- from new fw to new fw
-    # 2 - from old fw to new fw
-    # 3 - from new fw to old fw
-    # 4 - from old fw to old fw
-    # other types are not supported (f.e. old to previous an so on)!
-    echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $SDC_DIR/upgrade.cfg
-    
 
     # TODO: with which firmware there was the change?
     vercomp "${TARGET_FW_VERSION//-/.}" "22000"
@@ -418,8 +403,23 @@ function save_system(){
     fi
 
     echo "ROTATION=\"$rotation\""
-    echo "ROTATION=\"$rotation\"" >> $SDC_DIR/upgrade.cfg
+    echo "ROTATION=\"$rotation\"" >> $RECOVER_DIR/upgrade.cfg
     echo "System Save End"
+
+    echo "HARDWARE_BASE=\"$BASE_HW\"" >> $RECOVER_DIR/upgrade.cfg
+    echo "FIRMWARE_BASE=\"$BASE_FW_VERSION\"" >> $RECOVER_DIR/upgrade.cfg
+    echo "FW_TYPE_BASE=\"$FW_TYPE_BASE\"" >> $RECOVER_DIR/upgrade.cfg
+
+    echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $RECOVER_DIR/upgrade.cfg
+    echo "FIRMWARE_TARGET=\"$TARGET_FW_VERSION\"" >> $RECOVER_DIR/upgrade.cfg
+    echo "FW_TYPE_TARGET=\"$FW_TYPE_TARGET\"" >> $RECOVER_DIR/upgrade.cfg
+    # UpgradeType:
+    # 1- from new fw to new fw
+    # 2 - from old fw to new fw
+    # 3 - from new fw to old fw
+    # 4 - from old fw to old fw
+    # other types are not supported (f.e. old to previous an so on)!
+    echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $RECOVER_DIR/upgrade.cfg
 }
 
 #------------------------------------------------------------------------------
@@ -575,11 +575,16 @@ select_image
 if [ -f "${IMAGEFILE}" ]; then
     echo "Start..."
     # make tmp dir clean:
-    if [ -d "$SDC_DIR" ]; then
-        chmod 757 -R $SDC_DIR
-        # don't delete, better to make 'with rsync --delete' rm -r $SDC_DIR
+    if [ -d "$RECOVER_DIR" ]; then
+        chmod 757 -R $RECOVER_DIR
+        # don't delete, better to make 'with rsync --delete' rm -r $RECOVER_DIR
     fi
-    
+
+    if [ "$FW_TYPE_BASE" = "1" ]; then # Base is old, delete all nmea logs (log folder)
+    # because this can be very big and destroy the upgrade...    
+      rm -vfr $PART2_ROOT/.xcsoar/logs
+      rm -vfr $PART2_ROOT/.xcsoar/cache
+    fi
 
     # 1st: Save the system
     save_system
@@ -587,16 +592,16 @@ if [ -f "${IMAGEFILE}" ]; then
 
     # 2nd: save boot folder to Backup from partition 1
     echo "2nd: save boot folder to Backup from partition 1"
-    # -d is invalid option? rm -fr $SDC_DIR/part1
-    rm -fr $SDC_DIR/part1
-    mkdir -p $SDC_DIR/part1
+    # -d is invalid option? rm -fr $RECOVER_DIR/part1
+    rm -fr $RECOVER_DIR/part1
+    mkdir -p $RECOVER_DIR/part1
     echo "  copy command ..."
     # cp is available on all (old) firmware
     # copy only files from interest (no picture, no uImage) 
-    cp -fv  $PART1/config.uEnv        $SDC_DIR/part1/
-    cp -fv  $PART1/image-version-info $SDC_DIR/part1/
+    cp -fv  $PART1/config.uEnv        $RECOVER_DIR/part1/
+    cp -fv  $PART1/image-version-info $RECOVER_DIR/part1/
     # 17119 don't have a *.dtb file...
-    # cp -fv  $PART1/*.dtb              $SDC_DIR/part1/
+    # cp -fv  $PART1/*.dtb              $RECOVER_DIR/part1/
 
     # 3rd: save OpenSoarData/XCSoarData from partition 2 (or 3):
     echo "3rd: save OpenSoarData / XCSoarData from partition 2 or 3"
@@ -604,26 +609,26 @@ if [ -f "${IMAGEFILE}" ]; then
       # new firmware, rsync is available       
       # no rm, because synchronizing
       # with "$FW_TYPE_TARGET" = "2" this isn't necessary - but helps to find data
-      mkdir -p $SDC_DIR/part2/OpenSoarData
-      rsync -ruvtcE --progress $PART3/OpenSoarData/* $SDC_DIR/part2/OpenSoarData/ \
+      mkdir -p $RECOVER_DIR/part2/OpenSoarData
+      rsync -ruvtcE --progress $PART3/OpenSoarData/* $RECOVER_DIR/part2/OpenSoarData/ \
             --delete --exclude cache  --exclude logs
-      rsync -ruvtcE --progress $PART3/XCSoarData/* $SDC_DIR/part2/XCSoarData/ \
+      rsync -ruvtcE --progress $PART3/XCSoarData/* $RECOVER_DIR/part2/XCSoarData/ \
             --delete --exclude cache  --exclude logs
-      rsync -uvtcE --progress $PART2_ROOT/.bash_history $SDC_DIR/part2/
+      rsync -uvtcE --progress $PART2_ROOT/.bash_history $RECOVER_DIR/part2/
     else  # Base is old, data coming from '.xcsoar' folder
       if [ -n "$RSYNC_COPY" ]; then
           # no rm, because synchronizing
-          mkdir -p $SDC_DIR/part2/xcsoar
-          rsync -ruvtcE --progress $PART2_ROOT/.xcsoar/* $SDC_DIR/part2/xcsoar/ \
+          mkdir -p $RECOVER_DIR/part2/xcsoar
+          rsync -ruvtcE --progress $PART2_ROOT/.xcsoar/* $RECOVER_DIR/part2/xcsoar/ \
                 --delete --exclude cache  --exclude logs
-          rsync -uvtcE --progress $PART2_ROOT/.bash_history $SDC_DIR/part2/
+          rsync -uvtcE --progress $PART2_ROOT/.bash_history $RECOVER_DIR/part2/
       else
           echo "  copy command (rsync not available)..."
           # this is possible on older fw (17119 for example)
-          rm -fr $SDC_DIR/part2/*
-          mkdir -p $SDC_DIR/part2/xcsoar
-          cp -rfv  $PART2_ROOT/.xcsoar/* $SDC_DIR/part2/xcsoar/
-          cp -fv   $PART2_ROOT/.bash_history $SDC_DIR/part2/
+          rm -fr $RECOVER_DIR/part2/*
+          mkdir -p $RECOVER_DIR/part2/xcsoar
+          cp -rfv  $PART2_ROOT/.xcsoar/* $RECOVER_DIR/part2/xcsoar/
+          cp -fv   $PART2_ROOT/.bash_history $RECOVER_DIR/part2/
       fi
     fi
     debug_stop
@@ -631,8 +636,8 @@ if [ -f "${IMAGEFILE}" ]; then
     # HardLink at FAT isn't possible
     if [ -d "$PART2_ROOT/.glider_club" ]; then
         echo "save gliderclub data from partition 2"
-        mkdir -p $SDC_DIR/part2/glider_club
-        cp -frv $PART2_ROOT/.glider_club/* $SDC_DIR/part2/glider_club/
+        mkdir -p $RECOVER_DIR/part2/glider_club
+        cp -frv $PART2_ROOT/.glider_club/* $RECOVER_DIR/part2/glider_club/
     fi
     
     # Synchronize the commands (?)
@@ -640,12 +645,7 @@ if [ -f "${IMAGEFILE}" ]; then
 
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGE_NAME !"
-    echo "IMAGEFILE=$IMAGE_NAME" >> $SDC_DIR/upgrade.cfg
-###    if [ "$FW_TYPE_BASE" = "2" ]; then
-###      # echo "$IMAGE_NAME" > data/upgrade.file
-###    else
-###      echo "IMAGENAME=$IMAGE_NAME" >> 
-###    fi
+    echo "IMAGEFILE=$IMAGE_NAME" >> $RECOVER_DIR/upgrade.cfg
 
     echo "Upgrade step 1 finished!"
     chmod 757 -R $MNT_DIR
