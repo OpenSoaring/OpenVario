@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DEBUG_STOP="n"
+VERBOSE=n
 
 USB_STICK=/usb/usbstick
 DIALOG_CANCEL=1
@@ -48,9 +49,16 @@ function debug_stop(){
 }
 
 #------------------------------------------------------------------------------
+function printv(){
+    if [ "$VERBOSE" = "y" ]; then
+      echo "$1"
+    fi
+}
+
+#------------------------------------------------------------------------------
 vercomp () {
-    echo "compare '$1' vs. '$2'"
-    echo "---------------------"
+    printv "compare '$1' vs. '$2'"
+    printv "---------------------"
     if [[ $1 == $2 ]]
     then
         # debug_stop "equal!"
@@ -257,12 +265,12 @@ function select_image(){
         debug_stop
     fi
     # 0 - equal, 1 - lower, 2 greater
-    echo "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
+    printv "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
     vercomp "${TARGET_FW_VERSION//-/.}" "3.2.19"
     FW_TYPE_TARGET=$?
     vercomp   "${BASE_FW_VERSION//-/.}"   "3.2.19"
     FW_TYPE_BASE=$?
-    echo "2) '$FW_TYPE_BASE' => '$FW_TYPE_TARGET'"
+    printv "2) '$FW_TYPE_BASE' => '$FW_TYPE_TARGET'"
     if [ "$FW_TYPE_TARGET" = "2" ]; then
       if [ "$FW_TYPE_BASE" = "2" ]; then
         UPGRADE_TYPE=1  # 1- from new fw to new fw
@@ -305,11 +313,10 @@ function detect_base() {
 
     # read 1st line in 'image-version-info'
     VERSION_INFO=$(head -n 1 $PART1/image-version-info)
-    # fdtfile=openvario-57-lvds.dtb
     if [ -z "$fdtfile" ]; then
       # this means, we have a (very) old version (< 21000 ?)
-      echo "'$fdtfile' don't exist!?!"
-      echo "What is to do???"
+      printv "'$fdtfile' don't exist!?!"
+      printv "What is to do???"
       # VERSION_INFO=$(head -n 1 $PART1/image-version-info)
       fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $3}')
       if [ -z "$fdtfile" ]; then fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $2}'); fi
@@ -589,60 +596,8 @@ if [ -f "${IMAGEFILE}" ]; then
     # 1st: Save the system
     save_system
 
-
-    # 2nd: save boot folder to Backup from partition 1
-    echo "2nd: save boot folder to Backup from partition 1"
-    # -d is invalid option? rm -fr $RECOVER_DIR/part1
-    rm -fr $RECOVER_DIR/part1
-    mkdir -p $RECOVER_DIR/part1
-    echo "  copy command ..."
-    # cp is available on all (old) firmware
-    # copy only files from interest (no picture, no uImage) 
-    cp -fv  $PART1/config.uEnv        $RECOVER_DIR/part1/
-    cp -fv  $PART1/image-version-info $RECOVER_DIR/part1/
-    # 17119 don't have a *.dtb file...
-    # cp -fv  $PART1/*.dtb              $RECOVER_DIR/part1/
-
-    # 3rd: save OpenSoarData/XCSoarData from partition 2 (or 3):
-    echo "3rd: save OpenSoarData / XCSoarData from partition 2 or 3"
-    if [ "$FW_TYPE_BASE" = "2" ]; then # Base is new, data on 3rd partition 
-      # new firmware, rsync is available       
-      # no rm, because synchronizing
-      # with "$FW_TYPE_TARGET" = "2" this isn't necessary - but helps to find data
-      mkdir -p $RECOVER_DIR/part2/OpenSoarData
-      rsync -ruvtcE --progress $PART3/OpenSoarData/* $RECOVER_DIR/part2/OpenSoarData/ \
-            --delete --exclude cache  --exclude logs
-      rsync -ruvtcE --progress $PART3/XCSoarData/* $RECOVER_DIR/part2/XCSoarData/ \
-            --delete --exclude cache  --exclude logs
-      rsync -uvtcE --progress $PART2_ROOT/.bash_history $RECOVER_DIR/part2/
-    else  # Base is old, data coming from '.xcsoar' folder
-      if [ -n "$RSYNC_COPY" ]; then
-          # no rm, because synchronizing
-          mkdir -p $RECOVER_DIR/part2/xcsoar
-          rsync -ruvtcE --progress $PART2_ROOT/.xcsoar/* $RECOVER_DIR/part2/xcsoar/ \
-                --delete --exclude cache  --exclude logs
-          rsync -uvtcE --progress $PART2_ROOT/.bash_history $RECOVER_DIR/part2/
-      else
-          echo "  copy command (rsync not available)..."
-          # this is possible on older fw (17119 for example)
-          rm -fr $RECOVER_DIR/part2/*
-          mkdir -p $RECOVER_DIR/part2/xcsoar
-          cp -rfv  $PART2_ROOT/.xcsoar/* $RECOVER_DIR/part2/xcsoar/
-          cp -fv   $PART2_ROOT/.bash_history $RECOVER_DIR/part2/
-      fi
-    fi
-    debug_stop
-
-    # HardLink at FAT isn't possible
-    if [ -d "$PART2_ROOT/.glider_club" ]; then
-        echo "save gliderclub data from partition 2"
-        mkdir -p $RECOVER_DIR/part2/glider_club
-        cp -frv $PART2_ROOT/.glider_club/* $RECOVER_DIR/part2/glider_club/
-    fi
+    # 2nd: move saving recovery data to ov-upgrade.itb
     
-    # Synchronize the commands (?)
-    sync
-
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGE_NAME !"
     echo "IMAGEFILE=$IMAGE_NAME" >> $RECOVER_DIR/upgrade.cfg
