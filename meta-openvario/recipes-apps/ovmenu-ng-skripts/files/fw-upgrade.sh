@@ -6,16 +6,13 @@ VERBOSE=n
 USB_STICK=/usb/usbstick
 DIALOG_CANCEL=1
 SELECTION=/tmp/output.sh.$$
-OV_DIRNAME=$USB_STICK/openvario
+USB_OPENVARIO=$USB_STICK/openvario
 
-# timestamp > OV-3.0.1-19-CB2-XXXX.img.gz
 # timestamp > OV-3.0.1-19-CB2-XXXX.img.gz
 TIMESTAMP_3_19=1695000000
 
-# temporary directories at USB stick to save the setting informations
-RECOVER_DIR=/home/root/recover_data
-MNT_DIR="mnt"
-# MNT_DIR=$OV_DIRNAME/usb
+# MNT_DIR="mnt"
+# MNT_DIR=$USB_OPENVARIO/usb
 
 # SD card:
 TARGET=/dev/mmcblk0
@@ -28,11 +25,15 @@ BASE_FW_VERSION=0
 UPGRADE_TYPE=0
 
 # partition 1 of SD card is mounted as '/boot'!
-PART1=/boot
+PARTITION1=/boot
 # partition 2 of SD card is mounted on the root of the system
-PART2_ROOT=/home/root
+PARTITION2_ROOT=/home/root
 # partition 3 of SD card is mounted on the root of the system
-PART3=$PART2_ROOT/data
+PARTITION3=$PARTITION2_ROOT/data
+
+# temporary directories at USB stick to save the setting informations
+RECOVER_DIR=$PARTITION2_ROOT/recover_data
+
 BATCH_PATH=$(dirname $0)
 #------------------------------------------------------------------------------
 function error_stop(){
@@ -118,7 +119,7 @@ vercomp () {
 
 #------------------------------------------------------------------------------
 function select_image(){
-    # images=$OV_DIRNAME/images/O*V*-*.gz
+    # images=$USB_OPENVARIO/images/O*V*-*.gz
     images=data/images/O*V*-*.gz
 
     let count=0 # define counting variable
@@ -153,7 +154,7 @@ function select_image(){
         files_nice+=($count "$temp") # selection index + name
     done < <( ls -1 $images )
 #------------------------------------------------------------------------------
-    images=$OV_DIRNAME/images/O*V*-*.gz
+    images=$USB_OPENVARIO/images/O*V*-*.gz
     while read -r line; do # process file by file
         let count=$count+1
         files+=($count "$line")
@@ -300,24 +301,24 @@ function clear_display(){
 #------------------------------------------------------------------------------
 function detect_base() {
     # if config.uEnv not exist
-    if [ ! -f $PART1/config.uEnv ]; then
-        PART1="/mnt/boot"
-        mkdir -p $PART1
+    if [ ! -f $PARTITION1/config.uEnv ]; then
+        PARTITION1="/mnt/boot"
+        mkdir -p $PARTITION1
         # $TARGET  = /dev/mmcblk0
-        mount /dev/mmcblk0p1 $PART1
-        if [ ! -f $PART1/config.uEnv ]; then
-           error_stop "'$PART1/config.uEnv' don't exist!?!"
+        mount /dev/mmcblk0p1 $PARTITION1
+        if [ ! -f $PARTITION1/config.uEnv ]; then
+           error_stop "'$PARTITION1/config.uEnv' don't exist!?!"
         fi
     fi
-    source $PART1/config.uEnv
+    source $PARTITION1/config.uEnv
 
     # read 1st line in 'image-version-info'
-    VERSION_INFO=$(head -n 1 $PART1/image-version-info)
+    VERSION_INFO=$(head -n 1 $PARTITION1/image-version-info)
     if [ -z "$fdtfile" ]; then
       # this means, we have a (very) old version (< 21000 ?)
       printv "'$fdtfile' don't exist!?!"
       printv "What is to do???"
-      # VERSION_INFO=$(head -n 1 $PART1/image-version-info)
+      # VERSION_INFO=$(head -n 1 $PARTITION1/image-version-info)
       fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $3}')
       if [ -z "$fdtfile" ]; then fdtfile=$(echo $VERSION_INFO | awk -F'-openvario-|-testing' '{print $2}'); fi
       fdtfile=$(echo $fdtfile | awk -F'-201|202' '{print $1}')
@@ -475,12 +476,12 @@ function start_upgrade(){
 
     if [ ! -f "/usr/bin/ov-recovery.itb" ]; then
       echo "this is an old firmware"
-      ITB_TARGET=$OV_DIRNAME/ov-recovery.itb
+      ITB_TARGET=$USB_OPENVARIO/ov-recovery.itb
       ### ITB_TARGET=./ov-recovery.itb
-      if [ -f "$OV_DIRNAME/images/$TARGET_HW/ov-recovery.itb" ]; then
+      if [ -f "$USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb" ]; then
         # hardlink from FAT (USB-Stick..) is not possible 
         echo "copy 'ov-recovery.itb' in the correct directory..."
-        cp -fv $OV_DIRNAME/images/$TARGET_HW/ov-recovery.itb   $ITB_TARGET
+        cp -fv $USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb   $ITB_TARGET
         echo "'ov-recovery.itb' done"
       fi
       if [ ! -f "$ITB_TARGET" ]; then
@@ -518,7 +519,7 @@ function start_upgrade(){
     ;;
     4)  # - from old fw to old fw
         echo "both FW are a old type!"
-        boot_sector_file=$OV_DIRNAME/images/$TARGET_HW/bootsector.bin.gz
+        boot_sector_file=$USB_OPENVARIO/images/$TARGET_HW/bootsector.bin.gz
         if [ -e "$boot_sector_file" ]; then
           echo "copy bootsector file to bootsector"
           gzip -cfd $boot_sector_file | dd of=$TARGET bs=1024 count=512
@@ -568,8 +569,8 @@ if [ -b "/dev/sda1" ]; then
     mkdir -p $USB_STICK
     mount /dev/sda1 $USB_STICK
     # or sdb1, sdc1, ...
-    if [ ! -d $OV_DIRNAME ]; then
-      error_stop "'$OV_DIRNAME' don't exist!?!"
+    if [ ! -d $USB_OPENVARIO ]; then
+      error_stop "'$USB_OPENVARIO' don't exist!?!"
     fi
   fi 
 fi
@@ -589,8 +590,8 @@ if [ -f "${IMAGEFILE}" ]; then
 
     if [ "$FW_TYPE_BASE" = "1" ]; then # Base is old, delete all nmea logs (log folder)
     # because this can be very big and destroy the upgrade...    
-      rm -vfr $PART2_ROOT/.xcsoar/logs
-      rm -vfr $PART2_ROOT/.xcsoar/cache
+      rm -vfr $PARTITION2_ROOT/.xcsoar/logs
+      rm -vfr $PARTITION2_ROOT/.xcsoar/cache
     fi
 
     # 1st: Save the system
@@ -601,10 +602,10 @@ if [ -f "${IMAGEFILE}" ]; then
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGE_NAME !"
     echo "IMAGEFILE=$IMAGE_NAME" >> $RECOVER_DIR/upgrade.cfg
-
     echo "Upgrade step 1 finished!"
-    chmod 757 -R $MNT_DIR
-    rm -rf $MNT_DIR
+
+    # chmod 757 -R $MNT_DIR
+    # rm -rf $MNT_DIR
 
     IMAGE_NAME=$(basename "$IMAGEFILE" .gz)
     TIMEOUT=5
