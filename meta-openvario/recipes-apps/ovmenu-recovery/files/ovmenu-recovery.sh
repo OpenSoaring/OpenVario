@@ -7,19 +7,23 @@ DIALOGRC=/opt/bin/openvario.rc
 # Config
 TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
-DIRNAME=/mnt/openvario
-SDMOUNT=/sd
+PARTITION1=/mmc1
+PARTITION2=/mmc2
 PARTITION3=""
+USB_STICK=/mnt
 
-DEBUG_LOG=$DIRNAME/debug.log
+USB_OPENVARIO=/$USB_STICK/openvario
+
+
+DEBUG_LOG=$USB_OPENVARIO/debug.log
 
 # Target device (typically /dev/mmcblk0):
 TARGET=/dev/mmcblk0
 
 # Image file search string:
-# images=$DIRNAME/images/OpenVario-linux*.gz
-# old: images=$DIRNAME/images/OpenVario-linux*.gz
-images=$DIRNAME/images/O*V*-*.gz
+# images=$USB_OPENVARIO/images/OpenVario-linux*.gz
+# old: images=$USB_OPENVARIO/images/OpenVario-linux*.gz
+images=$USB_OPENVARIO/images/O*V*-*.gz
 RECOVER_DIR=/home/root/recover_data
 
 #------------------------------------------------------------------------------
@@ -75,12 +79,12 @@ done
   
 function backup_image(){
   datestring=$(date +%F)
-  mkdir -p /$DIRNAME/backup
+  mkdir -p /$USB_OPENVARIO/backup
   # backup 1GB
-  # dd if=/dev/mmcblk0 bs=1M count=1024 | gzip > /$DIRNAME/backup/$datestring.img.gz
+  # dd if=/dev/mmcblk0 bs=1M count=1024 | gzip > /$USB_OPENVARIO/backup/$datestring.img.gz
   
   # test backup 50MB (Boot areal + 10 MB)
-  dd if=/dev/mmcblk0 bs=1M count=50 | gzip > /$DIRNAME/backup/$datestring.img.gz | dialog --gauge "Backup Image ... " 10 50 0
+  dd if=/dev/mmcblk0 bs=1M count=50 | gzip > /$USB_OPENVARIO/backup/$datestring.img.gz | dialog --gauge "Backup Image ... " 10 50 0
 #  (pv -n ${IMAGEFILE} | gunzip -c | dd bs=1024 skip=1024 | dd of=$TARGET bs=1024 seek=1024) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
  echo "Backup finished"
 }
@@ -169,7 +173,7 @@ function select_image(){
         files_nice+=($count "$temp") # selection index + name
     done < <( ls -1 $images )
 #------------------------------------------------------------------------------
-##    images=$OV_DIRNAME/images/O*V*-*.gz
+##    images=$OV_USB_OPENVARIO/images/O*V*-*.gz
 ##    while read -r line; do # process file by file
 ##        let count=$count+1
 ##        files+=($count "$line")
@@ -251,16 +255,15 @@ function updateall(){
     #########################################
     # remove the recovery file:
     echo "Upgrade '${IMAGEFILE}' finished"  >> $DEBUG_LOG
-    rm -f $DIRNAME/ov-recovery.itb
 }
 
 #------------------------------------------------------------------------------
 function recover_system(){
     # recover OpenSoarData:
     if [ -d "$RECOVER_DIR" ]; then
-        mkdir -p $SDMOUNT
+        mkdir -p $PARTITION1
         if [ -e "$RECOVER_DIR/part1/config.uEnv" ]; then
-            mount ${TARGET}p1  $SDMOUNT
+            mount ${TARGET}p1  $PARTITION1
             source $RECOVER_DIR/part1/config.uEnv
             echo "sdcard/part1/config.uEnv"      >> $DEBUG_LOG
             echo "------------------------"      >> $DEBUG_LOG
@@ -271,19 +274,19 @@ function recover_system(){
             echo "========================"      >> $DEBUG_LOG
             if [ -n rotation ]; then
                 echo "Set rotaton '$rotation'"  >> $DEBUG_LOG
-                sed -i 's/^rotation=.*/rotation='$rotation'/' $SDMOUNT/config.uEnv
+                sed -i 's/^rotation=.*/rotation='$rotation'/' $PARTITION1/config.uEnv
             fi
             if [ -n $font ]; then
-                sed -i 's/^font=.*/font='$font'/' $SDMOUNT/config.uEnv
+                sed -i 's/^font=.*/font='$font'/' $PARTITION1/config.uEnv
                 echo "Set font '$font'"  >> $DEBUG_LOG
             fi
             if [ -n $brightness ]; then
-              count=$(grep -c "brightness" $SDMOUNT/config.uEnv)
+              count=$(grep -c "brightness" $PARTITION1/config.uEnv)
               if [ "$count" = "0" ]; then 
-                echo "brightness=$brightness" >> $SDMOUNT/config.uEnv
+                echo "brightness=$brightness" >> $PARTITION1/config.uEnv
                 echo "Set brightness (1) '$brightness' NEW"  >> $DEBUG_LOG
               else
-                sed -i 's/^brightness=.*/brightness='$brightness'/' $SDMOUNT/config.uEnv
+                sed -i 's/^brightness=.*/brightness='$brightness'/' $PARTITION1/config.uEnv
                 echo "Set brightness (2) '$brightness' UPDATE"  >> $DEBUG_LOG
               fi
             fi
@@ -297,29 +300,29 @@ function recover_system(){
             echo "SSH           = $SSH"         >> $DEBUG_LOG
             echo "========================"     >> $DEBUG_LOG
             if [ -n $ROTATION ]; then
-                sed -i 's/^rotation=.*/rotation='$ROTATION'/' $SDMOUNT/config.uEnv
+                sed -i 's/^rotation=.*/rotation='$ROTATION'/' $PARTITION1/config.uEnv
             fi
             if [ -n font ]; then
-                sed -i 's/^font=.*/font='$font'/' $SDMOUNT/config.uEnv
+                sed -i 's/^font=.*/font='$font'/' $PARTITION1/config.uEnv
             fi
             # TODO(August2111): check, if this correct
             if [ -n $BRIGHTNESS ]; then
-                  count=$(grep -c "brightness" $SDMOUNT/config.uEnv)
+                  count=$(grep -c "brightness" $PARTITION1/config.uEnv)
                   if [ "$count" = "0" ]; then 
-                    echo "brightness=$BRIGHTNESS" >> $SDMOUNT/config.uEnv
+                    echo "brightness=$BRIGHTNESS" >> $PARTITION1/config.uEnv
                     echo "Set BRIGHTNESS (3) '$BRIGHTNESS' NEW"  >> $DEBUG_LOG
                   else
-                    sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' $SDMOUNT/config.uEnv
+                    sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' $PARTITION1/config.uEnv
                     echo "Set BRIGHTNESS (4) '$BRIGHTNESS' UPDATE"  >> $DEBUG_LOG
                   fi
             fi
             
             
-            umount $SDMOUNT
+            umount $PARTITION1
         fi
         
 
-        mount ${TARGET}p2  $SDMOUNT
+        mount ${TARGET}p2  $PARTITION2
           # 1 - from new fw to new fw
           # 2 - from old fw to new fw
           # 3 - from new fw to old fw
@@ -330,26 +333,26 @@ function recover_system(){
           # do now the same as with the old target yet
           # later: copy the zip file only (if exist)...           
         else 
-            rm -rf $SDMOUNT/home/root/.xcsoar/*  # delete the image data
-            cp -frv $RECOVER_DIR/part2/xcsoar/* $SDMOUNT/home/root/.xcsoar/
+            rm -rf $PARTITION2/home/root/.xcsoar/*  # delete the image data
+            cp -frv $RECOVER_DIR/part2/xcsoar/* $PARTITION2/home/root/.xcsoar/
         fi
 
         if [ -d "$RECOVER_DIR/part2/glider_club" ]; then
-            mkdir -p $SDMOUNT/home/root/.glider_club
-            cp -frv $RECOVER_DIR/part2/glider_club/* $SDMOUNT/home/root/.glider_club/
+            mkdir -p $PARTITION2/home/root/.glider_club
+            cp -frv $RECOVER_DIR/part2/glider_club/* $PARTITION2/home/root/.glider_club/
         fi
         # restore the bash history:
-        cp -fv  $RECOVER_DIR/part2/.bash_history $SDMOUNT/home/root/
+        cp -fv  $RECOVER_DIR/part2/.bash_history $PARTITION2/home/root/
         
         if [ -e "$RECOVER_DIR/connman.tar.gz" ]; then
-          tar -zxf $RECOVER_DIR/connman.tar.gz --directory $SDMOUNT/
+          tar -zxf $RECOVER_DIR/connman.tar.gz --directory $PARTITION2/
         fi
         
         if [ -e "$RECOVER_DIR/upgrade.cfg" ]; then
-          cp $RECOVER_DIR/upgrade.cfg $SDMOUNT/home/root/upgrade.cfg
+          cp $RECOVER_DIR/upgrade.cfg $PARTITION2/home/root/upgrade.cfg
         fi
         
-        ls -l $SDMOUNT/home/root/.xcsoar
+        ls -l $PARTITION2/home/root/.xcsoar
         echo "ready OV upgrade!"
         echo "ready OV upgrade!"  >> $DEBUG_LOG
     else
@@ -368,7 +371,7 @@ function recover_system(){
     0|1) echo "create 3rd partition 'ov-data'"
          echo "------------------------------"
          # debug: read -p "Press enter to continue"
-         source $SDMOUNT/usr/bin/create_datapart.sh
+         source $PARTITION2/usr/bin/create_datapart.sh
          ;;
     *)   echo "unknown UPGRADE_LEVEL '$UPGRADE_LEVEL'"  >> $DEBUG_LOG ;;
     esac
@@ -377,9 +380,9 @@ function recover_system(){
     echo "Upgrade ready"  >> $DEBUG_LOG
     # set dmesg kernel level back to the highest:
     dmesg -n 8
-    dmesg > $DIRNAME/dmesg.txt
-    gunzip -f $DIRNAME/dmesg.txt
-    umount $SDMOUNT
+    dmesg > $USB_OPENVARIO/dmesg.txt
+    gunzip -f $USB_OPENVARIO/dmesg.txt
+    umount $PARTITION2
     sync
     #############################################################
     # only for debug-test
@@ -405,21 +408,21 @@ function save_old_system() {
     # -d is invalid option? rm -fr $RECOVER_DIR/part1
 
     echo "  copy command ..."
-    mkdir -p $SDMOUNT
+    mkdir -p $PARTITION2
     mkdir -p $RECOVER_DIR/part1
-    mount ${TARGET}p1  $SDMOUNT
+    mount ${TARGET}p1  $PARTITION2
     # cp is available on all (old) firmware
     # copy only files from interest (no picture, no uImage) 
-    cp -fv  $SDMOUNT/config.uEnv        $RECOVER_DIR/part1/
-    cp -fv  $SDMOUNT/image-version-info $RECOVER_DIR/part1/
+    cp -fv  $PARTITION2/config.uEnv        $RECOVER_DIR/part1/
+    cp -fv  $PARTITION2/image-version-info $RECOVER_DIR/part1/
     # 17119 don't have a *.dtb file...
-    # cp -fv  $SDMOUNT/*.dtb              $RECOVER_DIR/part1/
-    umount $SDMOUNT
+    # cp -fv  $PARTITION2/*.dtb              $RECOVER_DIR/part1/
+    umount $PARTITION2
 
     # 3rd: save OpenSoarData/XCSoarData from partition 2 (or 3):
     echo "3rd: save OpenSoarData / XCSoarData from partition 2 or 3"
-    mount ${TARGET}p2  $SDMOUNT
-    PART2_ROOT=$SDMOUNT/home/root
+    mount ${TARGET}p2  $PARTITION2
+    PART2_ROOT=$PARTITION2/home/root
     # if [ "$FW_TYPE_BASE" = "2" ]; then # Base is new, data on 3rd partition 
     mkdir -p $RECOVER_DIR/part2/xcsoar
     if [ "$UPGRADE_TYPE" = "3" ]; then # Base is new, Target is old
@@ -446,7 +449,7 @@ function save_old_system() {
     debug_stop "saving finished"
     # Synchronize the commands (?)
     sync
-    umount $SDMOUNT
+    umount $PARTITION2
 }
 #==============================================================================
 #==============================================================================
@@ -462,11 +465,15 @@ trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 # debug_stop "... and begin..."
 # ??? setfont cp866-8x14.psf.gz
 
-mkdir -p $SDMOUNT
-mount ${TARGET}p2  $SDMOUNT
-rm -f $SDMOUNT/home/root/ov-recovery.itb
-if [ -f "$SDMOUNT/home/root/upgrade.cfg" ]; then
-  cp -fv "$SDMOUNT/home/root/upgrade.cfg" "/home/root/upgrade.cfg"
+#delete ov-recovery.itb from Usb stick (usb/openvario/ov-recovery.itb):
+rm -f $USB_OPENVARIO/ov-recovery.itb
+
+mkdir -p $PARTITION2
+mount ${TARGET}p2  $PARTITION2
+#delete ov-recovery.itb root:
+rm -f $PARTITION2/home/root/ov-recovery.itb
+if [ -f "$PARTITION2/home/root/upgrade.cfg" ]; then
+  cp -fv "$PARTITION2/home/root/upgrade.cfg" "/home/root/upgrade.cfg"
 fi 
 
 if [ -b "${TARGET}p3" ]; then
@@ -482,20 +489,23 @@ else
   debug_stop "No $PARTITION3!!"
 fi
 
-# DEBUG_LOG=$DIRNAME/debug.log
+# DEBUG_LOG=$USB_OPENVARIO/debug.log
 echo "Upgrade start"  > $DEBUG_LOG
 date  >> $DEBUG_LOG
 time  >> $DEBUG_LOG
 date; time  >> $DEBUG_LOG
+date; time
 
 
-if [ -d $SDMOUNT/home/root/recover_data ]; then
-  cp -rfv $SDMOUNT/home/root/recover_data /home/root 
+if [ -d $PARTITION2/home/root/recover_data ]; then
+  cp -rfv $PARTITION2/home/root/recover_data /home/root 
   debug_stop "'copy recover_data' done!"
 fi
-umount $SDMOUNT
+umount $PARTITION2
 
 if [ -e $RECOVER_DIR/upgrade.cfg ]; then
+  source $RECOVER_DIR/upgrade.cfg
+elif [ -e $RECOVER_DIR/upgrade.cfg ]; then
   source $RECOVER_DIR/upgrade.cfg
 elif [ -e $PARTITION3/recover_data/upgrade.cfg ]; then
   source $PARTITION3/upgrade.cfg
@@ -514,8 +524,8 @@ if [ -e $PARTITION3/images/$IMAGEFILE ]; then
   cp "$PARTITION3/images/$IMAGEFILE" ./
   IMAGEFILE="./$IMAGEFILE"
   sync
-elif [ -e $DIRNAME/images/$IMAGEFILE ]; then
-  IMAGEFILE="$DIRNAME/images/$IMAGEFILE"
+elif [ -e $USB_OPENVARIO/images/$IMAGEFILE ]; then
+  IMAGEFILE="$USB_OPENVARIO/images/$IMAGEFILE"
 else
   IMAGEFILE="Not available!"
 fi
