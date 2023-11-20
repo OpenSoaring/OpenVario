@@ -20,11 +20,14 @@ DEBUG_LOG=$USB_OPENVARIO/debug.log
 # Target device (typically /dev/mmcblk0):
 TARGET=/dev/mmcblk0
 
+UPGRADE_CFG=$PARTITION1/upgrade.cfg
+
+
 # Image file search string:
 # images=$USB_OPENVARIO/images/OpenVario-linux*.gz
 # old: images=$USB_OPENVARIO/images/OpenVario-linux*.gz
 images=$USB_OPENVARIO/images/O*V*-*.gz
-RECOVER_DIR=/home/root/recover_data
+# RECOVER_DIR=/home/root/recover_data
 
 #------------------------------------------------------------------------------
 function printv(){
@@ -408,16 +411,16 @@ function save_old_system() {
     # -d is invalid option? rm -fr $RECOVER_DIR/part1
 
     echo "  copy command ..."
-    mkdir -p $PARTITION2
+    mkdir -p $PARTITION1
     mkdir -p $RECOVER_DIR/part1
-    mount ${TARGET}p1  $PARTITION2
+    mount ${TARGET}p1  $PARTITION1
     # cp is available on all (old) firmware
     # copy only files from interest (no picture, no uImage) 
-    cp -fv  $PARTITION2/config.uEnv        $RECOVER_DIR/part1/
-    cp -fv  $PARTITION2/image-version-info $RECOVER_DIR/part1/
+    cp -fv  $PARTITION1/config.uEnv        $RECOVER_DIR/part1/
+    cp -fv  $PARTITION1/image-version-info $RECOVER_DIR/part1/
     # 17119 don't have a *.dtb file...
     # cp -fv  $PARTITION2/*.dtb              $RECOVER_DIR/part1/
-    umount $PARTITION2
+    umount $PARTITION1
 
     # 3rd: save OpenSoarData/XCSoarData from partition 2 (or 3):
     echo "3rd: save OpenSoarData / XCSoarData from partition 2 or 3"
@@ -468,13 +471,16 @@ trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 #delete ov-recovery.itb from Usb stick (usb/openvario/ov-recovery.itb):
 rm -f $USB_OPENVARIO/ov-recovery.itb
 
-mkdir -p $PARTITION2
-mount ${TARGET}p2  $PARTITION2
-#delete ov-recovery.itb root:
-rm -f $PARTITION2/home/root/ov-recovery.itb
-if [ -f "$PARTITION2/home/root/upgrade.cfg" ]; then
-  cp -fv "$PARTITION2/home/root/upgrade.cfg" "/home/root/upgrade.cfg"
+mkdir -p $PARTITION1
+mount ${TARGET}p1  $PARTITION1
+# ov-recovery.itb will be overwritten with dd
+if [ -f "$PARTITION1/upgrade.cfg" ]; then
+  cp -fv "$PARTITION1/upgrade.cfg" "/home/root/upgrade.cfg"
+  source /home/root/upgrade.cfg
 fi 
+echo "AugTest: Upgrade-Config: $RECOVER_DIR/upgrade.cfg "
+debug_stop "Upgrade-Image: $IMAGEFILE "
+
 
 if [ -b "${TARGET}p3" ]; then
   PARTITION3=/mmc3
@@ -484,9 +490,13 @@ if [ -b "${TARGET}p3" ]; then
   debug_stop "$PARTITION3 is mounted"
   sync
   ls $PARTITION3/
+  RECOVER_DIR=$PARTITION3/recover_data
+  mkdir $RECOVER_DIR
 else 
   PARTITION3=""  # empty
   debug_stop "No $PARTITION3!!"
+  RECOVER_DIR=$USB_OPENVARIO/recover_data
+  mkdir $RECOVER_DIR
 fi
 
 # DEBUG_LOG=$USB_OPENVARIO/debug.log
@@ -502,20 +512,6 @@ if [ -d $PARTITION2/home/root/recover_data ]; then
   debug_stop "'copy recover_data' done!"
 fi
 umount $PARTITION2
-
-if [ -e $RECOVER_DIR/upgrade.cfg ]; then
-  source $RECOVER_DIR/upgrade.cfg
-elif [ -e $RECOVER_DIR/upgrade.cfg ]; then
-  source $RECOVER_DIR/upgrade.cfg
-elif [ -e $PARTITION3/recover_data/upgrade.cfg ]; then
-  source $PARTITION3/upgrade.cfg
-else
-  error_stop "'upgrade.cfg' is not available!"
-  IMAGEFILE="Not available!"
-fi
-
-echo "AugTest: Upgrade-Config: $RECOVER_DIR/upgrade.cfg "
-debug_stop "Upgrade-Image: $IMAGEFILE "
 
 # image file name with path!
 if [ -e $PARTITION3/images/$IMAGEFILE ]; then
