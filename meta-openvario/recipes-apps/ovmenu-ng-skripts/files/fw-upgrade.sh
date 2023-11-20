@@ -6,7 +6,7 @@ VERBOSE=n
 USB_STICK=/usb/usbstick
 DIALOG_CANCEL=1
 SELECTION=/tmp/output.sh.$$
-USB_OPENVARIO=$USB_STICK/openvario
+USB_OPENVARIO=""
 
 # timestamp > OV-3.0.1-19-CB2-XXXX.img.gz
 TIMESTAMP_3_19=1695000000
@@ -30,6 +30,9 @@ PARTITION1=/boot
 PARTITION2_ROOT=/home/root
 # partition 3 of SD card is mounted on the root of the system
 PARTITION3=$PARTITION2_ROOT/data
+
+UPGRADE_CFG=$PARTITION1/upgrade.cfg
+# UPGRADE_CFG=$UPGRADE_CFG
 
 # temporary directories at USB stick to save the setting informations
 RECOVER_DIR=$PARTITION2_ROOT/recover_data
@@ -199,14 +202,14 @@ function select_image(){
         echo "IMAGEFILE = $IMAGEFILE"
         
     else
-        echo "no image file available"
+        echo "no image file(s) found"
         IMAGEFILE=""
     fi
     clear_display
 
     if [ ! -e "$IMAGEFILE" ]; then
-        if [ -n $IMAGEFILE ]; then
-            echo "no image file '$IMAGEFILE' found ... "
+        if [ -n "$IMAGEFILE" ]; then
+            echo "no image file '$IMAGEFILE' available ... "
         fi
         exit
     else
@@ -363,23 +366,23 @@ function save_system(){
     mkdir -p $RECOVER_DIR
     
     # start with a new 'upgrade.cfg':
-    rm -f $RECOVER_DIR/upgrade.cfg
+    rm -f $UPGRADE_CFG
     if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
         if /bin/systemctl --quiet is-enabled dropbear.socket; then
             echo "SSH=\"enabled\""
-            echo "SSH=\"enabled\"" >> $RECOVER_DIR/upgrade.cfg
+            echo "SSH=\"enabled\"" >> $UPGRADE_CFG
         elif /bin/systemctl --quiet is-active dropbear.socket; then
             echo "SSH=\"temporary\""
-            echo "SSH=\"temporary\"" >> $RECOVER_DIR/upgrade.cfg
+            echo "SSH=\"temporary\"" >> $UPGRADE_CFG
         else
             echo "SSH=\"disabled\""
-            echo "SSH=\"disabled\"" >> $RECOVER_DIR/upgrade.cfg
+            echo "SSH=\"disabled\"" >> $UPGRADE_CFG
         fi
     else
         # if there no dropbear.preset found -> enable the SSH like in this
         # old fw version!
         echo "SSH=\"enabled\""
-        echo "SSH=\"enabled\"" >> $RECOVER_DIR/upgrade.cfg
+        echo "SSH=\"enabled\"" >> $UPGRADE_CFG
     fi
 
     tar cvf - /var/lib/connman | gzip >$RECOVER_DIR/connman.tar.gz
@@ -387,10 +390,10 @@ function save_system(){
     brightness=$(</sys/class/backlight/lcd/brightness)
     if [ -n brightness ]; then
       echo "BRIGHTNESS=\"$brightness\""
-      echo "BRIGHTNESS=\"$brightness\"" >> $RECOVER_DIR/upgrade.cfg
+      echo "BRIGHTNESS=\"$brightness\"" >> $UPGRADE_CFG
     else
       echo "'brightness' doesn't exist"
-      echo "BRIGHTNESS=\"9\"" >> $RECOVER_DIR/upgrade.cfg    
+      echo "BRIGHTNESS=\"9\"" >> $UPGRADE_CFG    
     fi 
 
     # TODO: with which firmware there was the change?
@@ -411,23 +414,23 @@ function save_system(){
     fi
 
     echo "ROTATION=\"$rotation\""
-    echo "ROTATION=\"$rotation\"" >> $RECOVER_DIR/upgrade.cfg
+    echo "ROTATION=\"$rotation\"" >> $UPGRADE_CFG
     echo "System Save End"
 
-    echo "HARDWARE_BASE=\"$BASE_HW\"" >> $RECOVER_DIR/upgrade.cfg
-    echo "FIRMWARE_BASE=\"$BASE_FW_VERSION\"" >> $RECOVER_DIR/upgrade.cfg
-    echo "FW_TYPE_BASE=\"$FW_TYPE_BASE\"" >> $RECOVER_DIR/upgrade.cfg
+    echo "HARDWARE_BASE=\"$BASE_HW\"" >> $UPGRADE_CFG
+    echo "FIRMWARE_BASE=\"$BASE_FW_VERSION\"" >> $UPGRADE_CFG
+    echo "FW_TYPE_BASE=\"$FW_TYPE_BASE\"" >> $UPGRADE_CFG
 
-    echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $RECOVER_DIR/upgrade.cfg
-    echo "FIRMWARE_TARGET=\"$TARGET_FW_VERSION\"" >> $RECOVER_DIR/upgrade.cfg
-    echo "FW_TYPE_TARGET=\"$FW_TYPE_TARGET\"" >> $RECOVER_DIR/upgrade.cfg
+    echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $UPGRADE_CFG
+    echo "FIRMWARE_TARGET=\"$TARGET_FW_VERSION\"" >> $UPGRADE_CFG
+    echo "FW_TYPE_TARGET=\"$FW_TYPE_TARGET\"" >> $UPGRADE_CFG
     # UpgradeType:
     # 1- from new fw to new fw
     # 2 - from old fw to new fw
     # 3 - from new fw to old fw
     # 4 - from old fw to old fw
     # other types are not supported (f.e. old to previous an so on)!
-    echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $RECOVER_DIR/upgrade.cfg
+    echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $UPGRADE_CFG
 }
 
 #------------------------------------------------------------------------------
@@ -510,6 +513,11 @@ function start_upgrade(){
     2)  # - from old fw to new fw
         echo "Target FW is new but Base FW is old!"
         echo "copy the 1st block (20MB) (boot-sector!)"
+        #-------------------------------- August2111------------------------------
+        if [ -d "$PARTITION3" ]; then
+          gzip -cfd ${IMAGEFILE} | dd of=$PARTITION3/dd_test.bin bs=1M count=20
+        fi
+        #-------------------------------- August2111------------------------------
         gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1024 count=512
     ;;
     3)  # - from new fw to old fw
@@ -551,11 +559,21 @@ if [ ! -d "$USB_STICK" ]; then
   USB_STICK=/usb
 fi
 
+# the OV dirname at USB stick
+USB_OPENVARIO=$USB_STICK/openvario
 stat
 
-# the OV dirname at USB stick
+if [ ! -e "$PARTITION1/config.uEnv" ]; then
+  umount boot >> /dev/null 2>&1
+  mount ${TARGET}p1 boot
+  if [ ! -e "$PARTITION1/config.uEnv" ]; then
+    echo "No partition1 mounted - no upgrade possible"
+    error_stop "==> exit"
+  fi
 
-rsync --version > /dev/null
+fi
+
+rsync --version > /dev/null 2>&1 || echo "No rsync available!"
 if [ "$?" -eq "0" ]; then
    RSYNC_COPY="ok"
 fi
@@ -601,7 +619,7 @@ if [ -f "${IMAGEFILE}" ]; then
     
     # Better as copy is writing the name in the 'upgrade file'
     echo "Firmware ImageFile = $IMAGE_NAME !"
-    echo "IMAGEFILE=$IMAGE_NAME" >> $RECOVER_DIR/upgrade.cfg
+    echo "IMAGEFILE=$IMAGE_NAME" >> $UPGRADE_CFG
     echo "Upgrade step 1 finished!"
 
     # chmod 757 -R $MNT_DIR
@@ -624,7 +642,7 @@ if [ -f "${IMAGEFILE}" ]; then
     esac
 
 else
-    if [ "${IMAGEFILE}" = "" ]; then
+    if [ -z "$IMAGEFILE" ]; then
         echo "IMAGEFILE is empty, no recovery!"
     else
         echo "'$IMAGE_NAME' don't exist, no recovery!"
