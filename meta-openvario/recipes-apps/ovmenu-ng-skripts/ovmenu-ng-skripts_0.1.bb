@@ -31,6 +31,7 @@ SRC_URI = "\
 	file://system-info.sh \
 	file://fw-upgrade.sh \
 	file://update-system-config.sh \
+	file://image_backup.sh \
 "
 
 
@@ -56,6 +57,7 @@ do_install() {
 		${S}/system-info.sh \
 		${S}/fw-upgrade.sh \
 		${S}/update-system-config.sh \
+		${S}/image_backup.sh \
 		${D}${bindir}/
 	cd ${D}${bindir}
 	ln -s -r transfer-xcsoar.sh upload-all.sh

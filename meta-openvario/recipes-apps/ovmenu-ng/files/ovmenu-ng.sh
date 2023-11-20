@@ -194,6 +194,7 @@ function submenu_system() {
     --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
     "Upgrade FW"   "Update complete system firmware" \
     "Update Packg" "Update system software" \
+    "Save Image" "Save current image.." \
     Calibrate_Sensors   "Calibrate Sensors" \
     Calibrate_Touch   "Calibrate Touch" \
     Settings   "System Settings" \
@@ -209,6 +210,9 @@ function submenu_system() {
             ;;
         "Update Packg")
             update_system
+            ;;
+        "Save Image")
+            save_image()
             ;;
         Calibrate_Sensors)
             calibrate_sensors
