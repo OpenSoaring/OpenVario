@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DEBUG_STOP="n"
-VERBOSE=n
+DEBUG_STOP=Yes
+VERBOSE=No
 DIALOGRC=/opt/bin/openvario.rc
 
 # Config
@@ -31,7 +31,7 @@ images=$USB_OPENVARIO/images/O*V*-*.gz
 
 #------------------------------------------------------------------------------
 function printv(){
-    if [ "$VERBOSE" = "y" ]; then
+    if [ "$VERBOSE" = "Yes" ]; then
       echo "$1"
     fi
 }
@@ -44,7 +44,7 @@ function error_stop(){
 
 #------------------------------------------------------------------------------
 function debug_stop(){
-    if [ "$DEBUG_STOP" = "y" ]; then
+    if [ "$DEBUG_STOP" = "Yes" ]; then
       echo "Debug-Stop: $1"
       read -p "Press enter to continue"
     fi
@@ -480,6 +480,32 @@ if [ -f "$PARTITION1/upgrade.cfg" ]; then
 fi 
 echo "AugTest: Upgrade-Config: $RECOVER_DIR/upgrade.cfg "
 debug_stop "Upgrade-Image: $IMAGEFILE "
+
+mkdir -p $PARTITION2
+mount ${TARGET}p2  $PARTITION2
+if [ "$?" = "0" ]; then 
+  debug_stop "'${TARGET}p2 is mounted' "
+else
+  debug_stop "'${TARGET}p2 IS NOT MOUNTED!!!' "
+fi
+
+if [ -f "$USB_OPENVARIO\backup\root.bin.gz" ]; then
+  # dd if="$USB_OPENVARIO\backup\root.bin.gz" 
+  echo "'$USB_OPENVARIO\backup\root.bin.gz' found"
+  # gzip -cd "$USB_OPENVARIO\backup\root.bin.gz" | dd of=/dev/mmcblk0 bs=1024 count=2048) 2>&1
+  (pv -n $USB_OPENVARIO\backup\root.bin.gz | gzip -cfd | dd of=$TARGET \
+  bs=1024 count=2048) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
+  else
+  echo "'$USB_OPENVARIO\backup\root.bin.gz' NOT found!!!"
+fi
+# USB_STICK
+
+mount ${TARGET}p2  $PARTITION2
+if [ "$?" = "0" ]; then 
+  debug_stop "'${TARGET}p2 is mounted' "
+else
+  debug_stop "'${TARGET}p2 IS NOT MOUNTED!!!' "
+fi
 
 
 if [ -b "${TARGET}p3" ]; then
