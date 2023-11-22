@@ -461,6 +461,18 @@ function save_old_system() {
 echo "Upgrade Start"
 ####################################################################
 
+#---------------------------------------------------------
+# Call another ovmenu-recovery.sh to change it 'on the fly'
+if [ -f "$USB_OPENVARIO/ovmenu-recovery.sh" ]; then 
+  cp "$USB_OPENVARIO/ovmenu-recovery.sh" /home/root/
+  chmod 757 /home/root/ovmenu-recovery.sh
+  debug_stop " call '/home/root/ovmenu-recovery.sh'"
+  /home/root/ovmenu-recovery.sh
+  exit
+  debug_stop " exit after '/home/root/ovmenu-recovery.sh'"
+fi
+#---------------------------------------------------------
+
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 
@@ -489,14 +501,14 @@ else
   debug_stop "'${TARGET}p2 IS NOT MOUNTED!!!' "
 fi
 
-if [ -f "$USB_OPENVARIO\backup\root.bin.gz" ]; then
-  # dd if="$USB_OPENVARIO\backup\root.bin.gz" 
-  echo "'$USB_OPENVARIO\backup\root.bin.gz' found"
-  # gzip -cd "$USB_OPENVARIO\backup\root.bin.gz" | dd of=/dev/mmcblk0 bs=1024 count=2048) 2>&1
-  (pv -n $USB_OPENVARIO\backup\root.bin.gz | gzip -cfd | dd of=$TARGET \
+if [ -f "$USB_OPENVARIO/backup/root.bin.gz" ]; then
+  # dd if="$USB_OPENVARIO/backup/root.bin.gz" 
+  echo "'$USB_OPENVARIO/backup/root.bin.gz' found"
+  # gzip -cd "$USB_OPENVARIO/backup/root.bin.gz" | dd of=/dev/mmcblk0 bs=1024 count=2048) 2>&1
+  (pv -n $USB_OPENVARIO/backup/root.bin.gz | gzip -cfd | dd of=$TARGET \
   bs=1024 count=2048) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
-  else
-  echo "'$USB_OPENVARIO\backup\root.bin.gz' NOT found!!!"
+else
+  echo "'$USB_OPENVARIO/backup/root.bin.gz' NOT found!!!"
 fi
 # USB_STICK
 
