@@ -1,18 +1,20 @@
 #!/bin/bash
 
-DEBUG_STOP=Yes
-VERBOSE=No
+DEBUG_STOP=No
+VERBOSE=Yes
 DIALOGRC=/opt/bin/openvario.rc
 
 # Config
 TIMEOUT=3
+DIALOG_CANCEL=1
+
 INPUT=/tmp/menu.sh.$$
 PARTITION1=/mmc1
 PARTITION2=/mmc2
 PARTITION3=""
 USB_STICK=/mnt
 
-USB_OPENVARIO=/$USB_STICK/openvario
+USB_OPENVARIO=$USB_STICK/openvario
 
 
 DEBUG_LOG=$USB_OPENVARIO/debug.log
@@ -20,7 +22,7 @@ DEBUG_LOG=$USB_OPENVARIO/debug.log
 # Target device (typically /dev/mmcblk0):
 TARGET=/dev/mmcblk0
 
-UPGRADE_CFG=$PARTITION1/upgrade.cfg
+UPGRADE_CFG=/home/root/upgrade.cfg
 
 
 # Image file search string:
@@ -32,7 +34,7 @@ images=$USB_OPENVARIO/images/O*V*-*.gz
 #------------------------------------------------------------------------------
 function printv(){
     if [ "$VERBOSE" = "Yes" ]; then
-      echo "$1"
+      echo ":: $1"
     fi
 }
 
@@ -47,6 +49,8 @@ function debug_stop(){
     if [ "$DEBUG_STOP" = "Yes" ]; then
       echo "Debug-Stop: $1"
       read -p "Press enter to continue"
+    else 
+      printv "$1"
     fi
 }
 
@@ -88,7 +92,6 @@ function backup_image(){
   
   # test backup 50MB (Boot areal + 10 MB)
   dd if=/dev/mmcblk0 bs=1M count=50 | gzip > /$USB_OPENVARIO/backup/$datestring.img.gz | dialog --gauge "Backup Image ... " 10 50 0
-#  (pv -n ${IMAGEFILE} | gunzip -c | dd bs=1024 skip=1024 | dd of=$TARGET bs=1024 seek=1024) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
  echo "Backup finished"
 }
 
@@ -244,7 +247,6 @@ function updateuboot(){
     
   #gunzip -c $(cat selected_image.$$) | dd of=$TARGET bs=1024 count=1024  
   (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=1024 count=1024) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
-    
 }
 
 #update updateall
@@ -294,8 +296,8 @@ function recover_system(){
               fi
             fi
 
-            source $RECOVER_DIR/upgrade.cfg
-            echo "sdcard/upgrade.cfg"           >> $DEBUG_LOG
+            source $UPGRADE_CFG
+            echo "$UPGRADE_CFG2"                >> $DEBUG_LOG
             echo "------------------"           >> $DEBUG_LOG
             echo "ROTATION      = $ROTATION"    >> $DEBUG_LOG
             echo "BRIGHTNESS    = $BRIGHTNESS"  >> $DEBUG_LOG
@@ -351,8 +353,8 @@ function recover_system(){
           tar -zxf $RECOVER_DIR/connman.tar.gz --directory $PARTITION2/
         fi
         
-        if [ -e "$RECOVER_DIR/upgrade.cfg" ]; then
-          cp $RECOVER_DIR/upgrade.cfg $PARTITION2/home/root/upgrade.cfg
+        if [ -e "$UPGRADE_CFG" ]; then
+          cp -fv $UPGRADE_CFG   $PARTITION2/$UPGRADE_CFG
         fi
         
         ls -l $PARTITION2/home/root/.xcsoar
@@ -394,7 +396,28 @@ function recover_system(){
     #############################################################
     
     # reboot:
-    /opt/bin/reboot.sh
+#################################
+### exit 0 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#################################
+    MENU_TITLE="$MENU_TITLE\nUpgrade is finished!"
+    MENU_TITLE="$MENU_TITLE\nDo you want to restart the system?"
+    MENU_TITLE="$MENU_TITLE\n=================================="
+    MENU_TITLE="$MENU_TITLE\nPress [ESC] to cancel!"
+    # BACKTITLE="Finishing the Upgrade" \
+    # TITLE="Upgrade finished" \
+    TIMEOUT=10
+    dialog --nook --nocancel --pause \
+    "$MENU_TITLE" 20 60 $TIMEOUT 2>&1
+    # DO NOTHING AFTER USING '$?' ONE TIMES!!!
+    # but store the selection for debug reasons:
+    INPUT="$?"
+    if [ ! "$INPUT" = "0" ]; then
+      echo "No reboot because Escape!"
+      error_stop "INPUT was $INPUT"
+      exit
+    else
+      /opt/bin/reboot.sh
+    fi 
 }
 
 #------------------------------------------------------------------------------
@@ -462,15 +485,28 @@ echo "Upgrade Start"
 ####################################################################
 
 #---------------------------------------------------------
+if [ -z "$1" ]; then
+if [ ! "$0" = "/home/root/ovmenu-recovery.sh" ]; then
 # Call another ovmenu-recovery.sh to change it 'on the fly'
 if [ -f "$USB_OPENVARIO/ovmenu-recovery.sh" ]; then 
   cp "$USB_OPENVARIO/ovmenu-recovery.sh" /home/root/
-  chmod 757 /home/root/ovmenu-recovery.sh
+  chmod 757 /home/root/ovmenu-recovery.sh "New Start"
   debug_stop " call '/home/root/ovmenu-recovery.sh'"
   /home/root/ovmenu-recovery.sh
   exit
   debug_stop " exit after '/home/root/ovmenu-recovery.sh'"
 fi
+fi
+fi
+
+echo "==================================================="
+echo "==================================================="
+echo "==================================================="
+echo "==================================================="
+echo "==================================================="
+debug_stop " und jetzt sollte es richtig losgehen!"
+# # # !!!! exit 0
+
 #---------------------------------------------------------
 
 # trap and delete temp files
@@ -481,36 +517,29 @@ trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 # ??? setfont cp866-8x14.psf.gz
 
 #delete ov-recovery.itb from Usb stick (usb/openvario/ov-recovery.itb):
-rm -f $USB_OPENVARIO/ov-recovery.itb
+rm -f $USB_OPENVARIO/ov-recovery.itb  >/dev/null 2>&1
 
 mkdir -p $PARTITION1
+mkdir -p $PARTITION2
+
 mount ${TARGET}p1  $PARTITION1
 # ov-recovery.itb will be overwritten with dd
 if [ -f "$PARTITION1/upgrade.cfg" ]; then
-  cp -fv "$PARTITION1/upgrade.cfg" "/home/root/upgrade.cfg"
-  source /home/root/upgrade.cfg
+  cp -fv "$PARTITION1/upgrade.cfg" "$UPGRADE_CFG"
+  source $UPGRADE_CFG
 fi 
-echo "AugTest: Upgrade-Config: $RECOVER_DIR/upgrade.cfg "
+echo "AugTest: Upgrade-Config: $UPGRADE_CFG "
 debug_stop "Upgrade-Image: $IMAGEFILE "
 
-mkdir -p $PARTITION2
-mount ${TARGET}p2  $PARTITION2
-if [ "$?" = "0" ]; then 
-  debug_stop "'${TARGET}p2 is mounted' "
-else
-  debug_stop "'${TARGET}p2 IS NOT MOUNTED!!!' "
-fi
-
 if [ -f "$USB_OPENVARIO/backup/root.bin.gz" ]; then
-  # dd if="$USB_OPENVARIO/backup/root.bin.gz" 
   echo "'$USB_OPENVARIO/backup/root.bin.gz' found"
-  # gzip -cd "$USB_OPENVARIO/backup/root.bin.gz" | dd of=/dev/mmcblk0 bs=1024 count=2048) 2>&1
   (pv -n $USB_OPENVARIO/backup/root.bin.gz | gzip -cfd | dd of=$TARGET \
-  bs=1024 count=2048) 2>&1 | dialog --gauge "Writing Image ... " 10 50 0
+  bs=1024 count=512) 2>&1
+  echo "'$USB_OPENVARIO/backup/root.bin' has been written!"
+
 else
   echo "'$USB_OPENVARIO/backup/root.bin.gz' NOT found!!!"
 fi
-# USB_STICK
 
 mount ${TARGET}p2  $PARTITION2
 if [ "$?" = "0" ]; then 
@@ -518,7 +547,6 @@ if [ "$?" = "0" ]; then
 else
   debug_stop "'${TARGET}p2 IS NOT MOUNTED!!!' "
 fi
-
 
 if [ -b "${TARGET}p3" ]; then
   PARTITION3=/mmc3
@@ -529,27 +557,31 @@ if [ -b "${TARGET}p3" ]; then
   sync
   ls $PARTITION3/
   RECOVER_DIR=$PARTITION3/recover_data
-  mkdir $RECOVER_DIR
 else 
   PARTITION3=""  # empty
   debug_stop "No $PARTITION3!!"
-  RECOVER_DIR=$USB_OPENVARIO/recover_data
-  mkdir $RECOVER_DIR
+  if [ -d $PARTITION2/home/root/recover_data ]; then
+    RECOVER_DIR=/home/root/recover_data
+    mkdir -p $RECOVER_DIR
+    cp -rfv $PARTITION2/home/root/recover_data/* $RECOVER_DIR 
+    debug_stop "'copy recover_data' done!"
+  else
+    RECOVER_DIR=$USB_OPENVARIO/recover_data
+  fi
 fi
 
 # DEBUG_LOG=$USB_OPENVARIO/debug.log
 echo "Upgrade start"  > $DEBUG_LOG
-date  >> $DEBUG_LOG
-time  >> $DEBUG_LOG
-date; time  >> $DEBUG_LOG
-date; time
+date %Y-%m-%d %H:%M:%S >> $DEBUG_LOG
+date %Y-%m-%d %H:%M:%S
+echo "----------------------------------------"
 
-
-if [ -d $PARTITION2/home/root/recover_data ]; then
-  cp -rfv $PARTITION2/home/root/recover_data /home/root 
-  debug_stop "'copy recover_data' done!"
-fi
 umount $PARTITION2
+
+echo "List: '/home/root'"
+ls /home/root
+echo "List: '$RECOVER_DIR'"
+ls $RECOVER_DIR
 
 # image file name with path!
 if [ -e $PARTITION3/images/$IMAGEFILE ]; then
@@ -567,8 +599,24 @@ fi
 echo "Detected image file: '$IMAGEFILE'!"  >> $DEBUG_LOG
 debug_stop "Detected image file: '$IMAGEFILE'!"
 
+
+printv "SSH                = $SSH"
+printv "BRIGHTNESS         = $BRIGHTNESS"
+printv "ROTATION           = $ROTATION"
+printv "HARDWARE_BASE      = $HARDWARE_BASE"
+printv "FIRMWARE_BASE      = $FIRMWARE_BASE"
+printv "FW_TYPE_BASE       = $FW_TYPE_BASE"
+printv "HARDWARE_TARGET    = $HARDWARE_TARGET"
+printv "FIRMWARE_TARGET    = $FIRMWARE_TARGET"
+printv "FW_TYPE_TARGET     = $FW_TYPE_TARGET"
+printv "UPGRADE_TYPE       = $UPGRADE_TYPE"
+
 # set dmesg minimum kernel level:
 dmesg -n 1
+
+#################################
+### exit 0 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#################################
 
 if [ -e "$IMAGEFILE" ]; then
   echo "Update $IMAGEFILE !!!!"
