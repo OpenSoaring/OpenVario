@@ -7,6 +7,16 @@ DIALOG_CANCEL=1
 HOMEDIR=/home/root
 DATADIR=$HOMEDIR/data
 
+function system_check() {
+  echo "System Check OpenVario"
+  echo "====================="
+  # in the beginning check the complete system
+  # * check partition 2, should never filled about 400-450MB (if 468MB)
+  # * check partition 3 how much free memory is available
+  # * check if usb is in and check the size...
+  # is there a possibility to create an event for insert and remove of the usb?
+}
+
 echo "begin startup.. " > $HOMEDIR/start-debug.log
 if [ ! -e /dev/mmcblk0p3 ]; then
   echo "/dev/mmcblk0p3 dom't exist " >> $HOMEDIR/start-debug.log
