@@ -1,6 +1,12 @@
 #!/bin/bash
 
-DEBUG_STOP="n"
+if [ -z "$1" ]; then
+  echo "1st call '$0'"
+else
+  echo "2nd call '$0' - with '$1'"
+fi
+
+DEBUG_STOP="No"
 VERBOSE=n
 
 USB_STICK=/usb/usbstick
@@ -40,6 +46,11 @@ BACKUP_DIR=""
 WITH_FW_BACKUP=No
 
 BATCH_PATH=$(dirname $0)
+if [ -z "$1" ]; then
+  $0 "Das ist ein Versuch mit '$PARTITION1/upgrade.cfg'"
+  # if you call this a 2nd time (with a newer file...) don't make it again
+  exit
+fi
 #------------------------------------------------------------------------------
 function error_stop(){
     echo "Error-Stop: $1"
@@ -398,9 +409,6 @@ function fw_backup() {
           # dd of=$BACKUP_DIR/dd_test.bin bs=1024 count=2048
           gzip -cfd ${IMAGEFILE} | dd of=$BACKUP_DIR/root.bin bs=1024 count=2048 # = 2MB
           gzip $BACKUP_DIR/root.bin
-          gzip -cfd ${IMAGEFILE} | dd of=$BACKUP_DIR/dd_test-1k.bin bs=1k count=2048
-          gzip -cfd ${IMAGEFILE} | dd of=$BACKUP_DIR/dd_test-1m.bin bs=1m count=2
-          gzip -cfd ${IMAGEFILE} | dd of=$BACKUP_DIR/dd_test-1M.bin bs=1M count=2
           
           # mkdir -p $BACKUP_DIR/backup
           if [ "$UPGRADE_TYPE" = "1" ]; then  # with new to new only
@@ -430,7 +438,7 @@ function fw_backup() {
         fi
         
         # August2111:
-        exit
+        # exit
     
     ### if [ "$UPGRADE_TYPE" = "1" ]; then  # with new to new only
     ### else  # all other upgrade types
