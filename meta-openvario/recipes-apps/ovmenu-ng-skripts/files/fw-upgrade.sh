@@ -44,6 +44,7 @@ UPGRADE_CFG=$PARTITION1/upgrade.cfg
 RECOVER_DIR=""
 BACKUP_DIR=""
 WITH_FW_BACKUP=No
+WITH_DATA_BACKUP=No
 
 BATCH_PATH=$(dirname $0)
 if [ -z "$1" ]; then
@@ -399,8 +400,8 @@ function detect_base() {
 }   
 #------------------------------------------------------------------------------
 function fw_backup() {
-
-    # start with a new 'upgrade.    #-------------------------------- August2111------------------------------
+    # start with a new 'upgrade.
+    #-------------------------------- August2111------------------------------
         if [ -d "$BACKUP_DIR" ]; then
           rm -fvr $BACKUP_DIR/*
           # echo "Backup 1st 20MB"
@@ -412,26 +413,30 @@ function fw_backup() {
           
           # mkdir -p $BACKUP_DIR/backup
           if [ "$UPGRADE_TYPE" = "1" ]; then  # with new to new only
-            # backup dir is on partition 3
-            # dd if=/dev/mmcblk0 | gzip > $BACKUP_DIR/backup.img.gz bs=1024 count=524288 # = 512MB
-            echo "Backup boot, partition1 and partition 2"
-            dd if=/dev/mmcblk0  bs=1024 count=524288 | gzip >$BACKUP_DIR/backup.img.gz   # max: 512MB
-            # zip data dir:
-            echo "Backup Open- and XCSoarData"
-            tar cvf - $PARTITION3/OpenSoarData | gzip >$BACKUP_DIR/OpenSoarData.tar.gz
-            tar cvf - $PARTITION3/XCSoarData | gzip >$BACKUP_DIR/XCSoarData.tar.gz
+            if [ "$WITH_DATA_BACKUP" = "Yes" ]; then
+              # backup dir is on partition 3
+              # dd if=/dev/mmcblk0 | gzip > $BACKUP_DIR/backup.img.gz bs=1024 count=524288 # = 512MB
+              echo "Backup boot, partition1 and partition 2"
+              dd if=/dev/mmcblk0  bs=1024 count=524288 | gzip >$BACKUP_DIR/backup.img.gz   # max: 512MB
+              # zip data dir:
+              echo "Backup Open- and XCSoarData"
+              tar cvf - $PARTITION3/OpenSoarData | gzip >$BACKUP_DIR/OpenSoarData.tar.gz
+              tar cvf - $PARTITION3/XCSoarData | gzip >$BACKUP_DIR/XCSoarData.tar.gz
+            fi
           else  # all other upgrade types
             if [ "$WITH_FW_BACKUP" = "Yes" ]; then
               dd if=/dev/mmcblk0  bs=1024 count=4194304 | gzip >$BACKUP_DIR/backup.img.gz   # max: 4GB
             fi
-            # if [ "$FW_TYPE_BASE" = "2" ]; then  # with new to new only
-            echo "Backup XCSoarData to xcsoar"
-            if [ -d "$PARTITION3/OpenSoarData" ]; then  # with new to new only
-              # which is the current?
-              # tar cvf - $PARTITION3/XCSoarData | gzip >$BACKUP_DIR/xcsoar.tar.gz
-              tar cvf - $PARTITION3/OpenSoarData | gzip >$BACKUP_DIR/xcsoar.tar.gz
-            else
-              tar cvf - $PARTITION2_ROOT/.xcsoar | gzip >$BACKUP_DIR/xcsoar.tar.gz
+            if [ "$WITH_DATA_BACKUP" = "Yes" ]; then
+              # if [ "$FW_TYPE_BASE" = "2" ]; then  # with new to new only
+              echo "Backup XCSoarData to xcsoar"
+              if [ -d "$PARTITION3/OpenSoarData" ]; then  # with new to new only
+                # which is the current?
+                # tar cvf - $PARTITION3/XCSoarData | gzip >$BACKUP_DIR/xcsoar.tar.gz
+                tar cvf - $PARTITION3/OpenSoarData | gzip >$BACKUP_DIR/xcsoar.tar.gz
+              else
+                tar cvf - $PARTITION2_ROOT/.xcsoar | gzip >$BACKUP_DIR/xcsoar.tar.gz
+              fi
             fi
           fi 
           sync
@@ -530,6 +535,7 @@ function save_system(){
     echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $UPGRADE_CFG
     
     fw_backup
+    echo "WITH_DATA_BACKUP=\"$WITH_DATA_BACKUP\"" >> $UPGRADE_CFG
     
 }
 
