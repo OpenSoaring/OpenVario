@@ -527,10 +527,17 @@ mount ${TARGET}p1  $PARTITION1
 if [ -f "$PARTITION1/upgrade.cfg" ]; then
   cp -fv "$PARTITION1/upgrade.cfg" "$UPGRADE_CFG"
   source $UPGRADE_CFG
+elif [ -f "$USB_OPENVARIO/upgrade.cfg" ]; then
+  cp -fv "$USB_OPENVARIO/upgrade.cfg" "$UPGRADE_CFG"
+  source $UPGRADE_CFG
+  debug_stop "Upgrade-Config from '$USB_OPENVARIO' "
 fi 
-echo "AugTest: Upgrade-Config: $UPGRADE_CFG "
-debug_stop "Upgrade-Image: $IMAGEFILE "
-
+if [ -f "$UPGRADE_CFG" ]; then
+  echo "AugTest: Upgrade-Config: $UPGRADE_CFG "
+  debug_stop "Upgrade-Image: $IMAGEFILE "
+else
+  debug_stop "No Upgrade-Config found! "
+fi 
 if [ -f "$USB_OPENVARIO/backup/root.bin.gz" ]; then
   echo "'$USB_OPENVARIO/backup/root.bin.gz' found"
   (pv -n $USB_OPENVARIO/backup/root.bin.gz | gzip -cfd | dd of=$TARGET \
@@ -600,6 +607,8 @@ echo "Detected image file: '$IMAGEFILE'!"  >> $DEBUG_LOG
 debug_stop "Detected image file: '$IMAGEFILE'!"
 
 
+printv "IMAGEFILE          = '$IMAGEFILE' "
+printv "======================================"
 printv "SSH                = $SSH"
 printv "BRIGHTNESS         = $BRIGHTNESS"
 printv "ROTATION           = $ROTATION"
