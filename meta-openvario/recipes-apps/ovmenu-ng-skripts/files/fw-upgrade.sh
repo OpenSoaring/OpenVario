@@ -243,6 +243,7 @@ function select_image(){
                 7-CH070)      TARGET_HW="CH70";;
                 7-PQ070)      TARGET_HW="PQ70";;
                 7-AM070-DS2)  TARGET_HW="AM70s";;
+                7-AM070_2)    TARGET_HW="AM70s";;
                 43-rgb)       TARGET_HW="AM43";;
                 *)            TARGET_HW="'$TARGET_HW' (unknown)";;
             esac
@@ -275,6 +276,7 @@ function select_image(){
                 AM43)        TARGET_HW="$TARGET_HW";;
 
                 AM70_DS2)    TARGET_HW="AM70s";;
+                AM70_2)      TARGET_HW="AM70s";;
                 *)           TARGET_HW="'$TARGET_HW' (unknown)";;
             esac
             # fi
@@ -400,8 +402,8 @@ function detect_base() {
 }   
 #------------------------------------------------------------------------------
 function fw_backup() {
-    # start with a new 'upgrade.
-    #-------------------------------- August2111------------------------------
+
+    # start with a new 'upgrade.    #-------------------------------- August2111------------------------------
         if [ -d "$BACKUP_DIR" ]; then
           rm -fvr $BACKUP_DIR/*
           # echo "Backup 1st 20MB"
@@ -535,7 +537,6 @@ function save_system(){
     echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $UPGRADE_CFG
     
     fw_backup
-    echo "WITH_DATA_BACKUP=\"$WITH_DATA_BACKUP\"" >> $UPGRADE_CFG
     
 }
 
@@ -587,6 +588,7 @@ function start_upgrade(){
       echo "this is an old firmware"
       ITB_TARGET=$USB_OPENVARIO/ov-recovery.itb
       ### ITB_TARGET=./ov-recovery.itb
+      echo "use ITB target: '$USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb'"
       if [ -f "$USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb" ]; then
         # hardlink from FAT (USB-Stick..) is not possible 
         echo "copy 'ov-recovery.itb' in the correct directory..."
