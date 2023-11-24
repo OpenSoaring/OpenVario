@@ -6,9 +6,12 @@ INPUT=/tmp/menu.sh.$$
 DIALOG_CANCEL=1
 HOMEDIR=/home/root
 DATADIR=$HOMEDIR/data
+USB_STICK=/usb/usbstick
+USB_OPENVARIO=$USB_STICK/openvario
+RECOVER_DIR=$USB_OPENVARIO/recover_data
 
-function system_check() {
-  echo "System Check OpenVario"
+function sytem_check() {
+  echo "Sytem Check OpenVario"
   echo "====================="
   # in the beginning check the complete system
   # * check partition 2, should never filled about 400-450MB (if 468MB)
@@ -17,9 +20,31 @@ function system_check() {
   # is there a possibility to create an event for insert and remove of the usb?
 }
 
-echo "begin startup.. " > $HOMEDIR/start-debug.log
+#=========================================================================
+# a hidden possibility to change this file with a file from the USB-DIR
+if [ -z "$1" ]; then
+  if [ ! "$0" = "$HOME/ovmenu-ng.sh" ]; then
+  # Call another ovmenu-ng.sh to change it 'on the fly'
+    if [ -f "$USB_OPENVARIO/ovmenu-ng.sh" ]; then 
+      cp -vf "$USB_OPENVARIO/ovmenu-ng.sh" $HOME/
+      chmod 757 $HOME/ovmenu-ng.sh "New Start"
+      debug_stop " call '$HOME/ovmenu-ng.sh'"
+      $HOME/ovmenu-ng.sh
+      exit
+      debug_stop " exit after '$HOME/ovmenu-ng.sh'"
+    fi
+  fi
+fi
+#=========================================================================
+
+mv $HOMEDIR/start-debug-1.log $HOMEDIR/start-debug-2.log
+mv $HOMEDIR/start-debug.log $HOMEDIR/start-debug-1.log
+echo "begin startup.. $(date %Y-%m-%d %H:%M:%S)" >> $HOMEDIR/start-debug.log
+DATESTRING=$(date %Y-%m-%d %H:%M:%S)
+date %Y-%m-%d %H:%M:%S >> $HOMEDIR/start-debug.log
+echo "=================================" >> $HOMEDIR/start-debug.log
 if [ ! -e /dev/mmcblk0p3 ]; then
-  echo "/dev/mmcblk0p3 dom't exist " >> $HOMEDIR/start-debug.log
+  echo "/dev/mmcblk0p3 don't exist " >> $HOMEDIR/start-debug.log
   ls -l /dev/mm* >> $HOMEDIR/start-debug.log
   # create the 3rd SD card partition:
   source /usr/bin/create_datapart.sh
@@ -40,13 +65,18 @@ fi
 
 # Mount the 3rd partition to the data dir
 # if [ ! -d $DATADIR ]; then mkdir $DATADIR; fi
-if ! mount /dev/mmcblk0p3 $DATADIR; then
+mount /dev/mmcblk0p3 $DATADIR
+if [ ! -d $DATADIR/OpenSoarData ]; then
+  if ! mount /dev/mmcblk0p3 $DATADIR; then
   if ! mkfs.ext4 /dev/mmcblk0p3; then
     echo "Error 1: mmcblk0p3 couldn't be formatted"  >> $HOMEDIR/start-debug.log
   fi
   if ! mount /dev/mmcblk0p3 $DATADIR; then
     echo "Error 2: mmcblk0p3 couldn't be mounted"  >> $HOMEDIR/start-debug.log
   fi
+fi
+else
+  echo "mmcblk0p3 is mounted at '$DATADIR'"  >> $HOMEDIR/start-debug.log
 fi
 
 if [ ! -d $DATADIR/OpenSoarData ]; then
@@ -56,18 +86,18 @@ if [ ! -d $DATADIR/OpenSoarData ]; then
   mkdir -p $DATADIR/OpenSoarData
   echo "'data/OpenSoarData'is new and has to be filled..."  >> $HOMEDIR/start-debug.log
   # mv -v $HOMEDIR/.xcsoar/* $DATADIR/OpenSoarData  >> $HOMEDIR/start-debug.log
-  rsync -ruvtcE --progress $SDC_DIR/part2/xcsoar/* $DATADIR/OpenSoarData/ \
+  rsync -ruvtcE --progress $RECOVER_DIR/part2/xcsoar/* $DATADIR/OpenSoarData/ \
             --delete --exclude cache  --exclude logs
-  echo "rsync $SDC_DIR/part2/xcsoar/* $DATADIR/OpenSoarData/ "  >> $HOMEDIR/start-debug.log
+  echo "rsync $RECOVER_DIR/part2/xcsoar/* $DATADIR/OpenSoarData/ "  >> $HOMEDIR/start-debug.log
   # rm -f $HOMEDIR/.xcsoar
 fi
 if [ ! -d $DATADIR/XCSoarData ]; then
   # the data dir is new and has to be filled
   mkdir -p $DATADIR/XCSoarData
   echo "'data/XCSoarData'is new and has to be filled..."  >> $HOMEDIR/start-debug.log
-  rsync -ruvtcE --progress $SDC_DIR/part2/xcsoar/* $DATADIR/XCSoarData/ \
+  rsync -ruvtcE --progress $RECOVER_DIR/part2/xcsoar/* $DATADIR/XCSoarData/ \
             --delete --exclude cache  --exclude logs
-  echo "rsync $SDC_DIR/part2/xcsoar/* $DATADIR/XCSoarData/ "  >> $HOMEDIR/start-debug.log
+  echo "rsync $RECOVER_DIR/part2/xcsoar/* $DATADIR/XCSoarData/ "  >> $HOMEDIR/start-debug.log
 fi
 echo "startup is ready..."  >> $HOMEDIR/start-debug.log
 
@@ -100,15 +130,15 @@ esac
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 
 main_menu () {
-while true
-do
-  if [[ "$MENU_VERSION" == "club" ]]
-  then
-    club_menu
-  else
-    normal_menu
-  fi
-done
+  while true
+  do
+    if [[ "$MENU_VERSION" == "club" ]]
+    then
+      club_menu
+    else
+      normal_menu
+    fi
+  done
 }
 
 function normal_menu() {
@@ -173,27 +203,27 @@ function club_menu() {
 
 function submenu_file() {
 
-    ### display file menu ###
-    dialog --nocancel --backtitle "OpenVario" \
-    --title "[ F I L E ]" \
-    --begin 3 4 \
-    --menu "You can use the UP/DOWN arrow keys" 15 50 4 \
-    Download_IGC   "Download XCSoar IGC files to USB" \
-    Download   "Download XCSoar to USB" \
-    Upload   "Upload files from USB to XCSoar" \
-    Reset_Data   "Reset complete data files from USB" \
-    Back   "Back to Main" 2>"${INPUT}"
+  ### display file menu ###
+  dialog --nocancel --backtitle "OpenVario" \
+  --title "[ F I L E ]" \
+  --begin 3 4 \
+  --menu "You can use the UP/DOWN arrow keys" 15 50 4 \
+  Download_IGC   "Download XCSoar IGC files to USB" \
+  Download   "Download XCSoar to USB" \
+  Upload   "Upload files from USB to XCSoar" \
+  Reset_Data   "Reset complete data files from USB" \
+  Back   "Back to Main" 2>"${INPUT}"
 
-    menuitem=$(<"${INPUT}")
-
-    # make decsion
-    case $menuitem in
-        Download_IGC) download_igc_files;;
-        Download) download_files;;
-        Upload) upload_files;;
-        Reset_Data) reset_data;;
-        Exit) ;;
-esac
+  menuitem=$(<"${INPUT}")
+  
+  # make decsion
+  case $menuitem in
+      Download_IGC) download_igc_files;;
+      Download) download_files;;
+      Upload) upload_files;;
+      Reset_Data) reset_data;;
+      Exit) ;;
+  esac
 }
 
 function submenu_system() {
@@ -222,7 +252,7 @@ function submenu_system() {
             update_system
             ;;
         "Save Image")
-            save_image()
+            save_image
             ;;
         Calibrate_Sensors)
             calibrate_sensors
@@ -444,27 +474,27 @@ function calibrate_touch() {
     dialog --msgbox "Calibration OK!" 10 50
 }
 
-# Copy /home/root/data/OpenSoarData to /usb/usbstick/openvario/download/OpenSoarData
+# Copy /home/root/data/OpenSoarData to $USB_OPENVARIO/download/OpenSoarData
 function download_files() {
     echo "Downloading files ..." > /tmp/tail.$$
     /usr/bin/download-all.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
-# Copy /home/root/OpenSoarData/logs to /usb/usbstick/openvario/igc
+# Copy /home/root/OpenSoarData/logs to $USB_OPENVARIO/igc
 # Copy only *.igc files
 function download_igc_files() {
     /usr/bin/download-igc.sh
 }
 
-# Copy /usb/usbstick/openvario/upload to /home/root/data/OpenSoarData
+# Copy $USB_OPENVARIO/upload to /home/root/data/OpenSoarData
 function upload_files(){
     echo "Uploading files ..." > /tmp/tail.$$
     /usr/bin/upload-opensoar.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
-# Reset /usb/usbstick/openvario/upload to /home/root/data/OpenSoarData
+# Reset $USB_OPENVARIO/upload to /home/root/data/OpenSoarData
 function reset_data(){
     echo "Uploading data files ..." > /tmp/tail.$$
     /usr/bin/reset-opensoar-data.sh >> /tmp/tail.$$ &
