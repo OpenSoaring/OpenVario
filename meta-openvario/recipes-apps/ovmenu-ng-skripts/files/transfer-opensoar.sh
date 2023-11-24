@@ -31,8 +31,10 @@ fi
 if [ -z "$(find "$SRC_PATH" -type f | head -n 1 2>/dev/null)" ]; then
 	echo 'No files found !!!'
 else
+    echo "Source:         '$SRC_PATH'"
+    echo "Destination:    '$DEST_PATH'"
   # We use -c here due to cubieboards not having an rtc clock
-	if rsync -r -c --progress "${SRC_PATH}/" "$DEST_PATH/"; then
+	if rsync -rc --progress "${SRC_PATH}/" "$DEST_PATH/"; then
 		echo 'All files transfered successfully.'
 	else
 		>&2 echo 'An error has occured!'
