@@ -517,7 +517,7 @@ function check_exit_code() {
       do_reboot
     ;;
     202) # ShutDown
-      do_power_off  5 # with question!
+      do_power_off  "5" # with question!
       # shutdown -h now
     ;;
     *)
@@ -553,17 +553,17 @@ function do_reboot(){
     if [ -z "$1" ]; then REBOOT_TIMER=2;
     else REBOOT_TIMER="$1"; fi
     dialog --backtitle "Openvario" \
-    --title "Reboot ?" --pause \
+    --title "Reboot ?" --yesno --pause \
     "Reboot OpenVario ... \\n Press [ESC] for interrupt" 10 30 $REBOOT_TIMER 2>&1
 
     if [ "$?" = "0" ]; then reboot; fi; 
 }
 
-function do_power_off(){
-    if [ -z "$1" ]; then POWER_OFF_TIMER=10;
+function do_power_off() {
+    if [ -z "$1" ]; then POWER_OFF_TIMER=4;
     else POWER_OFF_TIMER="$1"; fi
     dialog --backtitle "Openvario" \
-    --title "Power-OFF ?" --pause \
+    --title "Power-OFF ?" --yesno --pause \
     "Really want to Power-OFF \\n Press [ESC] for interrupt" 10 30 $POWER_OFF_TIMER 2>&1
 
     if [ "$?" = "0" ]; then shutdown -h now; fi; 
