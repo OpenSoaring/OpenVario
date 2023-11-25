@@ -7,7 +7,7 @@ else
 fi
 
 DEBUG_STOP="No"
-VERBOSE=n
+VERBOSE="Yes"
 
 USB_STICK=/usb/usbstick
 DIALOG_CANCEL=1
@@ -24,7 +24,6 @@ TIMESTAMP_3_19=1695000000
 TARGET=/dev/mmcblk0
 IMAGEFILE=""
 TARGET_HW="0000"
-TARGET_FILENAME_TYPE=0
 TARGET_FW_VERSION=0
 BASE_HW="0000"
 BASE_FW_VERSION=0
@@ -33,48 +32,47 @@ UPGRADE_TYPE=0
 # partition 1 of SD card is mounted as '/boot'!
 PARTITION1=/boot
 # partition 2 of SD card is mounted on the root of the system
-PARTITION2_ROOT=/home/root
+HOME=/home/root
 # partition 3 of SD card is mounted on the root of the system
-PARTITION3=$PARTITION2_ROOT/data
+PARTITION3=$HOME/data
 
-UPGRADE_CFG=$PARTITION1/upgrade.cfg
-# UPGRADE_CFG=$UPGRADE_CFG
+RECOVER_DIR="$HOME/recover_data"
+UPGRADE_CFG=$RECOVER_DIR/upgrade.cfg
 
 # temporary directories at USB stick to save the setting informations
-RECOVER_DIR=""
-BACKUP_DIR=""
 WITH_FW_BACKUP=No
 WITH_DATA_BACKUP=No
+DISPLAY_ROTATION=No
 
 BATCH_PATH=$(dirname $0)
 if [ -z "$1" ]; then
-  $0 "Das ist ein Versuch mit '$PARTITION1/upgrade.cfg'"
+  $0 "This is a try with '$UPGRADE_CFG'"
   # if you call this a 2nd time (with a newer file...) don't make it again
   exit
 fi
 #------------------------------------------------------------------------------
-function error_stop(){
+function error_stop() {
     echo "Error-Stop: $1"
     read -p "Press enter to continue"
 }
 
 #------------------------------------------------------------------------------
-function debug_stop(){
-    if [ "$DEBUG_STOP" = "y" ]; then
+function debug_stop() {
+    if [ "$DEBUG_STOP" = "Yes" ]; then
       echo "Debug-Stop: $1"
       read -p "Press enter to continue"
     fi
 }
 
 #------------------------------------------------------------------------------
-function printv(){
-    if [ "$VERBOSE" = "y" ]; then
+function printv() {
+    if [ "$VERBOSE" = "Yes" ]; then
       echo "$1"
     fi
 }
 
 #------------------------------------------------------------------------------
-vercomp () {
+function vercomp() {
     printv "compare '$1' vs. '$2'"
     printv "---------------------"
     if [[ $1 == $2 ]]
@@ -135,7 +133,7 @@ vercomp () {
 }
 
 #------------------------------------------------------------------------------
-function select_image(){
+function select_image() {
     # images=$USB_OPENVARIO/images/O*V*-*.gz
     images=data/images/O*V*-*.gz
 
@@ -205,7 +203,9 @@ function select_image(){
         --title "Select image" \
         --menu "Use [UP/DOWN] keys to move, ENTER to select" \
         18 60 12 "${files_nice[@]}" 2> "${SELECTION}"
-        
+        TEST=$?
+	if [ ! "$TEST" = "0" ]; then exit; fi
+	
         read SELECTED < ${SELECTION}
         let INDEX=$SELECTED+$SELECTED-1  # correct pointer in the arrays
 
@@ -219,7 +219,8 @@ function select_image(){
         echo "no image file(s) found"
         IMAGEFILE=""
     fi
-    clear_display
+    # clear_display
+    clear
 
     if [ ! -e "$IMAGEFILE" ]; then
         if [ -n "$IMAGEFILE" ]; then
@@ -232,36 +233,29 @@ function select_image(){
         # grep the buzzword 'testing'
         TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]{5}')
         if [ -n "$TARGET_FW_VERSION" ]; then
-            TARGET_FILENAME_TYPE=1
             # find the part between '-ipk- and .rootfs
             teststr=$(echo $IMAGE_NAME | awk -F'-ipk-|.rootfs' '{print $2}')
             # teststr is now: 17119-openvario-57-lvds[-testing]
             TARGET_HW=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
             case $TARGET_HW in
-                57lvds)       TARGET_HW="CH57";;
-                57-lvds)      TARGET_HW="CH57";;
-                7-CH070)      TARGET_HW="CH70";;
-                7-PQ070)      TARGET_HW="PQ70";;
-                7-AM070-DS2)  TARGET_HW="AM70s";;
-                7-AM070_2)    TARGET_HW="AM70s";;
-                43-rgb)       TARGET_HW="AM43";;
-                *)            TARGET_HW="'$TARGET_HW' (unknown)";;
+                57lvds | 57-lvds)         TARGET_HW="CH57";;
+                7-CH070)                  TARGET_HW="CH70";;
+                7-PQ070)                  TARGET_HW="PQ70";;
+                7-AM070-DS2 | 7-AM070_2)  TARGET_HW="AM70s";;
+                43-rgb)                   TARGET_HW="AM43";;
+                *)                        TARGET_HW="'$TARGET_HW' (unknown)";;
             esac
         else
             # grep a version in form '##.##.##-##' like '3.0.2-20' 
             TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
-            TARGET_FW_TYPE=1
             if [ -z "$TARGET_FW_VERSION" ]; then
               # ... or in form '##.##.##.##' like '3.2.20.1' 
               TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+')
-              TARGET_FW_TYPE=2
             fi
             if [ -z "$TARGET_FW_VERSION" ]; then
               # ... or in form '##.##.##' like '3.0.2' 
               TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
-              TARGET_FW_TYPE=2
             fi
-            TARGET_FILENAME_TYPE=2
             TARGET_HW=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
             # awk is splitting 'OV-3.0.2.20-CB2-CH57.img.gz' in:
             # OV-3.0.2.20', 'CH57', '.gz' (-CB2- and .img are cutted out) 
@@ -269,23 +263,17 @@ function select_image(){
             #  TARGET_HW="$TARGET_HW"
             # else 
             case $TARGET_HW in
-                CH57)        TARGET_HW="$TARGET_HW";;
-                CH70)        TARGET_HW="$TARGET_HW";;
-                PQ70)        TARGET_HW="$TARGET_HW";;
-                AM70s)       TARGET_HW="$TARGET_HW";;
-                AM43)        TARGET_HW="$TARGET_HW";;
-
-                AM70_DS2)    TARGET_HW="AM70s";;
-                AM70_2)      TARGET_HW="AM70s";;
+                CH57 | CH70 | PQ70 | AM70s | AM43 )
+                             TARGET_HW="$TARGET_HW";;
+                AM70_2 | AM70_DS2)
+                             TARGET_HW="AM70s";;
                 *)           TARGET_HW="'$TARGET_HW' (unknown)";;
             esac
             # fi
         fi
         echo "selected image file:      '$IMAGE_NAME'"
         echo "TARGET_FW_VERSION:        '$TARGET_FW_VERSION'"
-        echo "TARGET_FW_TYPE:           '$TARGET_FW_TYPE'"
         echo "TARGET_HW:                '$TARGET_HW'"
-        echo "TARGET_FILENAME_TYPE:     '$TARGET_FILENAME_TYPE'"
         debug_stop
     fi
     # 0 - equal, 1 - lower, 2 greater
@@ -309,16 +297,24 @@ function select_image(){
       fi
     fi
     debug_stop "3) '$FW_TYPE_BASE' => '$FW_TYPE_TARGET' = UPGRADE_TYPE '$UPGRADE_TYPE'"
+    vercomp "${TARGET_FW_VERSION//-/.}" "22000"
+    target_display=$?
+    vercomp   "${BASE_FW_VERSION//-/.}" "22000"
+    base_display=$?
+    if [ ! "$target_display" = "$base_display" ]; then
+      DISPLAY_ROTATION=Yes
+      error_stop "DISPLAY_ROTATION = '$DISPLAY_ROTATION'!!!"
+    fi
 }
 
 
 #------------------------------------------------------------------------------
-function clear_display(){
-    #================== clear display (after diolog) =======================================================
-    for ((i=1 ; i<=20 ; i++ )); do 
-        echo ""
-    done
-}
+### function clear_display() {
+###     #================== clear display (after diolog) =======================================================
+###     for ((i=1 ; i<=20 ; i++ )); do 
+###         echo ""
+###     done
+### }
    
 
 #------------------------------------------------------------------------------
@@ -347,31 +343,21 @@ function detect_base() {
       fdtfile=$(echo $fdtfile | awk -F'-201|202' '{print $1}')
       fdtfile="openvario-$fdtfile"
       BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]{5}')
-      BASE_FILENAME_TYPE=1
       debug_stop "fdtfile = '$fdtfile'!!!!"
     else
       # 3.2.21:
-      BASE_FILENAME_TYPE=0
       BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
       if [ -z "$BASE_FW_VERSION" ]; then
       # 3.0.1-19:
         BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
-        BASE_FW_TYPE=1
-      else
-        BASE_FW_TYPE=2
       fi
       # 3.2.20.1
       if [ -z "$BASE_FW_VERSION" ]; then
         BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+')
-        BASE_FW_TYPE=2
       fi
       if [ -z "$BASE_FW_VERSION" ]; then
         # this could be up to version 3.39.19 ( = '23229')
         BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]{5}')
-        if [ -n "$BASE_FW_VERSION" ]; then BASE_FILENAME_TYPE=1; fi
-        BASE_FW_TYPE=1
-      else 
-        BASE_FILENAME_TYPE=2
       fi
     fi
     if [ -z "$BASE_FW_VERSION" ]; then
@@ -395,82 +381,77 @@ function detect_base() {
     echo "HARDWARE=\"$BASE_HW\""
         echo "selected Base:          '$VERSION_INFO'"
         echo "BASE_FW_VERSION:        '$BASE_FW_VERSION'"
-        echo "BASE_FW_TYPE:           '$BASE_FW_TYPE'"
         echo "BASE_HW:                '$BASE_HW'"
-        echo "BASE_FILENAME_TYPE:     '$BASE_FILENAME_TYPE'"
         debug_stop
 }   
 #------------------------------------------------------------------------------
 function fw_backup() {
+  # start with a new 'upgrade.
+  #-------------------------------- August2111------------------------------
+  local blocksize=1024
 
-    # start with a new 'upgrade.    #-------------------------------- August2111------------------------------
-        if [ -d "$BACKUP_DIR" ]; then
-          rm -fvr $BACKUP_DIR/*
-          # echo "Backup 1st 20MB"
-          # gzip -cfd ${IMAGEFILE} | dd of=$BACKUP_DIR/dd_test.bin.gz bs=1M count=20
-          echo "Backup 1st 2MB"  # address 0 to partition 1 (FAT16)
-          # dd of=$BACKUP_DIR/dd_test.bin bs=1024 count=2048
-          gzip -cfd ${IMAGEFILE} | dd of=$BACKUP_DIR/root.bin bs=1024 count=2048 # = 2MB
-          gzip $BACKUP_DIR/root.bin
-          
-          # mkdir -p $BACKUP_DIR/backup
-          if [ "$UPGRADE_TYPE" = "1" ]; then  # with new to new only
-            if [ "$WITH_DATA_BACKUP" = "Yes" ]; then
-              # backup dir is on partition 3
-              # dd if=/dev/mmcblk0 | gzip > $BACKUP_DIR/backup.img.gz bs=1024 count=524288 # = 512MB
-              echo "Backup boot, partition1 and partition 2"
-              dd if=/dev/mmcblk0  bs=1024 count=524288 | gzip >$BACKUP_DIR/backup.img.gz   # max: 512MB
-              # zip data dir:
-              echo "Backup Open- and XCSoarData"
-              tar cvf - $PARTITION3/OpenSoarData | gzip >$BACKUP_DIR/OpenSoarData.tar.gz
-              tar cvf - $PARTITION3/XCSoarData | gzip >$BACKUP_DIR/XCSoarData.tar.gz
-            fi
-          else  # all other upgrade types
-            if [ "$WITH_FW_BACKUP" = "Yes" ]; then
-              dd if=/dev/mmcblk0  bs=1024 count=4194304 | gzip >$BACKUP_DIR/backup.img.gz   # max: 4GB
-            fi
-            if [ "$WITH_DATA_BACKUP" = "Yes" ]; then
-              # if [ "$FW_TYPE_BASE" = "2" ]; then  # with new to new only
-              echo "Backup XCSoarData to xcsoar"
-              if [ -d "$PARTITION3/OpenSoarData" ]; then  # with new to new only
-                # which is the current?
-                # tar cvf - $PARTITION3/XCSoarData | gzip >$BACKUP_DIR/xcsoar.tar.gz
-                tar cvf - $PARTITION3/OpenSoarData | gzip >$BACKUP_DIR/xcsoar.tar.gz
-              else
-                tar cvf - $PARTITION2_ROOT/.xcsoar | gzip >$BACKUP_DIR/xcsoar.tar.gz
-              fi
-            fi
-          fi 
-          sync
-        fi
-        
-        # August2111:
-        # exit
-    
-    ### if [ "$UPGRADE_TYPE" = "1" ]; then  # with new to new only
-    ### else  # all other upgrade types
-    ### fi 
-        #-------------------------------- August2111------------------------------
+  local backup_dir="backup/$(date +%y_%m_%d)"
+  # backup_dir := ../backup/$(date +%y_%m_%d)"    # 1st save system config in upgrade.cfg for restoring reason
+  
+  if [ "$UPGRADE_TYPE" = "1" ]; then  # with new to new only
+     backup_dir="$PARTITION3/$backup_dir"
+  else  # all other upgrade types
+     backup_dir="$USB_OPENVARIO/$backup_dir"
+  fi 
+  # mkdir -p $backup_dir
+  #-----------------------------------------------
+
+  mkdir -p $backup_dir/backup
+  rm -fvr $backup_dir/*  # if files in...
+
+  if [ "$UPGRADE_TYPE" = "1" ]; then  # with new to new only
+    # backup dir is on partition 3
+    # dd if=/dev/mmcblk0 | gzip > $backup_dir/backup.img.gz bs=$blocksize count=524288 # = 512MB
+    if [ "$WITH_FW_BACKUP" = "Yes" ]; then
+      # save the image
+      echo "Backup boot, partition1 and partition 2"
+      dd if=/dev/mmcblk0 bs=$blocksize count=524288 | gzip >$backup_dir/backup.img.gz   # max: 512MB
+    fi
+    if [ "$WITH_DATA_BACKUP" = "Yes" ]; then
+      # save the data
+      # zip data dir:
+      echo "Backup Open- and XCSoarData"
+      tar cvf - $PARTITION3/OpenSoarData | gzip >$backup_dir/OpenSoarData.tar.gz
+      tar cvf - $PARTITION3/XCSoarData | gzip >$backup_dir/XCSoarData.tar.gz
+    fi
+   
+  else  # all other upgrade types
+    if [ "$WITH_FW_BACKUP" = "Yes" ]; then
+      # save the image:
+      dd if=/dev/mmcblk0  bs=$blocksize count=4194304 | gzip >$backup_dir/backup.img.gz   # max: 4GB
+    fi
+    if [ "$WITH_DATA_BACKUP" = "Yes" ]; then
+      # save the image:
+      # if [ "$FW_TYPE_BASE" = "2" ]; then  # with new to new only
+      echo "Backup XCSoarData to xcsoar"
+      if [ -d "$PARTITION3/OpenSoarData" ]; then  # with new to new only
+        # which is the current?
+        # tar cvf - $PARTITION3/XCSoarData | gzip >$backup_dir/xcsoar.tar.gz
+        tar cvf - $PARTITION3/OpenSoarData | gzip >$backup_dir/OpenSoarData.tar.gz
+      else
+        tar cvf - $HOME/.xcsoar | gzip >$backup_dir/xcsoar.tar.gz
+      fi
+    fi
+  fi
+  sync
+  #-------------------------------- August2111------------------------------
 }
 #------------------------------------------------------------------------------
-function save_system(){
+function save_system() {
     #================== System Config =======================================================
-    echo "1st: save system config in upgrade.cfg for restoring reason"
-    # 1st save system config in upgrade.cfg for restoring reason
-    
-    if [ "$UPGRADE_TYPE" = "1" ]; then  # with new to new only
-       SAVE_DIR="$PARTITION3"
-    else  # all other upgrade types
-       SAVE_DIR="$USB_OPENVARIO"
-    fi 
-    RECOVER_DIR="$SAVE_DIR/recover_data"
-    BACKUP_DIR="$SAVE_DIR/backup/$(date +%y_%m_%d)"
-    #-----------------------------------------------    
+    echo "1st: save system config in UPGRADE_CFG for restoring reason"
     debug_stop "RECOVER_DIR  = $RECOVER_DIR"
+
+    # delete an old 'recover_data':
+    rm -rvf $RECOVER_DIR
     mkdir -p $RECOVER_DIR
-    mkdir -p $BACKUP_DIR
     
-    rm -f $UPGRADE_CFG
+    rm -f $UPGRADE_CFG  # start with a new one
     if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
         if /bin/systemctl --quiet is-enabled dropbear.socket; then
             echo "SSH=\"enabled\""
@@ -500,21 +481,39 @@ function save_system(){
       echo "BRIGHTNESS=\"9\"" >> $UPGRADE_CFG    
     fi 
 
-    # TODO: with which firmware there was the change?
-    vercomp "${TARGET_FW_VERSION//-/.}" "22000"
-    TARGET_ROT_TEST=$?
-    vercomp   "${BASE_FW_VERSION//-/.}"   "22000"
-    BASE_ROT_TEST=$?
-    if [ "$BASE_ROT_TEST" = "$TARGET_ROT_TEST" ]; then
-      echo "FirmWare types identical: $BASE_ROT_TEST vs $TARGET_ROT_TEST!"
+    # ov-recovery.sh has problems with partition3... ;-(
+    if [ "$UPGRADE_TYPE"  = "3" ]; then  # from new to old system
+      # save the data from OpenSoarData to .xcsoar:
+      # the 'old' firmware don't know anything about partition 3
+      echo "PARTITION3 = $PARTITION3"
+      ### rsync -ruvtcE --progress --delete --exclude cache  --exclude logs 
+      if [ "$RSYNC_COPY" = "ok" ]; then 
+        rsync -a --progress --delete --exclude cache  --exclude logs \
+              $PARTITION3/OpenSoarData/ $HOME/.xcsoar/ 
+        echo "rsync from $PARTITION3/OpenSoarData/ to $HOME/.xcsoar"
+        if [ -d "$PARTITION3/.glider_club" ]; then
+          ## rsync -ruvtcE --progress $PARTITION3/.glider_club/ $HOME/.glider_club/ 
+          rsync -a --progress --delete \
+          $PARTITION3/.glider_club/ $HOME/.glider_club/
+        fi
+      else  # copy instead of rsync...
+        # but with a new firmware this should never happen
+        error_stop "UPGRADE_TYPE = 3: copy instead of rsync?"
+        rm -rvf $HOME/.xcsoar/*
+        sync
+        cp -rvf $PARTITION3/OpenSoarData/* $HOME/.xcsoar/
+        rm -rvf $HOME/.xcsoar/logs
+        rm -rvf $HOME/.xcsoar/cache
+        echo "rsync from $PARTITION3/OpenSoarData/ to $HOME/.xcsoar"
+
+        if [ -d "$PARTITION3/.glider_club" ]; then
+          rm -rvf $HOME/.glider_club/*
+          sync
+          cp -rvf $PARTITION3/.glider_club/* $HOME/.glider_club/
+        fi
+      fi
     else
-      echo "FirmWare types different: $BASE_ROT_TEST vs $TARGET_ROT_TEST!"
-      case $rotation in 
-      0) rotation=0;;
-      1) rotation=3;;
-      2) rotation=2;;
-      3) rotation=1;;
-      esac 
+      debug_stop "The UPGRADE_TYPE is $UPGRADE_TYPE"
     fi
 
     echo "ROTATION=\"$rotation\""
@@ -523,11 +522,11 @@ function save_system(){
 
     echo "HARDWARE_BASE=\"$BASE_HW\"" >> $UPGRADE_CFG
     echo "FIRMWARE_BASE=\"$BASE_FW_VERSION\"" >> $UPGRADE_CFG
-    echo "FW_TYPE_BASE=\"$FW_TYPE_BASE\"" >> $UPGRADE_CFG
+    # echo "FW_TYPE_BASE=\"$FW_TYPE_BASE\"" >> $UPGRADE_CFG
 
     echo "HARDWARE_TARGET=\"$TARGET_HW\"" >> $UPGRADE_CFG
     echo "FIRMWARE_TARGET=\"$TARGET_FW_VERSION\"" >> $UPGRADE_CFG
-    echo "FW_TYPE_TARGET=\"$FW_TYPE_TARGET\"" >> $UPGRADE_CFG
+    # echo "FW_TYPE_TARGET=\"$FW_TYPE_TARGET\"" >> $UPGRADE_CFG
     # UpgradeType:
     # 1- from new fw to new fw
     # 2 - from old fw to new fw
@@ -535,13 +534,14 @@ function save_system(){
     # 4 - from old fw to old fw
     # other types are not supported (f.e. old to previous an so on)!
     echo "UPGRADE_TYPE=\"$UPGRADE_TYPE\"" >> $UPGRADE_CFG
+    echo "DISPLAY_ROTATION=\"$DISPLAY_ROTATION\"" >> $UPGRADE_CFG
     
-    fw_backup
+    # # # 2023-11-25 disabled: fw_backup
     
 }
 
 #------------------------------------------------------------------------------
-function start_upgrade(){
+function start_upgrade() {
     # IMAGE_NAME=$(basename $IMAGEFILE)
 #    echo "Start Upgrading with '$IMAGE_NAME'..."
     #================================
@@ -570,7 +570,8 @@ function start_upgrade(){
       
       # store the selection for debug reasons:
       INPUT="$?"
-      clear_display
+      # clear_display
+      clear
       if [ ! "$INPUT" = "0" ]; then
         error_stop "Exit because Escape!"
         exit
@@ -584,8 +585,22 @@ function start_upgrade(){
       TARGET_HW="CH57"
     fi 
 
-    if [ ! -f "/usr/bin/ov-recovery.itb" ]; then
+    if [ -f "/usr/bin/ov-recovery.itb" ]; then
+      # this is the case with UPGRADE_TYPE = 1 | 3 (new base FW):
+      echo "'/usr/bin/ov-recovery.itb' is available" # AugTest
+      # make a hardlink from in $HOME:
+      ln -f /usr/bin/ov-recovery.itb $HOME/ov-recovery.itb
+      ITB_TARGET=$HOME/ov-recovery.itb
+      echo "ln -f /usr/bin/ov-recovery.itb $HOME/ov-recovery.itb"
+      if [ ! -f "$HOME/ov-recovery.itb" ]; then
+          error_stop "'$HOME/ov-recovery.itb' doesn't exist - no upgrade possible"
+          echo "Exit!"
+          exit
+      fi
+    else
+      # this is the case with UPGRADE_TYPE = 2 | 4 (old base FW):
       echo "this is an old firmware"
+      # the USB-STICK has to be available:
       ITB_TARGET=$USB_OPENVARIO/ov-recovery.itb
       ### ITB_TARGET=./ov-recovery.itb
       echo "use ITB target: '$USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb'"
@@ -600,18 +615,7 @@ function start_upgrade(){
             echo "Exit!"
             exit
       fi
-    else
-        echo "'/usr/bin/ov-recovery.itb' is available" # AugTest
-        # hardlink from '/home/root/' to '/usr/bin/ov-recovery.itb'
-        ln -f /usr/bin/ov-recovery.itb ov-recovery.itb
-        echo "ln -f /usr/bin/ov-recovery.itb ov-recovery.itb"
-        if [ ! -f "ov-recovery.itb" ]; then
-            error_stop "'ov-recovery.itb' doesn't exist - no upgrade possible"
-            echo "Exit!"
-            exit
-        fi
     fi
-    
     
     debug_stop "AugTest UPGRADE_TYPE = '$UPGRADE_TYPE'"
     case "$UPGRADE_TYPE" in
@@ -620,23 +624,24 @@ function start_upgrade(){
     ;;
     2)  # - from old fw to new fw
         echo "Target FW is new but Base FW is old!"
-        echo "copy the 1st block (20MB) (boot-sector!)"
-        gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1024 count=512
+        # delete:   # # echo "copy the 1st block (20MB) (boot-sector!)"
+        # delete:   # # gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1024 count=512
     ;;
     3)  # - from new fw to old fw
         echo "Target FW is old but Base FW is new!"
         dialog --nook --nocancel --pause "This is a change to an old FW file ($TARGET_FW_VERSION)!" 10 30 5 2>&1
-        clear_display
+        # clear_display
+        clear
     ;;
     4)  # - from old fw to old fw
         echo "both FW are a old type!"
-        boot_sector_file=$USB_OPENVARIO/images/$TARGET_HW/bootsector.bin.gz
-        if [ -e "$boot_sector_file" ]; then
-          echo "copy bootsector file to bootsector"
-          gzip -cfd $boot_sector_file | dd of=$TARGET bs=1024 count=512
-        else
-          error_stop "An upgrade without '$boot_sector_file' is not possible!"
-        fi
+        # delete:   # # boot_sector_file=$USB_OPENVARIO/images/$TARGET_HW/bootsector.bin.gz
+        # delete:   # # if [ -e "$boot_sector_file" ]; then
+        # delete:   # # # echo "copy bootsector file to bootsector"
+        # delete:   # # # gzip -cfd $boot_sector_file | dd of=$TARGET bs=1024 count=512
+        # delete:   # # else
+        # delete:   # # # error_stop "An upgrade without '$boot_sector_file' is not possible!"
+        # delete:   # # fi
     ;;
     esac
     
@@ -702,16 +707,12 @@ select_image
 # Complete Update
 if [ -f "${IMAGEFILE}" ]; then
     echo "Start..."
-    # make tmp dir clean:
-    if [ -d "$RECOVER_DIR" ]; then
-        chmod 757 -R $RECOVER_DIR
-        # don't delete, better to make 'with rsync --delete' rm -r $RECOVER_DIR
-    fi
 
     if [ "$FW_TYPE_BASE" = "1" ]; then # Base is old, delete all nmea logs (log folder)
     # because this can be very big and destroy the upgrade...    
-      rm -vfr $PARTITION2_ROOT/.xcsoar/logs
-      rm -vfr $PARTITION2_ROOT/.xcsoar/cache
+      rm -vfr $HOME/.xcsoar/logs
+      rm -vfr $HOME/.xcsoar/cache
+      sync
     fi
 
     # 1st: Save the system
@@ -736,7 +737,8 @@ if [ -f "${IMAGEFILE}" ]; then
     
     # store the selection for debug reasons:
     INPUT="$?"
-    clear_display
+    # clear_display
+    clear
     case $INPUT in
         0) 
             start_upgrade;;
