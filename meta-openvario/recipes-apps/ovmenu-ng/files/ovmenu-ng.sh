@@ -1,18 +1,54 @@
 #!/bin/bash
 
 #Config
+DEBUG_STOP="No"
+VERBOSE="Yes"
+WITH_TESTSTEPS="No"
+
 TIMEOUT=3
 INPUT=/tmp/menu.sh.$$
 DIALOG_CANCEL=1
-HOMEDIR=/home/root
-DATADIR=$HOMEDIR/data
+## HOME=/home/root
+DATADIR=$HOME/data
 USB_STICK=/usb/usbstick
 USB_OPENVARIO=$USB_STICK/openvario
-RECOVER_DIR=$USB_OPENVARIO/recover_data
+RECOVER_DIR=$HOME/recover_data
 
-function sytem_check() {
-  echo "Sytem Check OpenVario"
-  echo "====================="
+DEBUG_LOG=$HOME/start-debug.log
+#------------------------------------------------------------------------------
+function TestStep() {
+  if [ "$WITH_TESTSTEPS" = "Yes" ]; then
+    echo "Test step:  $1"
+    echo "Test step:  $1"  >> $DEBUG_LOG
+  fi
+}
+#------------------------------------------------------------------------------
+function error_stop() {
+    echo "Error-Stop: $1"
+    read -p "Press enter to continue"
+}
+
+#------------------------------------------------------------------------------
+function printv() {
+    if [ "$VERBOSE" = "Yes" ]; then
+      echo "$1"
+      echo "$1" >> $DEBUG_LOG
+    fi
+}
+
+#------------------------------------------------------------------------------
+function debug_stop() {
+    if [ "$DEBUG_STOP" = "Yes" ]; then
+      echo "Debug-Stop: $1"
+      read -p "Press enter to continue"
+    fi
+}
+
+#------------------------------------------------------------------------------
+function system_check() {
+  printv "system_check"
+  echo "System Check OpenVario"
+  echo "======================"
   # in the beginning check the complete system
   # * check partition 2, should never filled about 400-450MB (if 468MB)
   # * check partition 3 how much free memory is available
@@ -23,86 +59,94 @@ function sytem_check() {
 #=========================================================================
 # a hidden possibility to change this file with a file from the USB-DIR
 if [ -z "$1" ]; then
-  if [ ! "$0" = "$HOME/ovmenu-ng.sh" ]; then
-  # Call another ovmenu-ng.sh to change it 'on the fly'
+  if [ "$0" = "/usr/bin/ovmenu-ng.sh" ]; then
+    echo "Call another ovmenu-ng.sh to change it 'on the fly'"
     if [ -f "$USB_OPENVARIO/ovmenu-ng.sh" ]; then 
       cp -vf "$USB_OPENVARIO/ovmenu-ng.sh" $HOME/
-      chmod 757 $HOME/ovmenu-ng.sh "New Start"
-      debug_stop " call '$HOME/ovmenu-ng.sh'"
-      $HOME/ovmenu-ng.sh
+      chmod 757 $HOME/ovmenu-ng.sh
+      echo "call '$HOME/ovmenu-ng.sh'"
+      $HOME/ovmenu-ng.sh "New Start"
+      echo "Extra ovmenu from '$USB_OPENVARIO'"
       exit
       debug_stop " exit after '$HOME/ovmenu-ng.sh'"
     fi
   fi
 fi
-#=========================================================================
 
-mv $HOMEDIR/start-debug-1.log $HOMEDIR/start-debug-2.log
-mv $HOMEDIR/start-debug.log $HOMEDIR/start-debug-1.log
-echo "begin startup.. $(date %Y-%m-%d %H:%M:%S)" >> $HOMEDIR/start-debug.log
+#=========================================================================
+#=========================================================================
+#=========================================================================
+echo "begin startup.."
+echo "===============" 
+chmod -Rf 757 $HOME
+TestStep  PreStart
+mv $HOME/start-debug-1.log $HOME/start-debug-2.log
+mv $DEBUG_LOG $HOME/start-debug-1.log
+TestStep  0
+source /boot/config.uEnv
+test=$(</sys/class/backlight/lcd/brightness)
+if [[ ! "$test" = "$brightness" ]]; then 
+  echo "low brightness = $test" >> $DEBUG_LOG
+  echo "$brightness" >/sys/class/backlight/lcd/brightness
+  debug_stop "brightness = '$test' vs. '$brightness'"
+fi
+
+# set system configs if upgrade.cfg is available (from Upgrade)
+TestStep  0
+cd $HOME
+if [ -f $HOME/recover_data/upgrade.cfg ]; then
+  echo "Update system config" > sysconfig.txt
+  /usr/bin/update-system-config.sh
+elif [ ! -f $HOME/recover_data/_upgrade.cfg ]; then
+  echo "upgrade.cfg not found" > sysconfig.txt
+else
+  echo "only backup config found !!!!!" > sysconfig.txt
+fi
+
+echo "begin startup.. $(date %Y-%m-%d %H:%M:%S)" >> $DEBUG_LOG
 DATESTRING=$(date %Y-%m-%d %H:%M:%S)
-date %Y-%m-%d %H:%M:%S >> $HOMEDIR/start-debug.log
-echo "=================================" >> $HOMEDIR/start-debug.log
+date %Y-%m-%d %H:%M:%S >> $DEBUG_LOG
+TestStep  1
+echo "=================================" >> $DEBUG_LOG
 if [ ! -e /dev/mmcblk0p3 ]; then
-  echo "/dev/mmcblk0p3 don't exist " >> $HOMEDIR/start-debug.log
-  ls -l /dev/mm* >> $HOMEDIR/start-debug.log
+  echo "/dev/mmcblk0p3 don't exist " >> $DEBUG_LOG
+  ls -l /dev/mm* >> $DEBUG_LOG
   # create the 3rd SD card partition:
   source /usr/bin/create_datapart.sh
 
-  echo "Debug-Stop: 3rd SD card partition created" >> $HOMEDIR/start-debug.log
-  if [ -f $HOMEDIR/_upgrade.cfg ]; then
+  echo "Debug: 3rd SD card partition created" >> $DEBUG_LOG
+  if [ -f $HOME/_upgrade.cfg ]; then
     # reactivate the previous system data
-    mv -f $HOMEDIR/_upgrade.cfg $HOMEDIR/upgrade.cfg
+    mv -f $HOME/_upgrade.cfg $HOME/upgrade.cfg
   fi 
       ### read -p "Press enter to continue"
   if [ ! -e /dev/mmcblk0p3 ]; then
-    echo "Reboot ====================================" >> $HOMEDIR/start-debug.log
-    echo "Wait until OpenVario after Reboot is ready!" >> $HOMEDIR/start-debug.log
+    echo "Reboot ====================================" >> $DEBUG_LOG
+    echo "Wait until OpenVario after Reboot is ready!" >> $DEBUG_LOG
     reboot
     ### read -p "Press enter to continue"
   fi
 fi
 
+TestStep  2
 # Mount the 3rd partition to the data dir
 # if [ ! -d $DATADIR ]; then mkdir $DATADIR; fi
 mount /dev/mmcblk0p3 $DATADIR
 if [ ! -d $DATADIR/OpenSoarData ]; then
   if ! mount /dev/mmcblk0p3 $DATADIR; then
-  if ! mkfs.ext4 /dev/mmcblk0p3; then
-    echo "Error 1: mmcblk0p3 couldn't be formatted"  >> $HOMEDIR/start-debug.log
+    if ! mkfs.ext4 /dev/mmcblk0p3; then
+      echo "Error 1: mmcblk0p3 couldn't be formatted"  >> $DEBUG_LOG
+    fi
+    if ! mount /dev/mmcblk0p3 $DATADIR; then
+      echo "Error 2: mmcblk0p3 couldn't be mounted"  >> $DEBUG_LOG
+    fi
   fi
-  if ! mount /dev/mmcblk0p3 $DATADIR; then
-    echo "Error 2: mmcblk0p3 couldn't be mounted"  >> $HOMEDIR/start-debug.log
-  fi
-fi
 else
-  echo "mmcblk0p3 is mounted at '$DATADIR'"  >> $HOMEDIR/start-debug.log
+  echo "mmcblk0p3 is mounted at '$DATADIR'"  >> $DEBUG_LOG
 fi
 
-if [ ! -d $DATADIR/OpenSoarData ]; then
-  # the data dir is new and has to be filled from USB, this stick should be still 
-  # available after upgrade
-  # This is only the case on an upgrade from old to a new system
-  mkdir -p $DATADIR/OpenSoarData
-  echo "'data/OpenSoarData'is new and has to be filled..."  >> $HOMEDIR/start-debug.log
-  # mv -v $HOMEDIR/.xcsoar/* $DATADIR/OpenSoarData  >> $HOMEDIR/start-debug.log
-  rsync -ruvtcE --progress $RECOVER_DIR/part2/xcsoar/* $DATADIR/OpenSoarData/ \
-            --delete --exclude cache  --exclude logs
-  echo "rsync $RECOVER_DIR/part2/xcsoar/* $DATADIR/OpenSoarData/ "  >> $HOMEDIR/start-debug.log
-  # rm -f $HOMEDIR/.xcsoar
-fi
-if [ ! -d $DATADIR/XCSoarData ]; then
-  # the data dir is new and has to be filled
-  mkdir -p $DATADIR/XCSoarData
-  echo "'data/XCSoarData'is new and has to be filled..."  >> $HOMEDIR/start-debug.log
-  rsync -ruvtcE --progress $RECOVER_DIR/part2/xcsoar/* $DATADIR/XCSoarData/ \
-            --delete --exclude cache  --exclude logs
-  echo "rsync $RECOVER_DIR/part2/xcsoar/* $DATADIR/XCSoarData/ "  >> $HOMEDIR/start-debug.log
-fi
-echo "startup is ready..."  >> $HOMEDIR/start-debug.log
-
-
-if [ -e ~/.glider_club/GliderClub_Std.prf ]; then
+TestStep  5
+if [ -e $DATADIR/.glider_club/GliderClub_Std.prf ]; then
   MENU_VERSION="club"
   MENU_ITEM="club_menu"
 else
@@ -110,8 +154,8 @@ else
   MENU_ITEM="normal_menu"
 fi
 
+TestStep "6 - 'main_app'"
 # detect main application and start this
-source /boot/config.uEnv
 case "$main_app" in 
   xcsoar)
       START_PROGRAM="start_xcsoar"
@@ -123,13 +167,18 @@ case "$main_app" in
       START_PROGRAM="start_opensoar"
     fi
     ;;
-  # LK8000)  START_PROGRAM="start_lk8000";;
 esac
+  # LK8000)  START_PROGRAM="start_lk8000";;
+
+TestStep "7 - 'START_PROGRAM'"
 
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 
-main_menu () {
+TestStep  10
+main_menu() {
+echo "call main_menu" >> $DEBUG_LOG
+
   while true
   do
     if [[ "$MENU_VERSION" == "club" ]]
@@ -141,6 +190,8 @@ main_menu () {
   done
 }
 
+#------------------------------------------------------------------------------
+TestStep  11
 function normal_menu() {
     ### display main menu ###
     dialog --clear --nocancel --backtitle "OpenVario" \
@@ -166,10 +217,12 @@ function normal_menu() {
         System) submenu_system;;
         Exit) do_shell;;
         Reboot) do_reboot;; 
-        Power_OFF) do_power_off;;
+        Power_OFF) do_power_off 3;;
     esac
 }
 
+#------------------------------------------------------------------------------
+TestStep  12
 function club_menu() {
     ### display main menu  with club version###
     dialog --clear --nocancel --backtitle "OpenVario" \
@@ -196,11 +249,13 @@ function club_menu() {
         System) submenu_system;;
         Exit) do_shell;;
         Reboot) do_reboot;; 
-        Power_OFF) do_power_off;;
+        Power_OFF) do_power_off 3;;
     esac
 }
 
 
+#------------------------------------------------------------------------------
+TestStep  13
 function submenu_file() {
 
   ### display file menu ###
@@ -226,50 +281,54 @@ function submenu_file() {
   esac
 }
 
+#------------------------------------------------------------------------------
+TestStep  14
 function submenu_system() {
-    ### display system menu ###
-    dialog --nocancel --backtitle "OpenVario" \
-    --title "[ S Y S T E M ]" \
-    --begin 3 4 \
-    --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
-    "Upgrade FW"   "Update complete system firmware" \
-    "Update Packg" "Update system software" \
-    "Save Image" "Save current image.." \
-    Calibrate_Sensors   "Calibrate Sensors" \
-    Calibrate_Touch   "Calibrate Touch" \
-    Settings   "System Settings" \
-    Information "System Info" \
-    Back   "Back to Main" 2>"${INPUT}"
+  ### display system menu ###
+  dialog --nocancel --backtitle "OpenVario" \
+  --title "[ S Y S T E M ]" \
+  --begin 3 4 \
+  --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
+  "Upgrade FW"   "Update complete system firmware" \
+  "Update Packg" "Update system software" \
+  "Save Image" "Save current image.." \
+  Calibrate_Sensors   "Calibrate Sensors" \
+  Calibrate_Touch   "Calibrate Touch" \
+  Settings   "System Settings" \
+  Information "System Info" \
+  Back   "Back to Main" 2>"${INPUT}"
 
-    menuitem=$(<"${INPUT}")
+  menuitem=$(<"${INPUT}")
 
-    # make decsion
-    case $menuitem in
-        "Upgrade FW")
-            upgrade_firmware
-            ;;
-        "Update Packg")
-            update_system
-            ;;
-        "Save Image")
-            save_image
-            ;;
-        Calibrate_Sensors)
-            calibrate_sensors
-            ;;
-        Calibrate_Touch)
-            calibrate_touch
-            ;;
-        Settings)
-            submenu_settings
-            ;;
-        Information)
-            show_info
-            ;;
-        Exit) ;;
-    esac
+  # make decsion
+  case $menuitem in
+      "Upgrade FW")
+          upgrade_firmware
+          ;;
+      "Update Packg")
+          update_system
+          ;;
+      "Save Image")
+          save_image
+          ;;
+      Calibrate_Sensors)
+          calibrate_sensors
+          ;;
+      Calibrate_Touch)
+          calibrate_touch
+          ;;
+      Settings)
+          submenu_settings
+          ;;
+      Information)
+          show_info
+          ;;
+      Exit) ;;
+  esac
 }
 
+TestStep  15
+#------------------------------------------------------------------------------
 function show_info() {
     ### collect info of system and show them in a dialog 
 	/usr/bin/system-info.sh > /tmp/tail.$$ &
@@ -277,6 +336,7 @@ function show_info() {
            --tailbox /tmp/tail.$$ 30 50
 }
 
+#------------------------------------------------------------------------------
 function submenu_settings() {
     ### display settings menu ###
     dialog --nocancel --backtitle "OpenVario" \
@@ -306,6 +366,8 @@ function submenu_settings() {
 }
 
 
+#------------------------------------------------------------------------------
+TestStep  16
 function submenu_ssh() {
     if /bin/systemctl --quiet is-enabled dropbear.socket; then
         local state=enabled
@@ -336,75 +398,86 @@ function submenu_ssh() {
             /bin/systemctl disable --now dropbear.socket
         fi
     fi
+  submenu_settings
 }
 
+#------------------------------------------------------------------------------
+TestStep  17
 function submenu_lcd_brightness() {
-while [ $? -eq 0 ]
-do
-    menuitem=$(</sys/class/backlight/lcd/brightness)
-    dialog --backtitle "OpenVario" \
-    --title "LCD brightness" \
-    --cancel-label Back \
-    --ok-label Set \
-    --default-item "${menuitem}" \
-    --menu "Brightness value" \
-    17 50 10 \
-    1 "Dark" \
-    2 "" \
-    3 "" \
-    4 "" \
-    5 "Medium" \
-    6 "" \
-    7 "" \
-    8 "" \
-    9 "" \
-    10 "Bright" \
-    2>/sys/class/backlight/lcd/brightness
-done
-if [ "$(</sys/class/backlight/lcd/brightness)" = "" ]; then 
-  # in case of ESC brightness is empty
-  echo "$menuitem" > /sys/class/backlight/lcd/brightness
-  # for later usage (upgrade fw...)
-  count=$(grep -c "brightness" /boot/config.uEnv)
-  if [ "$count"´-eq "0" ]; then 
-    echo "brightness=$menuitem" >> /boot/config.uEnv
+  while [ $? -eq 0 ]
+  do
+      menuitem=$(</sys/class/backlight/lcd/brightness)
+      dialog --backtitle "OpenVario" \
+      --title "LCD brightness" \
+      --cancel-label Back \
+      --ok-label Set \
+      --default-item "${menuitem}" \
+      --menu "Brightness value" \
+      17 50 10 \
+      1 "Dark" \
+      2 "" \
+      3 "" \
+      4 "" \
+      5 "Medium" \
+      6 "" \
+      7 "" \
+      8 "" \
+      9 "" \
+      10 "Bright" \
+      2>/sys/class/backlight/lcd/brightness
+  done
+  new_value=$(</sys/class/backlight/lcd/brightness)
+  if [ -z "$new_value" ]; then 
+    # in case of ESC brightness is empty
+    echo "$menuitem" > /sys/class/backlight/lcd/brightness
   else
-    sed -i 's/^brightness=.*/brightness='$menuitem'/' /boot/config.uEnv
-  fi
-fi
-    submenu_settings
-}
-
-function submenu_rotation() {
-    TEMP=$(grep "rotation" /boot/config.uEnv)
-    if [ -n $TEMP ]; then
-        ROTATION=${TEMP: -1}
-        dialog --nocancel --backtitle "OpenVario" \
-        --title "[ S Y S T E M ]" \
-        --begin 3 4 \
-        --default-item "${ROTATION}" \
-        --menu "Select Rotation:" 15 50 4 \
-         0 "Landscape 0 deg" \
-         1 "Portrait 90 deg" \
-         2 "Landscape 180 deg" \
-         3 "Portrait 270 deg" 2>"${INPUT}"
-
-         menuitem=$(<"${INPUT}")
-
-        # update config
-        # uboot rotation
-        sed -i 's/^rotation=.*/rotation='$menuitem'/' /boot/config.uEnv
-        echo "$menuitem" >/sys/class/graphics/fbcon/rotate_all
-        dialog --msgbox "New Setting saved !!\n Touch recalibration required !!" 10 50
+    # for later usage (upgrade fw...)
+    count=$(grep -c "brightness" /boot/config.uEnv)
+    if [ "$count"´-eq "0" ]; then 
+      echo "brightness=$new_value" >> /boot/config.uEnv
     else
-        dialog --backtitle "OpenVario" \
-        --title "ERROR" \
-        --msgbox "No Config found !!"
+      sed -i 's/^brightness=.*/brightness='$new_value'/' /boot/config.uEnv
     fi
+    debug_stop "brightness = $new_value"
+  fi
+  
+  submenu_settings
 }
 
-function update_system() {
+#------------------------------------------------------------------------------
+TestStep  18
+function submenu_rotation() {
+  TEMP=$(grep "rotation" /boot/config.uEnv)
+  if [ -n $TEMP ]; then
+      ROTATION=${TEMP: -1}
+      dialog --nocancel --backtitle "OpenVario" \
+      --title "[ S Y S T E M ]" \
+      --begin 3 4 \
+      --default-item "${ROTATION}" \
+      --menu "Select Rotation:" 15 50 4 \
+       0 "Landscape 0 deg" \
+       1 "Portrait 90 deg" \
+       2 "Landscape 180 deg" \
+       3 "Portrait 270 deg" 2>"${INPUT}"
 
+       menuitem=$(<"${INPUT}")
+
+      # update config
+      # uboot rotation
+      sed -i 's/^rotation=.*/rotation='$menuitem'/' /boot/config.uEnv
+      echo "$menuitem" >/sys/class/graphics/fbcon/rotate_all
+      dialog --msgbox "New Setting saved !!\n Touch recalibration required !!" 10 50
+  else
+      dialog --backtitle "OpenVario" \
+      --title "ERROR" \
+      --msgbox "No Config found !!"
+  fi
+  submenu_settings
+}
+
+#------------------------------------------------------------------------------
+TestStep  19
+function update_system() {
     echo "Updating System ..." > /tmp/tail.$$
     opkg update &>/dev/null
     OPKG_UPDATE=$(opkg list-upgradable)
@@ -423,6 +496,8 @@ function update_system() {
     esac
 }
 
+#------------------------------------------------------------------------------
+TestStep  20
 function upgrade_firmware() {
     echo "Upgrade Firmware ..." > /tmp/tail.$$
     /usr/bin/fw-upgrade.sh
@@ -431,6 +506,8 @@ function upgrade_firmware() {
     sync
 }
 
+#------------------------------------------------------------------------------
+TestStep  21
 function calibrate_sensors() {
 
     dialog --backtitle "Openvario" \
@@ -468,12 +545,16 @@ function calibrate_sensors() {
     systemctl restart variod.service
 }
 
+#------------------------------------------------------------------------------
+TestStep  22
 function calibrate_touch() {
     echo "Calibrating Touch ..." >> /tmp/tail.$$
     /usr/bin/ov-calibrate-ts.sh >> /tmp/tail.$$
     dialog --msgbox "Calibration OK!" 10 50
 }
 
+#------------------------------------------------------------------------------
+TestStep  23
 # Copy /home/root/data/OpenSoarData to $USB_OPENVARIO/download/OpenSoarData
 function download_files() {
     echo "Downloading files ..." > /tmp/tail.$$
@@ -481,27 +562,35 @@ function download_files() {
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
+#------------------------------------------------------------------------------
+TestStep  24
 # Copy /home/root/OpenSoarData/logs to $USB_OPENVARIO/igc
 # Copy only *.igc files
 function download_igc_files() {
     /usr/bin/download-igc.sh
 }
 
+#------------------------------------------------------------------------------
+TestStep  25
 # Copy $USB_OPENVARIO/upload to /home/root/data/OpenSoarData
-function upload_files(){
+function upload_files() {
     echo "Uploading files ..." > /tmp/tail.$$
     /usr/bin/upload-opensoar.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
+#------------------------------------------------------------------------------
+TestStep  26
 # Reset $USB_OPENVARIO/upload to /home/root/data/OpenSoarData
-function reset_data(){
+function reset_data() {
     echo "Uploading data files ..." > /tmp/tail.$$
     /usr/bin/reset-opensoar-data.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 }
 
 
+#------------------------------------------------------------------------------
+TestStep  27
 # datapath with short name: better visibility im OpenSoar/XCSoar
 function check_exit_code() {
   case "$1" in
@@ -517,8 +606,7 @@ function check_exit_code() {
       do_reboot
     ;;
     202) # ShutDown
-      do_power_off  "5" # with question!
-      # shutdown -h now
+      do_power_off  5
     ;;
     *)
       echo "OpenSoar Exit Code: '$1'"
@@ -526,6 +614,9 @@ function check_exit_code() {
     ;;
   esac
 }
+
+#------------------------------------------------------------------------------
+TestStep  28
 # datapath with short name: better visibility im OpenSoar/XCSoar
 function start_opensoar_club() {
     # reset the profile to standard profile
@@ -537,39 +628,56 @@ function start_opensoar_club() {
     sync
 }
 
-
+#------------------------------------------------------------------------------
+TestStep  29
 function start_opensoar() {
     /usr/bin/OpenSoar -fly -datapath=data/OpenSoarData/
     check_exit_code $?
     sync
 }
 
+#------------------------------------------------------------------------------
+TestStep  30
 function start_xcsoar() {
     /usr/bin/xcsoar -fly -datapath=data/XCSoarData/
     sync
 }
 
-function do_reboot(){
-    if [ -z "$1" ]; then REBOOT_TIMER=2;
-    else REBOOT_TIMER="$1"; fi
-    dialog --backtitle "Openvario" \
-    --title "Reboot ?" --yesno --pause \
-    "Reboot OpenVario ... \\n Press [ESC] for interrupt" 10 30 $REBOOT_TIMER 2>&1
+#------------------------------------------------------------------------------
+TestStep  31
+function do_reboot() {
+    local REBOOT_TIMER=2
+    if [ -n "$1" ]; then REBOOT_TIMER="$1"; fi
 
-    if [ "$?" = "0" ]; then reboot; fi; 
+    dialog --backtitle "Openvario" \
+    --title "Reboot ?" --pause \
+    "Reboot OpenVario ... \\n Press [ESC] for interrupt" 10 30 $REBOOT_TIMER 2>&1
+    RESULT=$?
+    sync
+    if [ "$RESULT" = "0" ]; then reboot; fi
 }
 
+#------------------------------------------------------------------------------
+TestStep  32
 function do_power_off() {
-    if [ -z "$1" ]; then POWER_OFF_TIMER=4;
-    else POWER_OFF_TIMER="$1"; fi
+    POWER_OFF_TIMER=4
+    if [ -n "$1" ]; then POWER_OFF_TIMER="$1"; fi
+
     dialog --backtitle "Openvario" \
-    --title "Power-OFF ?" --yesno --pause \
+    --title "Power-OFF ?" --pause \
     "Really want to Power-OFF \\n Press [ESC] for interrupt" 10 30 $POWER_OFF_TIMER 2>&1
 
-    if [ "$?" = "0" ]; then shutdown -h now; fi; 
+    RESULT=$?
+    if [ "$RESULT" = "0" ]; then 
+      echo "1" >/sys/class/backlight/lcd/brightness
+      sync
+      shutdown -h now
+    fi
 }
 
-function do_shell(){
+#------------------------------------------------------------------------------
+TestStep  34
+function do_shell() {
     clear
     cd
 
@@ -586,24 +694,23 @@ function do_shell(){
     fi
 }
 
-# set system configs if upgrade.cfg is available (from Upgrade)
-cd ~/
-if [ -f upgrade.cfg ]; then
-  echo "Update system config" > sysconfig.txt
-  /usr/bin/update-system-config.sh
-elif [ ! -f _upgrade.cfg ]; then
-  echo "upgrade.cfg not found" > sysconfig.txt
-else
-  echo "only backup config found !!!!!" > sysconfig.txt
-fi
-
+#==============================================================================
+#==============================================================================
+#==============================================================================
 dialog --nook --nocancel --pause \
 "Starting OpenSoar (!)... \\n Press [ESC] for menu" \
 10 30 $TIMEOUT 2>&1
 
 case $? in
-    0) $START_PROGRAM;;
-    *) main_menu;;
+    0) 
+      TestStep  36
+      $START_PROGRAM
+    ;;
+    *) 
+       TestStep  37
+       main_menu
+    ;;
 esac
+TestStep  38
 
 main_menu
