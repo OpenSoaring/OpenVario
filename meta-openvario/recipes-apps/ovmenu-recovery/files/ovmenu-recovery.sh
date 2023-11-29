@@ -305,12 +305,14 @@ function updateall(){
 
 #------------------------------------------------------------------------------
 function create_mmcblkp3(){
+PARTITION3_START=2359296
+
 fdisk /dev/mmcblk0 << EOF
 p
 n
 p
 3
-1048576
+$PARTITION3_START
 
 
 p
