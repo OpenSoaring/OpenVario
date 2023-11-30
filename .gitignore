@@ -8,3 +8,6 @@ downloads/
 sstate-cache/
 tmp/
 build/
+/meta-openvario/recipes-apps/opensoar/_aug_revisions.txt
+/meta-openvario/recipes-apps/ovmenu-ng-skripts/files/_aug_version-test.sh
+/meta-openvario/recipes-apps/xcsoar/_aug_revisions.txt
