@@ -303,7 +303,7 @@ function select_image() {
     base_display=$?
     if [ ! "$target_display" = "$base_display" ]; then
       DISPLAY_ROTATION=Yes
-      error_stop "DISPLAY_ROTATION = '$DISPLAY_ROTATION'!!!"
+      debug_stop "Display-Rotation has to be changed!"
     fi
 }
 
