@@ -189,34 +189,34 @@ function select_image(){
         files_nice+=($count "$temp") # selection index + name
     done < <( ls -1 $images )
 #------------------------------------------------------------------------------
-##    images=$OV_USB_OPENVARIO/images/O*V*-*.gz
-##    while read -r line; do # process file by file
-##        let count=$count+1
-##        files+=($count "$line")
-##        filename=$(basename "$line") 
-##        temp1=$(echo $filename | grep -oE '[0-9]{5}')
-##        if [ -n "$temp1" ]; then
-##            teststr=$(echo $filename | awk -F'-ipk-|.rootfs' '{print $2}')
-##            # teststr is now: 17119-openvario-57-lvds[-testing]
-##            temp2=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
-##        else
-##            # the complete (new) filename without extension
-##            # temp1=$(echo $filename | awk -F'/|.img' '{print $4}')
-##            temp1=${filename}
-##        fi
-##        # grep the buzzword 'testing'
-##        temp3=$(echo $filename | grep -o "testing")
-##        
-##        if [ -n "$temp2" ]; then
-##            temp="$temp1 hw=$temp2"
-##        else
-##            temp="$temp1"
-##        fi
-##        if [ -n "$temp3" ]; then
-##            temp="$temp ($temp3)"
-##        fi
-##        files_nice+=($count "$temp (USB)") # selection index + name
-##    done < <( ls -1 $images )
+    images=$USB_OPENVARIO/images/O*V*-*.gz
+    while read -r line; do # process file by file
+        let count=$count+1
+        files+=($count "$line")
+        filename=$(basename "$line") 
+        temp1=$(echo $filename | grep -oE '[0-9]{5}')
+        if [ -n "$temp1" ]; then
+            teststr=$(echo $filename | awk -F'-ipk-|.rootfs' '{print $2}')
+            # teststr is now: 17119-openvario-57-lvds[-testing]
+            temp2=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
+        else
+            # the complete (new) filename without extension
+            # temp1=$(echo $filename | awk -F'/|.img' '{print $4}')
+            temp1=${filename}
+        fi
+        # grep the buzzword 'testing'
+        temp3=$(echo $filename | grep -o "testing")
+        
+        if [ -n "$temp2" ]; then
+            temp="$temp1 hw=$temp2"
+        else
+            temp="$temp1"
+        fi
+        if [ -n "$temp3" ]; then
+            temp="$temp ($temp3)"
+        fi
+        files_nice+=($count "$temp (USB)") # selection index + name
+    done < <( ls -1 $images )
 #------------------------------------------------------------------------------
     if [ -n "$files" ]; then
         dialog --backtitle "Selection upgrade image from file list" \
@@ -227,7 +227,6 @@ function select_image(){
         read SELECTED < ${SELECTION}
         let INDEX=$SELECTED+$SELECTED-1  # correct pointer in the arrays
 
-        # IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$(<${SELECTION}) p"))
         IMAGEFILE="${files[$INDEX]}"
         echo "-------------------------"
         echo "SELECTED  = ${files_nice[$INDEX]}"
@@ -237,28 +236,6 @@ function select_image(){
         echo "no image file(s) found"
         IMAGEFILE=""
     fi
-    # clear_display
-
-    ### if [ -n "$files" ]; then
-    ###     dialog --backtitle "Selection upgrade image from file list" \
-    ###     --title "Select image" \
-    ###     --menu "Use [UP/DOWN] keys to move, ENTER to select" \
-    ###     18 60 12 "${files_nice[@]}" 2> "${SELECTION}"
-    ###     
-    ###     read SELECTED < ${SELECTION}
-    ###     let INDEX=$SELECTED+$SELECTED-1  # correct pointer in the arrays
-    ### 
-    ###     # IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$(<${SELECTION}) p"))
-    ###     IMAGEFILE="${files[$INDEX]}"
-    ###     echo "-------------------------"
-    ###     echo "SELECTED  = ${files_nice[$INDEX]}"
-    ###     echo "IMAGEFILE = $IMAGEFILE"
-    ###     
-    ### else
-    ###     echo "no image file available"
-    ###     IMAGEFILE=""
-    ### fi
-    # clear_display
 }
 
 #------------------------------------------------------------------------------
@@ -442,24 +419,6 @@ function recover_system(){
       echo "font          = $font"         >> $DEBUG_LOG
       echo "fdt           = $fdtfile"      >> $DEBUG_LOG
       echo "========================"      >> $DEBUG_LOG
-      ##### later if [ -n rotation ]; then
-      #####   echo "Set rotaton '$rotation'"  >> $DEBUG_LOG
-      #####   sed -i 's/^rotation=.*/rotation='$rotation'/' $PARTITION1/config.uEnv
-      ##### fi
-      #### ??? if [ -n $font ]; then
-      ####   sed -i 's/^font=.*/font='$font'/' $PARTITION1/config.uEnv
-      ####   echo "Set font '$font'"  >> $DEBUG_LOG
-      #### fi
-      #### later if [ -n $brightness ]; then
-      ####   count=$(grep -c "brightness" $PARTITION1/config.uEnv)
-      ####   if [ "$count" = "0" ]; then 
-      ####     echo "brightness=$brightness" >> $PARTITION1/config.uEnv
-      ####     echo "Set brightness (1) '$brightness' NEW"  >> $DEBUG_LOG
-      ####   else
-      ####     sed -i 's/^brightness=.*/brightness='$brightness'/' $PARTITION1/config.uEnv
-      ####     echo "Set brightness (2) '$brightness' UPDATE"  >> $DEBUG_LOG
-      ####   fi
-      #### fi
     
       if [ -n "$ROTATION" ]; then
           if [ "$DISPLAY_ROTATION" = "Yes" ]; then
@@ -480,10 +439,6 @@ function recover_system(){
       if [ -n "$ROTATION" ]; then
           sed -i 's/^rotation=.*/rotation='$ROTATION'/' $PARTITION1/config.uEnv
       fi
-      #### if [ -n font ]; then
-      ####     sed -i 's/^font=.*/font='$font'/' $PARTITION1/config.uEnv
-      #### fi
-      # TODO(August2111): check, if this correct
       if [ -n "$BRIGHTNESS" ]; then
         count=$(grep -c "brightness" $PARTITION1/config.uEnv)
         if [ "$count" = "0" ]; then 
@@ -763,10 +718,6 @@ printv "UPGRADE_TYPE       = $UPGRADE_TYPE"
 
 # set dmesg minimum kernel level:
 dmesg -n 1
-
-#################################
-### exit 0 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#################################
 
 if [ -e "$IMAGEFILE" ]; then
   echo "Update $IMAGEFILE !!!!"
