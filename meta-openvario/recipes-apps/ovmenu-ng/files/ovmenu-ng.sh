@@ -84,12 +84,11 @@ mv $HOME/start-debug-1.log $HOME/start-debug-2.log
 mv $DEBUG_LOG $HOME/start-debug-1.log
 TestStep  0
 source /boot/config.uEnv
-test=$(</sys/class/backlight/lcd/brightness)
-if [[ ! "$test" = "$brightness" ]]; then 
-  echo "low brightness = $test" >> $DEBUG_LOG
-  echo "$brightness" >/sys/class/backlight/lcd/brightness
-  debug_stop "brightness = '$test' vs. '$brightness'"
+if [[ -z "$brightness" ]]; then 
+  brightness=10
 fi
+echo "$brightness" >/sys/class/backlight/lcd/brightness
+debug_stop "set brightness to '$brightness'"
 
 # set system configs if upgrade.cfg is available (from Upgrade)
 TestStep  0
@@ -669,8 +668,9 @@ function do_power_off() {
 
     RESULT=$?
     if [ "$RESULT" = "0" ]; then 
-      echo "1" >/sys/class/backlight/lcd/brightness
+      # echo "1" >/sys/class/backlight/lcd/brightness
       sync
+      clear
       shutdown -h now
     fi
 }
