@@ -303,10 +303,16 @@ EOF
 # # The function make no sense here, because system services not started yet
 function restore_settings() {
   # ... content from update-system-config.sh
-  if [ ! -e $PARTITION2/usr/bin/update-system-config.sh ]; then
+  if [ ! -e $PARTITION2/usr/bin/update-system-config.sh ]; then # => UPDATE_TYPE 2 and 4
     if [  -e $USB_OPENVARIO/update-system-config.sh ]; then
       cp -f $USB_OPENVARIO/update-system-config.sh $PARTITION2/usr/bin/
       chmod 757 $PARTITION2/usr/bin/update-system-config.sh
+      # chown root:root $PARTITION2/usr/bin/update-system-config.sh
+    fi
+    # copy also fw-upgrade.sh in the usr/bin dir too
+    if [  -e $USB_STICK/fw-upgrade.sh ]; then
+      cp -f $USB_STICK/fw-upgrade.sh $PARTITION2/usr/bin/
+      chmod 757 $PARTITION2/usr/bin/fw-upgrade.sh
       # chown root:root $PARTITION2/usr/bin/update-system-config.sh
     fi
   fi
@@ -396,6 +402,10 @@ function recover_system(){
        mv -fv $RECOVER_DIR/xcsoar $HOME_PART2/.xcsoar
        if [ -e $USB_OPENVARIO/update-system-config.sh ]; then 
          cp -fv $USB_OPENVARIO/update-system-config.sh $HOME_PART2/
+       fi
+       # copy also fw-upgrade.sh in the HOME dir too
+       if [ -e $USB_STICK/fw-upgrade.sh ]; then 
+         cp -fv $USB_STICK/fw-upgrade.sh $HOME_PART2/
        fi
        if [ -d "$RECOVER_DIR/glider_club" ]; then
           mkdir -p $HOME_PART2/.glider_club
