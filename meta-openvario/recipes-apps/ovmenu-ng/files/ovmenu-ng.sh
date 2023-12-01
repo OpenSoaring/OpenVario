@@ -674,9 +674,7 @@ function do_power_off() {
 
     RESULT=$?
     if [ "$RESULT" = "0" ]; then 
-      # echo "1" >/sys/class/backlight/lcd/brightness
       sync
-      clear
       shutdown -h now
     fi
 }
