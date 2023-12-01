@@ -446,26 +446,32 @@ function submenu_lcd_brightness() {
 #------------------------------------------------------------------------------
 TestStep  18
 function submenu_rotation() {
-  TEMP=$(grep "rotation" /boot/config.uEnv)
-  if [ -n $TEMP ]; then
-      ROTATION=${TEMP: -1}
-      dialog --nocancel --backtitle "OpenVario" \
-      --title "[ S Y S T E M ]" \
-      --begin 3 4 \
-      --default-item "${ROTATION}" \
-      --menu "Select Rotation:" 15 50 4 \
-       0 "Landscape 0 deg" \
-       1 "Portrait 90 deg" \
-       2 "Landscape 180 deg" \
-       3 "Portrait 270 deg" 2>"${INPUT}"
-
-       menuitem=$(<"${INPUT}")
-
+  temp=$(grep "rotation" /boot/config.uEnv)
+  if [ -n temp ]; then
+    rotation=${temp: -1}
+    dialog --nocancel --backtitle "OpenVario" \
+        --title "[ S Y S T E M ]" \
+        --begin 3 4 \
+        --default-item "${rotation}" \
+        --menu "Select Rotation:" 15 50 4 \
+         0 "Landscape 0 deg" \
+         1 "Portrait 90 deg" \
+         2 "Landscape 180 deg" \
+         3 "Portrait 270 deg" 2>"${INPUT}"
+    
+    new_value=$(<"${INPUT}")
+    if [ -z "$new_value" ]; then 
+      echo "Rotation: Cancel or ESC!"
+    elif [ "$new_value" = "$rotation" ]; then
+      echo "Rotation value not changed = '$rotation'!"
+    else
+      echo "diff values: new_value = '$new_value', temp = '$temp', rotation = '$rotation'"
       # update config
       # uboot rotation
-      sed -i 's/^rotation=.*/rotation='$menuitem'/' /boot/config.uEnv
-      echo "$menuitem" >/sys/class/graphics/fbcon/rotate_all
+      sed -i 's/^rotation=.*/rotation='$new_value'/' /boot/config.uEnv
+      echo "$new_value" >/sys/class/graphics/fbcon/rotate_all
       dialog --msgbox "New Setting saved !!\n Touch recalibration required !!" 10 50
+    fi
   else
       dialog --backtitle "OpenVario" \
       --title "ERROR" \
