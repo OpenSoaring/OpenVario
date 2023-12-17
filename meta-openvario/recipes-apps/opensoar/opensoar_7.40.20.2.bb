@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r1"
+PR="r2"
 ### RCONFLICTS:${PN}="xcsoar xcsoar-testing"
 RCONFLICTS:${PN}="xcsoar-testing"
 
