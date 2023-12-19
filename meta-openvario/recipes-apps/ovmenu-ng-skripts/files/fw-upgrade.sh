@@ -626,12 +626,14 @@ function start_upgrade() {
     ;;
     2)  # - from old fw to new fw
         echo "Target FW is new but Base FW is old!"
-        # delete:   # # echo "copy the 1st block (20MB) (boot-sector!)"
+        # delete:   # # echo "copy the 1st block (2MB) (boot-sector!)"
         # delete:   # # gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1024 count=512
     ;;
     3)  # - from new fw to old fw
         echo "Target FW is old but Base FW is new!"
-        dialog --nook --nocancel --pause "This is a change to an old FW file ($TARGET_FW_VERSION)!" 10 30 5 2>&1
+        DIALOG_TEXT="This is a change to an old image type "
+        DIALOG_TEXT+="with a limited data memory (FW: $TARGET_FW_VERSION)!"
+        dialog --nook --nocancel --pause "$DIALOG_TEXT" 10 30 5 2>&1
         # clear_display
         clear
     ;;
@@ -639,10 +641,10 @@ function start_upgrade() {
         echo "both FW are a old type!"
         # delete:   # # boot_sector_file=$USB_OPENVARIO/images/$TARGET_HW/bootsector.bin.gz
         # delete:   # # if [ -e "$boot_sector_file" ]; then
-        # delete:   # # # echo "copy bootsector file to bootsector"
-        # delete:   # # # gzip -cfd $boot_sector_file | dd of=$TARGET bs=1024 count=512
+        # delete:   # #   echo "copy bootsector file to bootsector"
+        # delete:   # #   gzip -cfd $boot_sector_file | dd of=$TARGET bs=1024 count=512
         # delete:   # # else
-        # delete:   # # # error_stop "An upgrade without '$boot_sector_file' is not possible!"
+        # delete:   # #   error_stop "An upgrade without '$boot_sector_file' is not possible!"
         # delete:   # # fi
     ;;
     esac
@@ -732,9 +734,9 @@ if [ -f "${IMAGEFILE}" ]; then
 
     IMAGE_NAME=$(basename "$IMAGEFILE" .gz)
     TIMEOUT=5
-    dialog --nook --nocancel --pause \
-    "OpenVario Upgrade with \\n'$IMAGE_NAME' ... \\n Press [Enter] or wait $TIMEOUT seconds to continue\\n Press [ESC] for interrupting" \
-    20 60 $TIMEOUT 2>&1
+    DIALOG_TEXT="OpenVario Upgrade with \\n'$IMAGE_NAME' ... \\n Press [Enter] or wait "
+    DIALOG_TEXT+="$TIMEOUT seconds to continue\\n Press [ESC] for interrupting"
+    dialog --nook --nocancel --pause "$DIALOG_TEXT" 20 60 $TIMEOUT 2>&1
     # DO NOTHING AFTER USING '$?' ONE TIMES!!!
     
     # store the selection for debug reasons:
