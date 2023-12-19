@@ -604,7 +604,8 @@ function start_upgrade() {
       echo "this is an old firmware"
       # the USB-STICK has to be available:
       ITB_TARGET=$USB_OPENVARIO/ov-recovery.itb
-      ### ITB_TARGET=./ov-recovery.itb
+      # TestA: 
+      ITB_TARGET=$HOME/ov-recovery.itb
       echo "use ITB target: '$USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb'"
       if [ -f "$USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb" ]; then
         # hardlink from FAT (USB-Stick..) is not possible 
@@ -626,7 +627,10 @@ function start_upgrade() {
     ;;
     2)  # - from old fw to new fw
         echo "Target FW is new but Base FW is old!"
-        # delete:   # # echo "copy the 1st block (2MB) (boot-sector!)"
+      # TestA: 
+        # delete:   # # 
+        echo "overwrite the bootloader 0xA000 - ~0x78000"
+        gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=4096 skip=10 seek=10 count=112
         # delete:   # # gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1024 count=512
     ;;
     3)  # - from new fw to old fw
@@ -639,13 +643,15 @@ function start_upgrade() {
     ;;
     4)  # - from old fw to old fw
         echo "both FW are a old type!"
-        # delete:   # # boot_sector_file=$USB_OPENVARIO/images/$TARGET_HW/bootsector.bin.gz
-        # delete:   # # if [ -e "$boot_sector_file" ]; then
-        # delete:   # #   echo "copy bootsector file to bootsector"
-        # delete:   # #   gzip -cfd $boot_sector_file | dd of=$TARGET bs=1024 count=512
-        # delete:   # # else
-        # delete:   # #   error_stop "An upgrade without '$boot_sector_file' is not possible!"
-        # delete:   # # fi
+        # delete:   # # 
+        
+        boot_sector_file=$USB_OPENVARIO/images/$TARGET_HW/bootsector.bin.gz
+        if [ -e "$boot_sector_file" ]; then
+          echo "overwrite the bootloader "
+          gzip -cfd $boot_sector_file | dd of=$TARGET bs=4096 skip=10 seek=10 count=112
+        else
+          error_stop "An upgrade without '$boot_sector_file' is not possible!"
+        fi
     ;;
     esac
     
@@ -743,6 +749,7 @@ if [ -f "${IMAGEFILE}" ]; then
     INPUT="$?"
     # clear_display
     clear
+    echo "$DIALOG_TEXT"
     case $INPUT in
         0) 
             start_upgrade;;
