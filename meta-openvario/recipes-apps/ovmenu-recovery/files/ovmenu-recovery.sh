@@ -557,9 +557,29 @@ function save_old_system() {
 
     # 3rd: save OpenSoarData/XCSoarData from partition 2 (or 3):
     echo "3rd: save OpenSoarData / XCSoarData from partition 2 or 3"
+    debug_stop "UPGRADE_TYPE = $UPGRADE_TYPE"
 
     case "$UPGRADE_TYPE" in 
-      2 | 3 | 4) # data coming from '.xcsoar' folder
+      3)  # data coming from 'data/OpenSoarData' folder
+          echo "data coming from 'data/OpenSoarData' folder for upgrade type $UPGRADE_TYPE"
+          mkdir -p $RECOVER_DIR/xcsoar
+          if [ ! -d "$PARTITION3/OpenVarioData" ]; then
+            mount ${TARGET}p3 $PARTITION3
+          fi
+          if [ -d  $PARTITION3/OpenSoarData ]; then
+            # unfortunately RSYNC is not available in ov-recovery.itb!
+            cp -rfv  $PARTITION3/OpenSoarData/* $RECOVER_DIR/xcsoar/
+            # or ? cp -rfv  $PARTITION3/XCVarioData/* $RECOVER_DIR/xcsoar/
+            # the old image type has a reduced data memory
+            rm -rf $RECOVER_DIR/xcsoar/logs/
+            rm -rf $RECOVER_DIR/xcsoar/cache/
+          else
+            error_stop "OpenSoarData doesn't exist!"
+          fi
+          
+          debug_stop "OpenSoarData are copied in '$RECOVER_DIR/xcsoar'"
+        ;;
+      2 | 4) # data coming from '.xcsoar' folder
           echo "data coming from '.xcsoar' folder for upgrade type $UPGRADE_TYPE"
           mkdir -p $RECOVER_DIR/xcsoar
           cp -rfv  $HOME_PART2/.xcsoar/* $RECOVER_DIR/xcsoar/
@@ -580,6 +600,9 @@ function save_old_system() {
     debug_stop "saving finished"
     # Synchronize the commands (?)
     sync
+    if [ -d "$PARTITION3/OpenVarioData" ]; then
+      umount $PARTITION3
+    fi
 }
 
 #==============================================================================
@@ -594,12 +617,21 @@ if [ -z "$1" ]; then
   if [ ! "$0" = "$HOME/ovmenu-recovery.sh" ]; then
     # Call another ovmenu-recovery.sh to change it 'on the fly'
     if [ -f "$USB_OPENVARIO/ovmenu-recovery.sh" ]; then 
-      cp "$USB_OPENVARIO/ovmenu-recovery.sh" $HOME/
-      chmod 757 $HOME/ovmenu-recovery.sh
-      debug_stop " call '$HOME/ovmenu-recovery.sh'"
-      $HOME/ovmenu-recovery.sh  "New Start"
-      exit
-      debug_stop " exit after '$HOME/ovmenu-recovery.sh'"
+      TIMEOUT=6
+      dialog --nook --nocancel --pause \
+      "Do you want to use the alternate 'ovmenu-recovery.sh'" 20 60 $TIMEOUT 2>&1
+      # DO NOTHING AFTER USING '$?' ONE TIMES!!!
+      # but store the selection for debug reasons:
+      INPUT="$?"
+      if [ "$INPUT" = "0" ]; then
+        # ENTER or TIMEOUT:
+        cp "$USB_OPENVARIO/ovmenu-recovery.sh" $HOME/
+        chmod 757 $HOME/ovmenu-recovery.sh
+        error_stop " call alternative '$HOME/ovmenu-recovery.sh'"
+        $HOME/ovmenu-recovery.sh  "New Start"
+        exit
+        debug_stop " exit after '$HOME/ovmenu-recovery.sh'"
+      fi 
     fi
   else
     debug_stop "new ovmenu-recovery.sh - 2"
