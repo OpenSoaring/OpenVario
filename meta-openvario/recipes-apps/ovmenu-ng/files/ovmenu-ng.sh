@@ -155,6 +155,7 @@ fi
 
 TestStep "6 - 'main_app'"
 # detect main application and start this
+export MAIN_APP=$main_app
 case "$main_app" in 
   xcsoar)
       START_PROGRAM="start_xcsoar"
@@ -197,26 +198,26 @@ function normal_menu() {
     --title "[ M A I N - M E N U ]" \
     --begin 3 4 \
     --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
-    OpenSoar   "Start OpenSoar" \
-    XCSoar   "Start XCSoar" \
-    File   "Copys file to and from OpenVario" \
-    System   "Update, Settings, ..." \
-    Exit   "Exit to the shell" \
-    Reboot "Reboot" \
-    Power_OFF "Power OFF" \
+    "OpenSoar"    "Start OpenSoar" \
+    "XCSoar"      "Start XCSoar" \
+    "File"        "Copys file to and from OpenVario" \
+    "System"      "Update, Settings, ..." \
+    "Exit"        "Exit to the shell" \
+    "Reboot"      "Reboot" \
+    "Power OFF"   "Shutdown and Power OFF" \
     2>"${INPUT}"
 
     menuitem=$(<"${INPUT}")
 
     # make decsion
     case $menuitem in
-        OpenSoar) start_opensoar;;
-        XCSoar) start_xcsoar;;
-        File) submenu_file;;
-        System) submenu_system;;
-        Exit) do_shell;;
-        Reboot) do_reboot;; 
-        Power_OFF) do_power_off 3;;
+        "OpenSoar")  start_opensoar;;
+        "XCSoar")    start_xcsoar;;
+        "File")      submenu_file;;
+        "System")    submenu_system;;
+        "Exit")      do_shell;;
+        "Reboot")    do_reboot;; 
+        "Power OFF") do_power_off 3;;
     esac
 }
 
@@ -228,27 +229,28 @@ function club_menu() {
     --title "[ M A I N - M E N U - C L U B]" \
     --begin 3 4 \
     --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
-    OpenSoarClub   "Start OpenSoarClub" \
-    OpenSoar   "Start OpenSoar" \
-    XCSoar   "Start XCSoar" \
-    File   "Copys file to and from OpenVario" \
-    System   "Update, Settings, ..." \
-    Exit   "Exit to the shell" \
-    Reboot "Reboot" \
-    Power_OFF "Power OFF" 2>"${INPUT}"
+    "OpenSoarClub"  "Start OpenSoarClub" \
+    "OpenSoar"      "Start OpenSoar" \
+    "XCSoar"        "Start XCSoar" \
+    "File"          "Copys file to and from OpenVario" \
+    "System"        "Update, Settings, ..." \
+    "Exit"          "Exit to the shell" \
+    "Reboot"        "Reboot" \
+    "Power OFF"     "shutdown and power OFF" \
+    2>"${INPUT}"
 
     menuitem=$(<"${INPUT}")
 
     # make decsion
     case $menuitem in
-        OpenSoarClub) start_opensoar_club;;
-        OpenSoar) start_opensoar;;
-        XCSoar) start_xcsoar;;
-        File) submenu_file;;
-        System) submenu_system;;
-        Exit) do_shell;;
-        Reboot) do_reboot;; 
-        Power_OFF) do_power_off 3;;
+        "OpenSoarClub") start_opensoar_club;;
+        "OpenSoar")     start_opensoar;;
+        "XCSoar")       start_xcsoar;;
+        "File")         submenu_file;;
+        "System")       submenu_system;;
+        "Exit")         do_shell;;
+        "Reboot")       do_reboot;; 
+        "Power OFF")    do_power_off 3;;
     esac
 }
 
@@ -265,7 +267,7 @@ function submenu_file() {
   Download_IGC   "Download XCSoar IGC files to USB" \
   Download   "Download XCSoar to USB" \
   Upload   "Upload files from USB to XCSoar" \
-  Reset_Data   "Reset complete data files from USB" \
+  "Reset Data"   "Reset complete data files from USB" \
   Back   "Back to Main" 2>"${INPUT}"
 
   menuitem=$(<"${INPUT}")
@@ -275,7 +277,7 @@ function submenu_file() {
       Download_IGC) download_igc_files;;
       Download) download_files;;
       Upload) upload_files;;
-      Reset_Data) reset_data;;
+      "Reset Data") reset_data;;
       Exit) ;;
   esac
 }
@@ -288,14 +290,15 @@ function submenu_system() {
   --title "[ S Y S T E M ]" \
   --begin 3 4 \
   --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
-  "Upgrade FW"   "Update complete system firmware" \
-  "Update Packg" "Update system software" \
-  "Save Image" "Save current image.." \
-  Calibrate_Sensors   "Calibrate Sensors" \
-  Calibrate_Touch   "Calibrate Touch" \
-  Settings   "System Settings" \
-  Information "System Info" \
-  Back   "Back to Main" 2>"${INPUT}"
+  "Upgrade FW"          "Update complete system firmware" \
+  "Update Packg"        "Update system software" \
+  "Save Image"          "Save current image.." \
+  "Calibrate Sensors"   "Calibrate Sensors" \
+  "Calibrate Touch"     "Calibrate Touch" \
+  "Settings"            "System Settings" \
+  "Information"         "System Info" \
+  "Back"                "Back to Main" \
+  2>"${INPUT}"
 
   menuitem=$(<"${INPUT}")
 
@@ -310,19 +313,19 @@ function submenu_system() {
       "Save Image")
           save_image
           ;;
-      Calibrate_Sensors)
+      "Calibrate Sensors")
           calibrate_sensors
           ;;
-      Calibrate_Touch)
+      "Calibrate Touch")
           calibrate_touch
           ;;
-      Settings)
+      "Settings")
           submenu_settings
           ;;
-      Information)
+      "Information")
           show_info
           ;;
-      Exit) ;;
+      "Exit") ;;
   esac
 }
 
@@ -342,25 +345,26 @@ function submenu_settings() {
     --title "[ S Y S T E M ]" \
     --begin 3 4 \
     --menu "You can use the UP/DOWN arrow keys" 15 50 5 \
-    Display_Rotation     "Set rotation of the display" \
-    LCD_Brightness        "Set display brightness" \
-    SSH            "Enable or disable SSH" \
-    Back   "Back to Main" 2>"${INPUT}"
+    "Display Rotation"  "Set rotation of the display" \
+    "LCD Brightness"    "Set display brightness" \
+    "SSH"               "Enable or disable SSH" \
+    "Back"              "Back to Main" \
+    2>"${INPUT}"
 
     menuitem=$(<"${INPUT}")
 
     # make decsion
     case $menuitem in
-        Display_Rotation)
+        "Display Rotation")
             submenu_rotation
             ;;
-        LCD_Brightness)
+        "LCD Brightness")
             submenu_lcd_brightness
             ;;
-        SSH)
+        "SSH")
             submenu_ssh
             ;;
-        Back) ;;
+        "Back") ;;
     esac
 }
 
@@ -381,9 +385,9 @@ function submenu_ssh() {
         --begin 3 4 \
         --default-item "${state}" \
         --menu "SSH access is currently ${state}." 15 50 4 \
-        enabled "Enable SSH permanently" \
-        temporary "Enable SSH temporarily (until reboot)" \
-        disabled "Disable SSH" \
+        enabled     "Enable SSH permanently" \
+        temporary   "Enable SSH temporarily (until reboot)" \
+        disabled    "Disable SSH" \
         2>"${INPUT}"
     menuitem=$(<"${INPUT}")
 
@@ -562,12 +566,8 @@ function calibrate_touch() {
 TestStep  23
 # Copy /home/root/data/OpenSoarData to $USB_OPENVARIO/download/OpenSoarData
 function download_files() {
-    export TRANSFER_OPTION="download-data"
-    echo "Downloading files ..." > /tmp/tail.$$
-    /usr/bin/transfers.sh >> /tmp/tail.$$ &
+    /usr/bin/transfers.sh download-data $main_app >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
-
-    export TRANSFER_OPTION=""
 }
 
 #------------------------------------------------------------------------------
@@ -582,12 +582,9 @@ function download_igc_files() {
 TestStep  25
 # Copy $USB_OPENVARIO/upload to /home/root/data/OpenSoarData
 function upload_files() {
-    export TRANSFER_OPTION="upload-data"
-    echo "Uploading files ..." > /tmp/tail.$$
-    /usr/bin/transfers.sh >> /tmp/tail.$$ &
+    /usr/bin/transfers.sh upload-data $main_app  >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 
-    export TRANSFER_OPTION=""
 #    /usr/bin/upload-opensoar.sh >> /tmp/tail.$$ &
 }
 
@@ -595,13 +592,8 @@ function upload_files() {
 TestStep  26
 # Reset $USB_OPENVARIO/upload to /home/root/data/OpenSoarData
 function reset_data() {
-    export TRANSFER_OPTION="sync-data"
-    echo "Uploading data files ..." > /tmp/tail.$$
-    /usr/bin/transfers.sh >> /tmp/tail.$$ &
+    /usr/bin/transfers.sh sync-data $main_app >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
-
-    export TRANSFER_OPTION=""
-
 }
 
 
