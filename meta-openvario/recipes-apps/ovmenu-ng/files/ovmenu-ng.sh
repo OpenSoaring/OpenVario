@@ -177,83 +177,40 @@ trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 
 TestStep  10
 main_menu() {
-echo "call main_menu" >> $DEBUG_LOG
-
-  while true
-  do
-    if [[ "$MENU_VERSION" == "club" ]]
-    then
-      club_menu
-    else
-      normal_menu
-    fi
-  done
-}
-
-#------------------------------------------------------------------------------
-TestStep  11
-function normal_menu() {
+  echo "call main_menu" >> $DEBUG_LOG
     ### display main menu ###
+    declare -a menu_array=("OpenSoar"      "Start OpenSoar")
+    if [ "$MENU_VERSION" = "club" ]; then
+      menu_array+=("OpenSoarClub"  "Start OpenSoarClub")
+    fi
+    menu_array+=("XCSoar"        "Start XCSoar")
+    menu_array+=("File Copy"     "Copys file to and from OpenVario")
+    menu_array+=("System Menu"   "Update, Settings, ...")
+    menu_array+=("Linux Shell"   "Exit to the shell")
+    menu_array+=("Reboot"        "Reboot")
+    menu_array+=("Power OFF"     "Shutdown and Power OFF")
+
     dialog --clear --nocancel --backtitle "OpenVario" \
     --title "[ M A I N - M E N U ]" \
     --begin 3 4 \
     --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
-    "OpenSoar"    "Start OpenSoar" \
-    "XCSoar"      "Start XCSoar" \
-    "File"        "Copys file to and from OpenVario" \
-    "System"      "Update, Settings, ..." \
-    "Exit"        "Exit to the shell" \
-    "Reboot"      "Reboot" \
-    "Power OFF"   "Shutdown and Power OFF" \
+    "${menu_array[@]}" \
     2>"${INPUT}"
 
     menuitem=$(<"${INPUT}")
 
     # make decsion
     case $menuitem in
-        "OpenSoar")  start_opensoar;;
-        "XCSoar")    start_xcsoar;;
-        "File")      submenu_file;;
-        "System")    submenu_system;;
-        "Exit")      do_shell;;
-        "Reboot")    do_reboot;; 
-        "Power OFF") do_power_off 3;;
-    esac
-}
-
-#------------------------------------------------------------------------------
-TestStep  12
-function club_menu() {
-    ### display main menu  with club version###
-    dialog --clear --nocancel --backtitle "OpenVario" \
-    --title "[ M A I N - M E N U - C L U B]" \
-    --begin 3 4 \
-    --menu "You can use the UP/DOWN arrow keys" 15 50 6 \
-    "OpenSoarClub"  "Start OpenSoarClub" \
-    "OpenSoar"      "Start OpenSoar" \
-    "XCSoar"        "Start XCSoar" \
-    "File"          "Copys file to and from OpenVario" \
-    "System"        "Update, Settings, ..." \
-    "Exit"          "Exit to the shell" \
-    "Reboot"        "Reboot" \
-    "Power OFF"     "shutdown and power OFF" \
-    2>"${INPUT}"
-
-    menuitem=$(<"${INPUT}")
-
-    # make decsion
-    case $menuitem in
-        "OpenSoarClub") start_opensoar_club;;
         "OpenSoar")     start_opensoar;;
+        "OpenSoarClub") start_opensoar_club;;
         "XCSoar")       start_xcsoar;;
-        "File")         submenu_file;;
-        "System")       submenu_system;;
-        "Exit")         do_shell;;
+        "File Copy")    submenu_file;;
+        "System Menu")  submenu_system;;
+        "Linux Shell")  do_shell;;
         "Reboot")       do_reboot;; 
         "Power OFF")    do_power_off 3;;
     esac
 }
-
 
 #------------------------------------------------------------------------------
 TestStep  13
