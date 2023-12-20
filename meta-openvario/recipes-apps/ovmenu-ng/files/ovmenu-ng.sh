@@ -147,10 +147,8 @@ fi
 TestStep  5
 if [ -e $DATADIR/.glider_club/GliderClub_Std.prf ]; then
   MENU_VERSION="club"
-  MENU_ITEM="club_menu"
 else
   MENU_VERSION="normal"
-  MENU_ITEM="normal_menu"
 fi
 
 TestStep "6 - 'main_app'"
@@ -594,7 +592,7 @@ function start_opensoar_club() {
     # reset the profile to standard profile
     cp $DATADIR/.glider_club/GliderClub_Std.prf $DATADIR/OpenSoarData/GliderClub.prf
     # start the GliderClub version of opensoar
-    /usr/bin/OpenSoar -fly -profile=$DATADIR/OpenSoarData/GliderClub.prf \
+    /usr/bin/OpenSoar -fly -profile=data/OpenSoarData/GliderClub.prf \
       -datapath=data/OpenSoarData/
     check_exit_code $?
     sync
