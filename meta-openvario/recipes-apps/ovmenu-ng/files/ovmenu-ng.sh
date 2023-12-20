@@ -682,4 +682,8 @@ case $? in
 esac
 TestStep  38
 
-main_menu
+while true
+do
+  main_menu
+done
+
