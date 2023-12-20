@@ -559,6 +559,7 @@ function save_old_system() {
     echo "3rd: save OpenSoarData / XCSoarData from partition 2 or 3"
     debug_stop "UPGRADE_TYPE = $UPGRADE_TYPE"
 
+    CLUB_DIR=""
     case "$UPGRADE_TYPE" in 
       3)  # data coming from 'data/OpenSoarData' folder
           echo "data coming from 'data/OpenSoarData' folder for upgrade type $UPGRADE_TYPE"
@@ -577,12 +578,14 @@ function save_old_system() {
             error_stop "OpenSoarData doesn't exist!"
           fi
           
+          CLUB_DIR="$PARTITION3/.glider_club"
           debug_stop "OpenSoarData are copied in '$RECOVER_DIR/xcsoar'"
         ;;
       2 | 4) # data coming from '.xcsoar' folder
           echo "data coming from '.xcsoar' folder for upgrade type $UPGRADE_TYPE"
           mkdir -p $RECOVER_DIR/xcsoar
           cp -rfv  $HOME_PART2/.xcsoar/* $RECOVER_DIR/xcsoar/
+          CLUB_DIR="$HOME_PART2/.glider_club"
           debug_stop "xcsoar data are copied in '$RECOVER_DIR/xcsoar'"
         ;;
       1|*) 
@@ -591,10 +594,10 @@ function save_old_system() {
     esac
     cp -fv   $HOME_PART2/.bash_history $RECOVER_DIR/
 
-    if [ -d "$HOME_PART2/.glider_club" ]; then
+    if [ -d "$CLUB_DIR" ]; then
         echo "save gliderclub data from partition 2"
         mkdir -p $RECOVER_DIR/glider_club
-        cp -frv $HOME_PART2/.glider_club/* $RECOVER_DIR/glider_club/
+        cp -frv $CLUB_DIR/* $RECOVER_DIR/glider_club/
     fi
     
     debug_stop "saving finished"
