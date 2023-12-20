@@ -590,7 +590,20 @@ TestStep  28
 # datapath with short name: better visibility im OpenSoar/XCSoar
 function start_opensoar_club() {
     # reset the profile to standard profile
-    cp $DATADIR/.glider_club/GliderClub_Std.prf $DATADIR/OpenSoarData/GliderClub.prf
+    CLUB_FILE=$DATADIR/.glider_club/GliderClub_Std.prf
+    FLIGHT_FILE=$DATADIR/OpenSoarData/GliderClub.prf
+    COMPARE=$(cmp $CLUB_FILE $FLIGHT_FILE )
+    if [ ! "$COMPARE" = "" ]; then
+      # files differ...
+      echo "Differ: '$COMPARE'" >> $DEBUG_LOG
+      if [ -e "$FLIGHT_FILE" ]; then
+        DATE=$(date -r $DATADIR/OpenSoarData/GliderClub.prf "+%Y_%m_%d_%H%M")
+        cp $FLIGHT_FILE   $DATADIR/.glider_club/GliderClub_$DATE.prf 
+        echo "NewFile: GliderClub_$DATE.prf" >> $DEBUG_LOG
+      fi 
+      # read -p "Differ: '$COMPARE'"
+      cp $CLUB_FILE $FLIGHT_FILE
+    fi
     # start the GliderClub version of opensoar
     /usr/bin/OpenSoar -fly -profile=data/OpenSoarData/GliderClub.prf \
       -datapath=data/OpenSoarData/
