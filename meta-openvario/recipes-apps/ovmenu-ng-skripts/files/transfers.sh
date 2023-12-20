@@ -6,18 +6,26 @@ USB_PATH="/usb/usbstick/openvario/"
 OPENSOAR_PATH="/home/root/data/OpenSoarData"
 
 RSYNC_OPTION=""
+DATA_FOLDER="OpenSoarData"
 
 case "$TRANSFER_OPTION" in
 	'download-data')
+        echo "Syncronizing $DATA_FOLDER with USB "
 		SRC_PATH="$OPENSOAR_PATH"
-		DEST_PATH="$USB_PATH/download/OpenSoarData"
+		DEST_PATH="$USB_PATH/download/$DATA_FOLDER"
 		;;
-	'upload-data' | 'sync-data')
-		SRC_PATH="$USB_PATH/upload/OpenSoarData"
+	'upload-data')
+        echo "Copy USB data to $DATA_FOLDER"
+		SRC_PATH="$USB_PATH/upload/$DATA_FOLDER"
 		DEST_PATH="$OPENSOAR_PATH"
-        if [ "$TRANSFER_OPTION" = "sync-data" ]; then RSYNC_OPTION="--delete"; fi
 		;;
+	'sync-data' )
+        echo "Syncronizing USB data with $DATA_FOLDER"
+		SRC_PATH="$USB_PATH/upload/$DATA_FOLDER"
+		DEST_PATH="$OPENSOAR_PATH"
+        RSYNC_OPTION="--delete"; fi
 	'upload-all')
+        echo "Syncronizing complete USB data folder 'upload' with data partition"
 		SRC_PATH="$USB_PATH/upload"
 		DEST_PATH="$OPENSOAR_PATH"
 		;;
@@ -48,4 +56,5 @@ fi
 
 # Sync the buffer to be sure data is on disk
 sync
+RSYNC_OPTION=""
 echo 'Done !!'

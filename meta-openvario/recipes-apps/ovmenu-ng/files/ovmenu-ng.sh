@@ -562,9 +562,12 @@ function calibrate_touch() {
 TestStep  23
 # Copy /home/root/data/OpenSoarData to $USB_OPENVARIO/download/OpenSoarData
 function download_files() {
+    export TRANSFER_OPTION="download-data"
     echo "Downloading files ..." > /tmp/tail.$$
-    /usr/bin/download-all.sh >> /tmp/tail.$$ &
+    /usr/bin/transfers.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
+
+    export TRANSFER_OPTION=""
 }
 
 #------------------------------------------------------------------------------
@@ -581,7 +584,7 @@ TestStep  25
 function upload_files() {
     export TRANSFER_OPTION="upload-data"
     echo "Uploading files ..." > /tmp/tail.$$
-    /usr/bin/transfer-opensoar.sh >> /tmp/tail.$$ &
+    /usr/bin/transfers.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 
     export TRANSFER_OPTION=""
@@ -594,11 +597,10 @@ TestStep  26
 function reset_data() {
     export TRANSFER_OPTION="sync-data"
     echo "Uploading data files ..." > /tmp/tail.$$
-    /usr/bin/transfer-opensoar.sh >> /tmp/tail.$$ &
+    /usr/bin/transfers.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
 
     export TRANSFER_OPTION=""
-#    /usr/bin/reset-opensoar-data.sh >> /tmp/tail.$$ &
 
 }
 
