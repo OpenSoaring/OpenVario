@@ -579,18 +579,27 @@ function download_igc_files() {
 TestStep  25
 # Copy $USB_OPENVARIO/upload to /home/root/data/OpenSoarData
 function upload_files() {
+    export TRANSFER_OPTION="upload-data"
     echo "Uploading files ..." > /tmp/tail.$$
-    /usr/bin/upload-opensoar.sh >> /tmp/tail.$$ &
+    /usr/bin/transfer-opensoar.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
+
+    export TRANSFER_OPTION=""
+#    /usr/bin/upload-opensoar.sh >> /tmp/tail.$$ &
 }
 
 #------------------------------------------------------------------------------
 TestStep  26
 # Reset $USB_OPENVARIO/upload to /home/root/data/OpenSoarData
 function reset_data() {
+    export TRANSFER_OPTION="sync-data"
     echo "Uploading data files ..." > /tmp/tail.$$
-    /usr/bin/reset-opensoar-data.sh >> /tmp/tail.$$ &
+    /usr/bin/transfer-opensoar.sh >> /tmp/tail.$$ &
     dialog --backtitle "OpenVario" --title "Result" --tailbox /tmp/tail.$$ 30 50
+
+    export TRANSFER_OPTION=""
+#    /usr/bin/reset-opensoar-data.sh >> /tmp/tail.$$ &
+
 }
 
 

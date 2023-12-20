@@ -5,21 +5,24 @@
 USB_PATH="/usb/usbstick/openvario/"
 OPENSOAR_PATH="/home/root/data/OpenSoarData"
 
-case "$(basename "$0")" in
-	'download-all.sh')
+RSYNC_OPTION=""
+
+case "$TRANSFER_OPTION" in
+	'download-data')
 		SRC_PATH="$OPENSOAR_PATH"
 		DEST_PATH="$USB_PATH/download/OpenSoarData"
 		;;
-	'upload-opensoar.sh')
+	'upload-data' | 'sync-data')
 		SRC_PATH="$USB_PATH/upload/OpenSoarData"
 		DEST_PATH="$OPENSOAR_PATH"
+        if [ "$TRANSFER_OPTION" = "sync-data" ]; then RSYNC_OPTION="--delete"; fi
 		;;
-	'upload-all.sh')
+	'upload-all')
 		SRC_PATH="$USB_PATH/upload"
 		DEST_PATH="$OPENSOAR_PATH"
 		;;
 	*)
-		>&2 echo 'call as download-all.sh, upload-opensoar.sh or upload-all.sh'
+		>&2 echo 'transfer option unknown!'
 		exit 1
 esac
 
@@ -31,10 +34,11 @@ fi
 if [ -z "$(find "$SRC_PATH" -type f | head -n 1 2>/dev/null)" ]; then
 	echo 'No files found !!!'
 else
+    echo "Transfer-Cmd:   '$TRANSFER_OPTION'"
     echo "Source:         '$SRC_PATH'"
     echo "Destination:    '$DEST_PATH'"
   # We use -c here due to cubieboards not having an rtc clock
-	if rsync -rc --progress "${SRC_PATH}/" "$DEST_PATH/"; then
+	if rsync -rc --progress $RSYNC_OPTION "${SRC_PATH}/" "$DEST_PATH/"; then
 		echo 'All files transfered successfully.'
 	else
 		>&2 echo 'An error has occured!'
