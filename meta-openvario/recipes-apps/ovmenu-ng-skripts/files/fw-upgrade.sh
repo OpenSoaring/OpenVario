@@ -481,43 +481,6 @@ function save_system() {
       echo "BRIGHTNESS=\"9\"" >> $UPGRADE_CFG    
     fi 
 
-    if [  ]; then
-      # ov-recovery.sh has problems with partition3... ;-(
-      if [ "$UPGRADE_TYPE"  = "3" ]; then  # from new to old system
-        # save the data from OpenSoarData to .xcsoar:
-        # the 'old' firmware don't know anything about partition 3
-        echo "PARTITION3 = $PARTITION3"
-        ### rsync -ruvtcE --progress --delete --exclude cache  --exclude logs 
-        if [ "$RSYNC_COPY" = "ok" ]; then 
-          rsync -a --progress --delete --exclude cache  --exclude logs \
-                $PARTITION3/OpenSoarData/ $HOME/.xcsoar/ 
-          echo "rsync from $PARTITION3/OpenSoarData/ to $HOME/.xcsoar"
-          if [ -d "$PARTITION3/.glider_club" ]; then
-            ## rsync -ruvtcE --progress $PARTITION3/.glider_club/ $HOME/.glider_club/ 
-            rsync -a --progress --delete \
-            $PARTITION3/.glider_club/ $HOME/.glider_club/
-          fi
-        else  # copy instead of rsync...
-          # but with a new firmware this should never happen
-          error_stop "UPGRADE_TYPE = 3: copy instead of rsync?"
-          rm -rvf $HOME/.xcsoar/*
-          sync
-          cp -rvf $PARTITION3/OpenSoarData/* $HOME/.xcsoar/
-          rm -rvf $HOME/.xcsoar/logs
-          rm -rvf $HOME/.xcsoar/cache
-          echo "rsync from $PARTITION3/OpenSoarData/ to $HOME/.xcsoar"
-      
-          if [ -d "$PARTITION3/.glider_club" ]; then
-            rm -rvf $HOME/.glider_club/*
-            sync
-            cp -rvf $PARTITION3/.glider_club/* $HOME/.glider_club/
-          fi
-        fi
-      else
-        debug_stop "The UPGRADE_TYPE is $UPGRADE_TYPE"
-      fi
-    fi
-
     echo "ROTATION=\"$rotation\""
     echo "ROTATION=\"$rotation\"" >> $UPGRADE_CFG
     echo "System Save End"
