@@ -606,6 +606,10 @@ function check_exit_code() {
       # do nothing
       echo "OpenSoar Exit Code: $1 = 100(simple end)"
     ;;
+    139) # 'Quit' in StartScreen
+      # do nothing
+      echo "OpenSoar Exit Code: $1 = 139(simple end)"
+    ;;
     200) # Quit
       # do nothing
       echo "OpenSoar Exit Code: $1 = 200(simple end)"
@@ -615,6 +619,9 @@ function check_exit_code() {
     ;;
     202) # ShutDown
       do_power_off  5
+    ;;
+    203) # start Firmware Upgrade
+      upgrade_firmware
     ;;
     *)
       echo "OpenSoar Exit Code: '$1'"
