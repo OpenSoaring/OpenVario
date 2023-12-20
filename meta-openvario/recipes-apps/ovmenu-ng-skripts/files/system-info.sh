@@ -49,6 +49,15 @@ echo ' Kernel: '$KERNEL_VERSION
 # collect info of installed packages, depending of testing or stable version is used
 if [ -n "$(opkg list-installed xcsoar-testing)" ]
 then
+	OPENSOAR_VERSION=$(opkg list-installed opensoar-testing | cut -d ' - ' -f 3)
+	echo " OpenSoar: '$OPENSOAR_VERSION' (testing)"
+else
+	OPENSOAR_VERSION=$(opkg list-installed opensoar         | cut -d '-'   -f 2)
+	echo " OpenSoar: '$OPENSOAR_VERSION'"
+fi
+
+if [ -n "$(opkg list-installed xcsoar-testing)" ]
+then
 	XCSOAR_VERSION=$(opkg list-installed xcsoar-testing | cut -d ' - ' -f 3)
 	echo " XCSoar: '$XCSOAR_VERSION' (testing)"
 else
