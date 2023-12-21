@@ -408,6 +408,11 @@ function recover_system(){
        if [ -e $USB_STICK/fw-upgrade.sh ]; then 
          cp -fv $USB_STICK/fw-upgrade.sh $HOME_PART2/
        fi
+       # copy also ov-recovery.itb in the USR_BIN dir too
+       if [ -e $USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb ]; then 
+         cp -fv $USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb \
+                $PARTITION2/usr/bin/
+       fi
        if [ -d "$RECOVER_DIR/glider_club" ]; then
           mv -fv $RECOVER_DIR/glider_club $HOME_PART2/.glider_club
        fi
