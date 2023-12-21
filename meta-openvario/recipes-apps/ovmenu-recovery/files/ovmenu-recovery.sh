@@ -667,6 +667,14 @@ mkdir -p $PARTITION1
 mkdir -p $PARTITION2
 
 mount ${TARGET}p1  $PARTITION1
+if [ -e $PARTITION1/*.dtb ]; then
+  # very old image type (f.e. 17119)
+  source $PARTITION1/config.uEnv
+  case "$rotation" in
+    1)  echo "3" >/sys/class/graphics/fbcon/rotate_all ;;
+    3)  echo "1" >/sys/class/graphics/fbcon/rotate_all ;;
+  esac
+fi
 mount ${TARGET}p2  $PARTITION2
 if [ "$?" = "0" ]; then 
   debug_stop "'${TARGET}p2 is mounted' "
