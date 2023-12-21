@@ -646,11 +646,9 @@ echo "==================================================="
 echo "==================================================="
 echo "==================================================="
 echo "==================================================="
-debug_stop " und jetzt sollte es richtig losgehen!"
-# # # !!!! exit 0
+debug_stop " and now it's starting the upgrade!"
 
 #---------------------------------------------------------
-
 # trap and delete temp files
 trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 
@@ -669,9 +667,14 @@ if [ -e $PARTITION1/*.dtb ]; then
   # very old image type (f.e. 17119)
   source $PARTITION1/config.uEnv
   case "$rotation" in
-    1)  echo "3" >/sys/class/graphics/fbcon/rotate_all ;;
-    3)  echo "1" >/sys/class/graphics/fbcon/rotate_all ;;
+    1)  new_rot=3;;
+    3)  new_rot=1;;
   esac
+  if [ -z "$new_rot" ]; then
+    clear
+    echo "$new_rot" >/sys/class/graphics/fbcon/rotate_all
+    error_stop "rotate the display at this old image type to '$new_rot'!"
+  fi
 fi
 mount ${TARGET}p2  $PARTITION2
 if [ "$?" = "0" ]; then 
