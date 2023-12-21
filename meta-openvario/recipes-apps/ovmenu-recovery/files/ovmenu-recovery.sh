@@ -363,7 +363,6 @@ function recover_system(){
             mkdir -p $PARTITION3/.glider_club
             rsync -ruvtcE --progress $RECOVER_DIR/glider_club/* $PARTITION3/.glider_club/
             sync
-            rm -rvf $RECOVER_DIR/glider_club
          fi
        else
          echo "Error 2: mmcblk0p3 couldn't be mounted"  >> $DEBUG_LOG
@@ -410,7 +409,6 @@ function recover_system(){
          cp -fv $USB_STICK/fw-upgrade.sh $HOME_PART2/
        fi
        if [ -d "$RECOVER_DIR/glider_club" ]; then
-          mkdir -p $HOME_PART2/.glider_club
           mv -fv $RECOVER_DIR/glider_club $HOME_PART2/.glider_club
        fi
        ;;
