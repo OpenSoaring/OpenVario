@@ -592,16 +592,18 @@ function start_opensoar_club() {
     # reset the profile to standard profile
     CLUB_FILE=$DATADIR/.glider_club/GliderClub_Std.prf
     FLIGHT_FILE=$DATADIR/OpenSoarData/GliderClub.prf
-    COMPARE=$(cmp $CLUB_FILE $FLIGHT_FILE )
-    if [ ! "$COMPARE" = "" ]; then
+    LAST_FILE=$(ls -rt1 $DATADIR/.glider_club/GliderClub_*.prf | tail -1)
+    COMPARE1=$(cmp $CLUB_FILE $FLIGHT_FILE )
+    COMPARE2=$(cmp $LAST_FILE $FLIGHT_FILE )
+    if [ ! "$COMPARE1" = "" ] && [ ! "$COMPARE2" = "" ]; then
       # files differ...
-      echo "Differ: '$COMPARE'" >> $DEBUG_LOG
+      echo "Differ: '$COMPARE1' or '$COMPARE2'" >> $DEBUG_LOG
       if [ -e "$FLIGHT_FILE" ]; then
         DATE=$(date -r $DATADIR/OpenSoarData/GliderClub.prf "+%Y_%m_%d_%H%M")
         cp $FLIGHT_FILE   $DATADIR/.glider_club/GliderClub_$DATE.prf 
         echo "NewFile: GliderClub_$DATE.prf" >> $DEBUG_LOG
       fi 
-      # read -p "Differ: '$COMPARE'"
+      # read -p "Differ: '$COMPARE1'"
       cp $CLUB_FILE $FLIGHT_FILE
     fi
     # start the GliderClub version of opensoar
