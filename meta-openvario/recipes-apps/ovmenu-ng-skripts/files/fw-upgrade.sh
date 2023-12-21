@@ -554,11 +554,11 @@ function start_upgrade() {
       # this is the case with UPGRADE_TYPE = 1 | 3 (new base FW):
       echo "'/usr/bin/ov-recovery.itb' is available" # AugTest
       # make a hardlink from in $HOME:
-      ln -f /usr/bin/ov-recovery.itb $HOME/ov-recovery.itb
       ITB_TARGET=$HOME/ov-recovery.itb
-      echo "ln -f /usr/bin/ov-recovery.itb $HOME/ov-recovery.itb"
-      if [ ! -f "$HOME/ov-recovery.itb" ]; then
-          error_stop "'$HOME/ov-recovery.itb' doesn't exist - no upgrade possible"
+      echo "ln -f /usr/bin/ov-recovery.itb $ITB_TARGET"
+      ln -f /usr/bin/ov-recovery.itb $ITB_TARGET
+      if [ ! -f "$ITB_TARGET" ]; then
+          error_stop "'$ITB_TARGET' doesn't exist - no upgrade possible"
           echo "Exit!"
           exit
       fi
