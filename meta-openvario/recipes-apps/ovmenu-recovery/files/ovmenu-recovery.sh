@@ -611,6 +611,23 @@ function save_old_system() {
     fi
 }
 
+#------------------------------------------------------------------------------
+function check_old_image_type() {
+  if [ ! -e $PARTITION1/*.dtb ]; then
+    # very old image type (f.e. 17119)
+    source $PARTITION1/config.uEnv
+    case "$rotation" in
+      1)  new_rot=3;;
+      3)  new_rot=1;;
+    esac
+    if [ -n "$new_rot" ]; then
+      clear
+      echo "$new_rot" >/sys/class/graphics/fbcon/rotate_all
+      error_stop "rotate the display at this old image type to '$new_rot'!"
+    fi
+  fi
+}
+
 #==============================================================================
 #==============================================================================
 #==============================================================================
@@ -668,19 +685,7 @@ mkdir -p $PARTITION1
 mkdir -p $PARTITION2
 
 mount ${TARGET}p1  $PARTITION1
-if [ -e $PARTITION1/*.dtb ]; then
-  # very old image type (f.e. 17119)
-  source $PARTITION1/config.uEnv
-  case "$rotation" in
-    1)  new_rot=3;;
-    3)  new_rot=1;;
-  esac
-  if [ -z "$new_rot" ]; then
-    clear
-    echo "$new_rot" >/sys/class/graphics/fbcon/rotate_all
-    error_stop "rotate the display at this old image type to '$new_rot'!"
-  fi
-fi
+check_old_image_type
 mount ${TARGET}p2  $PARTITION2
 if [ "$?" = "0" ]; then 
   debug_stop "'${TARGET}p2 is mounted' "
