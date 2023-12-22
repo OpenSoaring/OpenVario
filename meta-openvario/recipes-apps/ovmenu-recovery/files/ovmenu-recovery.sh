@@ -83,15 +83,12 @@ esac
 done
 }
 
-  
 #------------------------------------------------------------------------------
 function backup_image(){
   if [ -d "$USB_OPENVARIO" ]; then
     local datestring=$(date +%F)
     mkdir -p $USB_OPENVARIO/backup
     # backup 1GB
-    # dd if=/dev/mmcblk0 bs=1M count=1024 | gzip > /$USB_OPENVARIO/backup/$datestring.img.gz
-    
     # test backup 50MB (Boot areal + 10 MB)
     local blocksize=1024
     dd if=/dev/mmcblk0 bs=$blocksize | gzip > $USB_OPENVARIO/backup/img_$datestring.img.gz | \
