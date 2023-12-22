@@ -658,6 +658,7 @@ if [ "$?" = "0" ]; then
 else
   debug_stop "'${TARGET}p2 IS NOT MOUNTED!!!' "
 fi
+bootloader_check_and_restore
 
 # ov-recovery.itb will be overwritten with dd
 mkdir -p $RECOVER_DIR
