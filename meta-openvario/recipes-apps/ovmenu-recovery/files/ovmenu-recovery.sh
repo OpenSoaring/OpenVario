@@ -202,6 +202,7 @@ function notimplemented(){
 
   dialog --backtitle "${TITLE}" \
       --msgbox "Not implemented yet !!" 10 60
+}
 
 #------------------------------------------------------------------------------
 function bootloader_check_and_restore(){
