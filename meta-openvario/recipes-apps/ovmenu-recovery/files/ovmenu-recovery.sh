@@ -202,6 +202,17 @@ function notimplemented(){
 
   dialog --backtitle "${TITLE}" \
       --msgbox "Not implemented yet !!" 10 60
+
+#------------------------------------------------------------------------------
+function bootloader_check_and_restore(){
+  BOOT_LOADER=$RECOVER_PART2/boot_recover.img.gz
+  if [ -f $BOOT_LOADER ]; then
+    # restore boot loader part in old fw!
+    gzip -cfd $BOOT_LOADER | dd of=$TARGET bs=4096 seek=10 count=112
+    sync
+    # delete this at the end:
+    rm -f $BOOT_LOADER
+  fi
 }
 
 #------------------------------------------------------------------------------
