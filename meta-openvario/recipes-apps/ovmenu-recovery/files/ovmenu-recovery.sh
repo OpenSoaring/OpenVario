@@ -735,11 +735,6 @@ else
   IMAGEFILE+=" (Not available!)"
 fi
 
-###############################################
-# echo "REMOVE"
-# IMAGEFILE='Nothing'
-###############################################
-
 echo "Detected image file: '$IMAGEFILE'!"  >> $DEBUG_LOG
 debug_stop "Detected image file: '$IMAGEFILE'!"
 
