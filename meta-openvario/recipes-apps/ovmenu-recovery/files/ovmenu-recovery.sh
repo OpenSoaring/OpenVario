@@ -103,55 +103,6 @@ function backup_image(){
 }
 
 #------------------------------------------------------------------------------
-function select_image_old(){
-  let i=0 # define counting variable
-  declare -a files=() # define working array
-  declare -a files_nice=()
-  for line in $images; do
-    let i=$i+1
-    files+=($i "$line")
-    filename=$(basename "$line") 
-    files_nice+=($i "$filename")
-  done
-
-  if [ -n "$files" ]; then
-    # Search for images
-    FILE=$(dialog --backtitle "${TITLE}" \
-    --title "Select image" \
-    --menu "Use [UP/DOWN] keys to move, ENTER to select" \
-    18 60 12 \
-    "${files_nice[@]}" 3>&2 2>&1 1>&3) 
-  else
-    dialog --backtitle "${TITLE}" \
-    --title "Select image" \
-    --msgbox "\n\nNo image file found with \n'$images'!!" 10 40
-    return
-  fi
-  IMAGEFILE=$(readlink -f $(ls -1 $images |sed -n "$FILE p"))
-  
-  # Show Image write options
-  dialog --backtitle "${TITLE}" \
-  --title "Select update method" \
-  --menu "Use [UP/DOWN] keys to move, ENTER to select" \
-  18 60 12 \
-  "UpdateAll"   "Update complete SD Card" \
-  "UpdateuBoot"   "Update Bootloader only" \
-  2>"${INPUT}"
-  
-  menuitem=$(<"${INPUT}")
- 
-  # make decsion 
-  case $menuitem in
-    UpdateuBoot) updateuboot;;
-    UpdateAll) 
-        updateall
-        recover_system
-        ;;
-  esac
-  
-}
-
-#------------------------------------------------------------------------------
 function select_image(){
     # here read only from USB
     images=$USB_OPENVARIO/images/O*V*-*.gz
@@ -623,7 +574,7 @@ function check_old_image_type() {
     if [ -n "$new_rot" ]; then
       clear
       echo "$new_rot" >/sys/class/graphics/fbcon/rotate_all
-      error_stop "rotate the display at this old image type to '$new_rot'!"
+      debug_stop "rotate the display at this old image type to '$new_rot'!"
     fi
   fi
 }
