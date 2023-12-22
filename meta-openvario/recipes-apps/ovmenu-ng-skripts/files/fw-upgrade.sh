@@ -581,24 +581,25 @@ function start_upgrade() {
       # TestA: 
         # delete:   # # 
         echo "overwrite the bootloader 0xA000 - ~0x78000"
+        dd if=$TARGET bs=4096 skip=10 count=112 | gzip >$RECOVER_DIR/boot_recover.img.gz   # max: 112 kB
+        sync  # sync before overwrite
         gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=4096 skip=10 seek=10 count=112
-        # delete:   # # gzip -cfd ${IMAGEFILE} | dd of=$TARGET bs=1024 count=512
     ;;
     3)  # - from new fw to old fw
         echo "Target FW is old but Base FW is new!"
         DIALOG_TEXT="This is a change to an old image type "
         DIALOG_TEXT+="with a limited data memory (FW: $TARGET_FW_VERSION)!"
         dialog --nook --nocancel --pause "$DIALOG_TEXT" 10 30 5 2>&1
-        # clear_display
         clear
     ;;
     4)  # - from old fw to old fw
         echo "both FW are a old type!"
-        # delete:   # # 
         
         boot_sector_file=$USB_OPENVARIO/images/$TARGET_HW/bootsector.bin.gz
         if [ -e "$boot_sector_file" ]; then
           echo "overwrite the bootloader "
+          dd if=$TARGET bs=4096 skip=10 count=112 | gzip >$RECOVER_DIR/boot_recover.img.gz   # max: (10+112)kB
+          sync  # sync before overwrite
           gzip -cfd $boot_sector_file | dd of=$TARGET bs=4096 skip=10 seek=10 count=112
         else
           error_stop "An upgrade without '$boot_sector_file' is not possible!"
