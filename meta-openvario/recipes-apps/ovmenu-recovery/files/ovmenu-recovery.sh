@@ -184,10 +184,10 @@ function select_image() {
         UpdateAll) updateall;;
     esac
 
-    else
-        echo "no image file(s) found"
-        IMAGEFILE=""
-    fi
+  else
+      error_stop "no image file(s) found"
+      IMAGEFILE=""
+  fi
 }
 
 #------------------------------------------------------------------------------
