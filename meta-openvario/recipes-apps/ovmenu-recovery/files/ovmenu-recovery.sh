@@ -763,9 +763,9 @@ if [ -e "$IMAGEFILE" ]; then
 else
   clear
   if [ -z "$IMAGEFILE" ]; then
-    error_stop "IMAGEFILE is empty, no recovery!"
+    error_stop "IMAGEFILE is empty, please select image from USB!"
   else
-    error_stop "'$IMAGEFILE' don't exist, no recovery!"
+    error_stop "'$IMAGEFILE' don't exist, please select image from USB!"
   fi
   main_menu
 fi
