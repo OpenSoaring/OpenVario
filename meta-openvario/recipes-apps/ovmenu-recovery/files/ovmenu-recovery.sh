@@ -100,16 +100,31 @@ function backup_image(){
 }
 
 #------------------------------------------------------------------------------
-function select_image(){
-    # here read only from USB
-    images=$USB_OPENVARIO/images/O*V*-*.gz
-    # images=data/images/O*V*-*.gz
+function select_image() {
+  # This has to be done because error '/dev/fd/63: No such file or directory'
+  ln -s /proc/self/fd /dev/fd
+  
+  let count=0 # define counting variable
+  files=()        # define file array 
+  files_nice=()   # define array with index + file description for dialogdialog
+  search_array=()
 
-    let count=0 # define counting variable
-    files=()        # define file array 
-    files_nice=()   # define array with index + file description for dialogdialog
-#------------------------------------------------------------------------------
-    while read -r line; do # process file by file
+  if [ -d "$PARTITION3/images" ]; then
+    search_array+=("$PARTITION3"  "(data)")
+  fi
+  if [ -d "$HOME_PART2/images" ]; then
+    search_array+=("$HOME_PART2"  "(intern)")
+  fi
+  search_array+=("$USB_OPENVARIO"  "(USB)")
+  
+  echo "count pathes ${#search_array[*]}"
+  for ((i=0; i<${#search_array[*]}; i=i+2)); do
+    images=${search_array[$i]}/images/O*V*-*.gz
+    extension=${search_array[$i+1]}
+    echo "$images:        $extension"
+    #--------------------------------------------------------------------------
+    while read -r line; do
+      # process file by file
         let count=$count+1
         files+=($count "$line")
         filename=$(basename "$line") 
@@ -134,37 +149,9 @@ function select_image(){
         if [ -n "$temp3" ]; then
             temp="$temp ($temp3)"
         fi
-        files_nice+=($count "$temp") # selection index + name
+        files_nice+=($count "$temp $extension") # selection index + name
     done < <( ls -1 $images )
-#------------------------------------------------------------------------------
-    images=$USB_OPENVARIO/images/O*V*-*.gz
-    while read -r line; do # process file by file
-        let count=$count+1
-        files+=($count "$line")
-        filename=$(basename "$line") 
-        temp1=$(echo $filename | grep -oE '[0-9]{5}')
-        if [ -n "$temp1" ]; then
-            teststr=$(echo $filename | awk -F'-ipk-|.rootfs' '{print $2}')
-            # teststr is now: 17119-openvario-57-lvds[-testing]
-            temp2=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
-        else
-            # the complete (new) filename without extension
-            # temp1=$(echo $filename | awk -F'/|.img' '{print $4}')
-            temp1=${filename}
-        fi
-        # grep the buzzword 'testing'
-        temp3=$(echo $filename | grep -o "testing")
-        
-        if [ -n "$temp2" ]; then
-            temp="$temp1 hw=$temp2"
-        else
-            temp="$temp1"
-        fi
-        if [ -n "$temp3" ]; then
-            temp="$temp ($temp3)"
-        fi
-        files_nice+=($count "$temp (USB)") # selection index + name
-    done < <( ls -1 $images )
+  done
 #------------------------------------------------------------------------------
     if [ -n "$files" ]; then
         dialog --backtitle "Selection upgrade image from file list" \
