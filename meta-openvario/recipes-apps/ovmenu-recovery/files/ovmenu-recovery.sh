@@ -651,6 +651,8 @@ mkdir -p $PARTITION2
 mount ${TARGET}p1  $PARTITION1
 check_old_image_type
 mount ${TARGET}p2  $PARTITION2
+#delete ov-recovery.itb in the home dir too:
+rm -f $HOME_PART2/ov-recovery.itb  >/dev/null 2>&1
 if [ "$?" = "0" ]; then 
   debug_stop "'${TARGET}p2 is mounted' "
 else
