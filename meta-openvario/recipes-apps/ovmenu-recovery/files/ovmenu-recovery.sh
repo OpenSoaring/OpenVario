@@ -656,7 +656,8 @@ rm -f $HOME_PART2/ov-recovery.itb  >/dev/null 2>&1
 if [ "$?" = "0" ]; then 
   debug_stop "'${TARGET}p2 is mounted' "
 else
-  debug_stop "'${TARGET}p2 IS NOT MOUNTED!!!' "
+  error_stop "'${TARGET}p2 IS NOT MOUNTED!!!' "
+  exit
 fi
 bootloader_check_and_restore
 
@@ -731,23 +732,30 @@ if [ -e $PARTITION3/images/$IMAGEFILE ]; then
 elif [ -e $USB_OPENVARIO/images/$IMAGEFILE ]; then
   IMAGEFILE="$USB_OPENVARIO/images/$IMAGEFILE"
 else
-  IMAGEFILE="Not available!"
+  IMAGEFILE+=" (Not available!)"
 fi
+
+###############################################
+# echo "REMOVE"
+# IMAGEFILE='Nothing'
+###############################################
 
 echo "Detected image file: '$IMAGEFILE'!"  >> $DEBUG_LOG
 debug_stop "Detected image file: '$IMAGEFILE'!"
 
 
-printv "IMAGEFILE          = '$IMAGEFILE' "
-printv "======================================"
-printv "SSH                = $SSH"
-printv "BRIGHTNESS         = $BRIGHTNESS"
-printv "ROTATION           = $ROTATION"
-printv "HARDWARE_BASE      = $HARDWARE_BASE"
-printv "FIRMWARE_BASE      = $FIRMWARE_BASE"
-printv "HARDWARE_TARGET    = $HARDWARE_TARGET"
-printv "FIRMWARE_TARGET    = $FIRMWARE_TARGET"
-printv "UPGRADE_TYPE       = $UPGRADE_TYPE"
+if [ -e "$IMAGEFILE" ]; then
+  printv "IMAGEFILE          = '$IMAGEFILE' "
+  printv "======================================"
+  printv "SSH                = $SSH"
+  printv "BRIGHTNESS         = $BRIGHTNESS"
+  printv "ROTATION           = $ROTATION"
+  printv "HARDWARE_BASE      = $HARDWARE_BASE"
+  printv "FIRMWARE_BASE      = $FIRMWARE_BASE"
+  printv "HARDWARE_TARGET    = $HARDWARE_TARGET"
+  printv "FIRMWARE_TARGET    = $FIRMWARE_TARGET"
+  printv "UPGRADE_TYPE       = $UPGRADE_TYPE"
+fi
 
 # set dmesg minimum kernel level:
 dmesg -n 1
@@ -760,9 +768,9 @@ if [ -e "$IMAGEFILE" ]; then
 else
   clear
   if [ -z "$IMAGEFILE" ]; then
-    error_stop "IMAGEFILE is empty! Please select an image from USB!"
+    error_stop "IMAGEFILE is empty, no recovery!"
   else
-    error_stop "'$IMAGEFILE' don't exist! Please select an image from USB!"
+    error_stop "'$IMAGEFILE' don't exist, no recovery!"
   fi
   main_menu
 fi
