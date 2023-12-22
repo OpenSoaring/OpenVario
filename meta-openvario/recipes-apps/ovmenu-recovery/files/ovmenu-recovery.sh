@@ -153,20 +153,37 @@ function select_image() {
     done < <( ls -1 $images )
   done
 #------------------------------------------------------------------------------
-    if [ -n "$files" ]; then
-        dialog --backtitle "Selection upgrade image from file list" \
-        --title "Select image" \
-        --menu "Use [UP/DOWN] keys to move, ENTER to select" \
-        18 60 12 "${files_nice[@]}" 2> "${SELECTION}"
-        
-        read SELECTED < ${SELECTION}
-        let INDEX=$SELECTED+$SELECTED-1  # correct pointer in the arrays
+  if [ -n "$files" ]; then
+      dialog --backtitle "Selection upgrade image from file list" \
+      --title "Select image" \
+      --menu "Use [UP/DOWN] keys to move, ENTER to select" \
+      18 60 12 "${files_nice[@]}" 2>"${INPUT}"
+      
+      read SELECTED < ${INPUT}
+      let INDEX=$SELECTED+$SELECTED-1  # correct pointer in the arrays
+      IMAGEFILE="${files[$INDEX]}"
+      echo "-------------------------"
+      echo "SELECTED  = ${files_nice[$INDEX]}"
+      echo "IMAGEFILE = $IMAGEFILE"
 
-        IMAGEFILE="${files[$INDEX]}"
-        echo "-------------------------"
-        echo "SELECTED  = ${files_nice[$INDEX]}"
-        echo "IMAGEFILE = $IMAGEFILE"
-        
+    TITLE="File:  $IMAGEFILE"
+    # Show Image write options
+    dialog --backtitle "${TITLE}" \
+    --title "Select update method" \
+    --menu "Use [UP/DOWN] keys to move, ENTER to select" \
+    18 60 12 \
+    "UpdateAll"     "Update complete SD Card" \
+    "UpdateuBoot"     "Update Bootloader only" \
+    2>"${INPUT}"
+    
+    menuitem=$(<"${INPUT}")
+ 
+    # make decsion 
+    case $menuitem in
+        UpdateuBoot) updateuboot;;
+        UpdateAll) updateall;;
+    esac
+
     else
         echo "no image file(s) found"
         IMAGEFILE=""
