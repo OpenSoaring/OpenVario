@@ -134,12 +134,22 @@ function vercomp() {
 
 #------------------------------------------------------------------------------
 function select_image() {
-    # images=$USB_OPENVARIO/images/O*V*-*.gz
-    images=data/images/O*V*-*.gz
+  search_array=()
+  let count=0 # define counting variable
+  files=()        # define file array 
+  files_nice=()   # define array with index + file description for dialogdialog
 
-    let count=0 # define counting variable
-    files=()        # define file array 
-    files_nice=()   # define array with index + file description for dialogdialog
+  if [ -d data ]; then
+    search_array+=("data"  "(data)")
+  fi
+  if [ -d "$HOME" ]; then
+    search_array+=("$HOME"  "(intern)")
+  fi
+  search_array+=("$USB_OPENVARIO"  "(USB)")
+  for ((i=0; i<${#search_array[*]}; i=i+2)); do
+    images=${search_array[$i]}/images/O*V*-*.gz
+    extension=${search_array[$i+1]}
+    echo "$images:        $extension"
 #------------------------------------------------------------------------------
     while read -r line; do # process file by file
         let count=$count+1
@@ -166,46 +176,21 @@ function select_image() {
         if [ -n "$temp3" ]; then
             temp="$temp ($temp3)"
         fi
-        files_nice+=($count "$temp") # selection index + name
+        files_nice+=($count "$temp $extension") # selection index + name
     done < <( ls -1 $images )
 #------------------------------------------------------------------------------
-    images=$USB_OPENVARIO/images/O*V*-*.gz
-    while read -r line; do # process file by file
-        let count=$count+1
-        files+=($count "$line")
-        filename=$(basename "$line") 
-        temp1=$(echo $filename | grep -oE '[0-9]{5}')
-        if [ -n "$temp1" ]; then
-            teststr=$(echo $filename | awk -F'-ipk-|.rootfs' '{print $2}')
-            # teststr is now: 17119-openvario-57-lvds[-testing]
-            temp2=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
-        else
-            # the complete (new) filename without extension
-            # temp1=$(echo $filename | awk -F'/|.img' '{print $4}')
-            temp1=${filename}
-        fi
-        # grep the buzzword 'testing'
-        temp3=$(echo $filename | grep -o "testing")
-        
-        if [ -n "$temp2" ]; then
-            temp="$temp1 hw=$temp2"
-        else
-            temp="$temp1"
-        fi
-        if [ -n "$temp3" ]; then
-            temp="$temp ($temp3)"
-        fi
-        files_nice+=($count "$temp (USB)") # selection index + name
-    done < <( ls -1 $images )
-#------------------------------------------------------------------------------
-    if [ -n "$files" ]; then
-        dialog --backtitle "Selection upgrade image from file list" \
-        --title "Select image" \
-        --menu "Use [UP/DOWN] keys to move, ENTER to select" \
-        18 60 12 "${files_nice[@]}" 2> "${SELECTION}"
-        TEST=$?
-	if [ ! "$TEST" = "0" ]; then exit; fi
-	
+  done
+  if [ -n "$files" ]; then
+    dialog --backtitle "Selection upgrade image from file list" \
+      --title "Select image" \
+      --menu "Use [UP/DOWN] keys to move, ENTER to select" \
+      18 60 12 "${files_nice[@]}" 2> "${SELECTION}"
+      TEST=$?
+    if [ ! "$TEST" = "0" ]; then 
+      clear
+      echo "Cancel Selection..."
+      exit 
+    fi
         read SELECTED < ${SELECTION}
         let INDEX=$SELECTED+$SELECTED-1  # correct pointer in the arrays
 
@@ -219,92 +204,94 @@ function select_image() {
         echo "no image file(s) found"
         IMAGEFILE=""
     fi
-    # clear_display
-    clear
 
+    clear
     if [ ! -e "$IMAGEFILE" ]; then
-        if [ -n "$IMAGEFILE" ]; then
-            echo "no image file '$IMAGEFILE' available ... "
-        fi
-        exit
-    else
-        IMAGE_NAME="$(basename $IMAGEFILE)"
-        TESTING=$(echo $IMAGE_NAME | grep -o "testing")
-        # grep the buzzword 'testing'
-        TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]{5}')
-        if [ -n "$TARGET_FW_VERSION" ]; then
-            # find the part between '-ipk- and .rootfs
-            teststr=$(echo $IMAGE_NAME | awk -F'-ipk-|.rootfs' '{print $2}')
-            # teststr is now: 17119-openvario-57-lvds[-testing]
-            TARGET_HW=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
-            case $TARGET_HW in
-                57lvds | 57-lvds)         TARGET_HW="CH57";;
-                7-CH070)                  TARGET_HW="CH70";;
-                7-PQ070)                  TARGET_HW="PQ70";;
-                7-AM070-DS2 | 7-AM070_2)  TARGET_HW="AM70s";;
-                43-rgb)                   TARGET_HW="AM43";;
-                *)                        TARGET_HW="'$TARGET_HW' (unknown)";;
-            esac
-        else
-            # grep a version in form '##.##.##-##' like '3.0.2-20' 
-            TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
-            if [ -z "$TARGET_FW_VERSION" ]; then
-              # ... or in form '##.##.##.##' like '3.2.20.1' 
-              TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+')
-            fi
-            if [ -z "$TARGET_FW_VERSION" ]; then
-              # ... or in form '##.##.##' like '3.0.2' 
-              TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
-            fi
-            TARGET_HW=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
-            # awk is splitting 'OV-3.0.2.20-CB2-CH57.img.gz' in:
-            # OV-3.0.2.20', 'CH57', '.gz' (-CB2- and .img are cutted out) 
-            # if [ $TARGET_HW in ("CH57", CH70", PQ70", AM70s", AM43") ]; then
-            #  TARGET_HW="$TARGET_HW"
-            # else 
-            case $TARGET_HW in
-                CH57 | CH70 | PQ70 | AM70s | AM43 )
-                             TARGET_HW="$TARGET_HW";;
-                AM70_2 | AM70_DS2)
-                             TARGET_HW="AM70s";;
-                *)           TARGET_HW="'$TARGET_HW' (unknown)";;
-            esac
-            # fi
-        fi
-        echo "selected image file:      '$IMAGE_NAME'"
-        echo "TARGET_FW_VERSION:        '$TARGET_FW_VERSION'"
-        echo "TARGET_HW:                '$TARGET_HW'"
-        debug_stop
-    fi
-    # 0 - equal, 1 - lower, 2 greater
-    printv "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
-    vercomp "${TARGET_FW_VERSION//-/.}" "3.2.19"
-    FW_TYPE_TARGET=$?
-    vercomp   "${BASE_FW_VERSION//-/.}"   "3.2.19"
-    FW_TYPE_BASE=$?
-    printv "2) '$FW_TYPE_BASE' => '$FW_TYPE_TARGET'"
-    if [ "$FW_TYPE_TARGET" = "2" ]; then
-      if [ "$FW_TYPE_BASE" = "2" ]; then
-        UPGRADE_TYPE=1  # 1- from new fw to new fw
+      clear
+      if [ -n "$IMAGEFILE" ]; then
+          echo "no image file '$IMAGEFILE' available ... "
       else
-        UPGRADE_TYPE=2  # 2 - from old fw to new fw
+          echo "no image found! "
       fi
+      exit
     else
-      if [ "$FW_TYPE_BASE" = "2" ]; then
-        UPGRADE_TYPE=3 # 3 - from new fw to old fw
-      else
-        UPGRADE_TYPE=4 # 4 - from old fw to old fw
+    IMAGE_NAME="$(basename $IMAGEFILE)"
+    TESTING=$(echo $IMAGE_NAME | grep -o "testing")
+    # grep the buzzword 'testing'
+    TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]{5}')
+    if [ -n "$TARGET_FW_VERSION" ]; then
+      # find the part between '-ipk- and .rootfs
+      teststr=$(echo $IMAGE_NAME | awk -F'-ipk-|.rootfs' '{print $2}')
+      # teststr is now: 17119-openvario-57-lvds[-testing]
+      TARGET_HW=$(echo $teststr | awk -F'-openvario-|-testing' '{print $2}')
+      case $TARGET_HW in
+          57lvds | 57-lvds)         TARGET_HW="CH57";;
+          7-CH070)                  TARGET_HW="CH70";;
+          7-PQ070)                  TARGET_HW="PQ70";;
+          7-AM070-DS2 | 7-AM070_2)  TARGET_HW="AM70s";;
+          43-rgb)                   TARGET_HW="AM43";;
+          *)                        TARGET_HW="'$TARGET_HW' (unknown)";;
+      esac
+    else
+      # grep a version in form '##.##.##-##' like '3.0.2-20' 
+      TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
+      if [ -z "$TARGET_FW_VERSION" ]; then
+        # ... or in form '##.##.##.##' like '3.2.20.1' 
+        TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+')
       fi
+      if [ -z "$TARGET_FW_VERSION" ]; then
+        # ... or in form '##.##.##' like '3.0.2' 
+        TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
+      fi
+      TARGET_HW=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
+      # awk is splitting 'OV-3.0.2.20-CB2-CH57.img.gz' in:
+      # OV-3.0.2.20', 'CH57', '.gz' (-CB2- and .img are cutted out) 
+      # if [ $TARGET_HW in ("CH57", CH70", PQ70", AM70s", AM43") ]; then
+      #  TARGET_HW="$TARGET_HW"
+      # else 
+      case $TARGET_HW in
+          CH57 | CH70 | PQ70 | AM70s | AM43 )
+                       TARGET_HW="$TARGET_HW";;
+          AM70_2 | AM70_DS2)
+                       TARGET_HW="AM70s";;
+          *)           TARGET_HW="'$TARGET_HW' (unknown)";;
+      esac
+      # fi
     fi
-    debug_stop "3) '$FW_TYPE_BASE' => '$FW_TYPE_TARGET' = UPGRADE_TYPE '$UPGRADE_TYPE'"
-    vercomp "${TARGET_FW_VERSION//-/.}" "22000"
-    target_display=$?
-    vercomp   "${BASE_FW_VERSION//-/.}" "22000"
-    base_display=$?
-    if [ ! "$target_display" = "$base_display" ]; then
-      DISPLAY_ROTATION=Yes
-      debug_stop "Display-Rotation has to be changed!"
+    echo "selected image file:      '$IMAGE_NAME'"
+    echo "TARGET_FW_VERSION:        '$TARGET_FW_VERSION'"
+    echo "TARGET_HW:                '$TARGET_HW'"
+    debug_stop
+  fi
+  # 0 - equal, 1 - lower, 2 greater
+  printv "1) '$BASE_FW_VERSION' => '$TARGET_FW_VERSION'"
+  vercomp "${TARGET_FW_VERSION//-/.}" "3.2.19"
+  FW_TYPE_TARGET=$?
+  vercomp   "${BASE_FW_VERSION//-/.}"   "3.2.19"
+  FW_TYPE_BASE=$?
+  printv "2) '$FW_TYPE_BASE' => '$FW_TYPE_TARGET'"
+  if [ "$FW_TYPE_TARGET" = "2" ]; then
+    if [ "$FW_TYPE_BASE" = "2" ]; then
+      UPGRADE_TYPE=1  # 1- from new fw to new fw
+    else
+      UPGRADE_TYPE=2  # 2 - from old fw to new fw
     fi
+  else
+    if [ "$FW_TYPE_BASE" = "2" ]; then
+      UPGRADE_TYPE=3 # 3 - from new fw to old fw
+    else
+      UPGRADE_TYPE=4 # 4 - from old fw to old fw
+    fi
+  fi
+  debug_stop "3) '$FW_TYPE_BASE' => '$FW_TYPE_TARGET' = UPGRADE_TYPE '$UPGRADE_TYPE'"
+  vercomp "${TARGET_FW_VERSION//-/.}" "22000"
+  target_display=$?
+  vercomp   "${BASE_FW_VERSION//-/.}" "22000"
+  base_display=$?
+  if [ ! "$target_display" = "$base_display" ]; then
+    DISPLAY_ROTATION=Yes
+    debug_stop "Display-Rotation has to be changed!"
+  fi
 }
 
 
@@ -538,6 +525,7 @@ function start_upgrade() {
       # clear_display
       clear
       if [ ! "$INPUT" = "0" ]; then
+        clear
         error_stop "Exit because Escape!"
         exit
       fi 
@@ -720,9 +708,10 @@ if [ -f "${IMAGEFILE}" ]; then
     esac
 
 else
-    if [ -z "$IMAGEFILE" ]; then
-        echo "IMAGEFILE is empty, no recovery!"
-    else
-        echo "'$IMAGE_NAME' don't exist, no recovery!"
-    fi
+  clear
+  if [ -z "$IMAGEFILE" ]; then
+    echo "IMAGEFILE is empty, no recovery!"
+  else
+    echo "'$IMAGE_NAME' don't exist, no recovery!"
+  fi
 fi
