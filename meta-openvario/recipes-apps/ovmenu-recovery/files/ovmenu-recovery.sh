@@ -742,6 +742,12 @@ if [ -e "$IMAGEFILE" ]; then
   updateall
   recover_system
 else
+  clear
+  if [ -z "$IMAGEFILE" ]; then
+    error_stop "IMAGEFILE is empty! Please select an image from USB!"
+  else
+    error_stop "'$IMAGEFILE' don't exist! Please select an image from USB!"
+  fi
   main_menu
 fi
 
