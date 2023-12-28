@@ -1,5 +1,41 @@
-Version v3.0.2-20 - not yet released
+Version v3.2.21 - not yet released
 ------------------------------
+- update opensoar (7.41.21)
+- update xcsoar (7.41)
+- (xcsoar-)bug with dead QuickMenu button solved
+
+Version v3.2.20.4 - 2023/12/18
+------------------------------
+
+Version v3.2.20.3 - not yet released
+------------------------------
+Version v3.2.20.2 - 2023/12/18
+------------------------------
+- update opensoar (7.41.20.2)
+
+Version v3.2.20.2 - 2023/12/17
+------------------------------
+
+Version v3.2.20.1 - 2023/12/02
+------------------------------
+- 1st version with upgrade functionality
+
+- update opensoar (7.40.20.1)
+- update xcsoar (7.40)
+
+known bugs:
+- downgrade to and from old image type (and between) not really ready
+  there are a lot of issues in
+- links: https://opensoar.de/releases/v7.40.20.1/ 
+
+Version v3.2.20 - 2023/11/10
+------------------------------
+- 1st version with upgrade functionality
+- Download version removed on server!
+
+known bugs:
+- downgrade to and from old image type (and between) not really ready
+  there are a lot of issues in
 
 Version v3.0.1-19 - 2023/08/17
 ------------------------------
