@@ -6,27 +6,40 @@ if [ -e "$HOME/recover_data/upgrade.cfg" ]; then
     echo "'upgrade.cfg' exist!!"
     source $HOME/recover_data/upgrade.cfg
     
+    # ==================== SSH ===============================
+    if [ ! "$SSH" == "" ]; then 
+        echo "SSH            = $SSH"
+        case "$SSH" in
+        enabled)
+            /bin/systemctl  enable --quiet --now dropbear.socket
+            /bin/systemctl   start --quiet --now dropbear.socket
+            echo " [####======] SSH has been enabled permanently.";;
+        temporary)
+            /bin/systemctl disable --quiet --now dropbear.socket
+            /bin/systemctl   start --quiet --now dropbear.socket
+            echo " [####======] SSH has been enabled temporarily.";;
+        disabled)
+            /bin/systemctl  disable --quiet --now dropbear.socket
+            echo " [####======] SSH has been disabled.";;
+        esac
+    fi
     # ==================== Brightness ========================
     if [ ! "$BRIGHTNESS" = "" ]; then 
       echo "$BRIGHTNESS" > /sys/class/backlight/lcd/brightness
       echo " [####======] Brightness set to '$BRIGHTNESS'"
     fi
-    # =========== Daemons variod, sensord and dropbear.socket(ssh) ====
-    # Restore variod, sensord and ssh status 
-    for daemon in sensord variod dropbear.socket; do
-      case $daemon in 
-        dropbear.socket) d_state="$ssh_d";;
-        sensord)         d_state="$sensord";;
-        variod)          d_state="$variod";;
-      esac
-      case $d_state in
-        enabled)  /bin/systemctl  enable --quiet --now $daemon
-                  /bin/systemctl   start --quiet --now $daemon
-                  echo " [#####=====] $daemon has been enabled."
-                  ;;
-        disabled) /bin/systemctl disable --quiet --now $daemon
-                  echo " [#####=====] $daemon has been disabled."
-                  ;;
+    # ==================== Daemon variod ========================
+    # Restore variod and sensord status 
+    # SSH_DAEMON=dropbear.socket
+    for DAEMON in variod sensord $SSH_DAEMON
+      case $DAEMON in
+      enabled)  /bin/systemctl  enable --quiet --now $DAEMON
+                /bin/systemctl   start --quiet --now $DAEMON
+                echo " [#####=====] $DAEMON has been enabled."
+                ;;
+      disabled) /bin/systemctl disable --quiet --now $DAEMON
+                echo " [#####=====] $DAEMON has been disabled."
+                ;;
       esac
     done
     # ==================== Recover Data ======================
