@@ -24,10 +24,24 @@ if [ -e "$HOME/recover_data/upgrade.cfg" ]; then
         esac
     fi
     # ==================== Brightness ========================
-    if [ ! "$BRIGHTNESS" == "" ]; then 
-        echo "$BRIGHTNESS" > /sys/class/backlight/lcd/brightness
-        echo " [####======] Brightness set to '$BRIGHTNESS'"
+    if [ ! "$BRIGHTNESS" = "" ]; then 
+      echo "$BRIGHTNESS" > /sys/class/backlight/lcd/brightness
+      echo " [####======] Brightness set to '$BRIGHTNESS'"
     fi
+    # ==================== Daemon variod ========================
+    # Restore variod and sensord status 
+    # SSH_DAEMON=dropbear.socket
+    for DAEMON in variod sensord $SSH_DAEMON
+      case $DAEMON in
+      enabled)  /bin/systemctl  enable --quiet --now $DAEMON
+                /bin/systemctl   start --quiet --now $DAEMON
+                echo " [#####=====] $DAEMON has been enabled."
+                ;;
+      disabled) /bin/systemctl disable --quiet --now $DAEMON
+                echo " [#####=====] $DAEMON has been disabled."
+                ;;
+      esac
+    done
     # ==================== Recover Data ======================
     if [ "$UPGRADE_TYPE" == "2" ]; then 
       if [ ! -d $DATADIR/OpenSoarData ]; then
