@@ -1,11 +1,17 @@
-#### OpenVarioNG with upgrade function:
-* complete upgrade possible via USB stick without any additional manual interactions (like removing SD card, saving the old data, restoring the data folder, setting device feature like SSH, rortation, brightness...)
+Version v3.2.21 - not yet released
+------------------------------
+- update opensoar (7.41.21)
+- update xcsoar (7.41)
+- (xcsoar-)bug with dead QuickMenu button solved
+
+#### Version v3.2.20.5 - 2024/01/23
+------------------------------
+##### OpenVarioNG with upgrade function:
+* complete upgrade possible via USB stick without any additional manually interactions (like removing SD card, saving the old data, restoring the data folder, setting device feature like SSH, rortation, brightness...)
 * this is the 5th patch of this release (with some solved bugs in the older ones)
 * Binaries OpenSoar:  https://opensoar.de/releases/v7.40.20.2
 * Images  OpenVario: https://opensoar.de/releases/v7.40.20.2/3.2.20.5/ 
 
-#### Version v3.2.20.5 - 2024/01/23
-------------------------------
 - Important Bugfix serial port ttyS1
 
 #### Version v3.2.20.4 - 2023/12/22
@@ -73,7 +79,7 @@
 - add a 2nd start option for start recovery: /home/root/ov-recovery.itb
 - using TARGET 'OPENVARIO_CB2' for compiling OpenSoar
 
-##### known bugs:
+known bugs:
 - downgrade to and from old image type (and between) not really ready
   there are a lot of issues in
 
