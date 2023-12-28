@@ -439,34 +439,35 @@ function save_system() {
     mkdir -p $RECOVER_DIR
     
     rm -f $UPGRADE_CFG  # start with a new one
-    if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
-        if /bin/systemctl --quiet is-enabled dropbear.socket; then
-            echo "SSH=\"enabled\""
-            echo "SSH=\"enabled\"" >> $UPGRADE_CFG
-        elif /bin/systemctl --quiet is-active dropbear.socket; then
-            echo "SSH=\"temporary\""
-            echo "SSH=\"temporary\"" >> $UPGRADE_CFG
-        else
-            echo "SSH=\"disabled\""
-            echo "SSH=\"disabled\"" >> $UPGRADE_CFG
-        fi
-    else
-        # if there no dropbear.preset found -> enable the SSH like in this
-        # old fw version!
-        echo "SSH=\"enabled\""
-        echo "SSH=\"enabled\"" >> $UPGRADE_CFG
-    fi
-
     tar cvf - /var/lib/connman | gzip >$RECOVER_DIR/connman.tar.gz
 
     brightness=$(</sys/class/backlight/lcd/brightness)
     if [ -n brightness ]; then
-      echo "BRIGHTNESS=\"$brightness\""
-      echo "BRIGHTNESS=\"$brightness\"" >> $UPGRADE_CFG
+      echo "BRIGHTNESS = $brightness"
+      echo "BRIGHTNESS=$brightness" >> $UPGRADE_CFG
     else
       echo "'brightness' doesn't exist"
-      echo "BRIGHTNESS=\"9\"" >> $UPGRADE_CFG    
+      echo "BRIGHTNESS=9" >> $UPGRADE_CFG
     fi 
+    if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
+        SSH_DAEMON=dropbear.socket
+    else
+        # if there no dropbear.preset found -> enable the SSH like in this
+        # old fw version!
+        echo "SSH = enabled"
+        echo "dropbear.socket=enabled" >> $UPGRADE_CFG
+        # the SSH_DAEMON still stay empty for the next loop:
+        SSH_DAEMON=
+    fi
+    # Store variod and sensord status- and SSH, is available
+    for DAEMON in variod sensord $SSH_DAEMON; do
+      if /bin/systemctl --quiet is-enabled $DAEMON
+      then DAEMON_STATUS=enabled
+      else DAEMON_STATUS=disabled
+      fi
+      echo "Daemon: $DAEMON = $DAEMON_STATUS"
+      echo $DAEMON=$DAEMON_STATUS >> $UPGRADE_CFG
+    done
 
     echo "ROTATION=\"$rotation\""
     echo "ROTATION=\"$rotation\"" >> $UPGRADE_CFG
