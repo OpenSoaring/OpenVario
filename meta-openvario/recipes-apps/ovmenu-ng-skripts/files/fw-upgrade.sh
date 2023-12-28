@@ -439,7 +439,7 @@ function save_system() {
     mkdir -p $RECOVER_DIR
     
     rm -f $UPGRADE_CFG  # start with a new one
-    # connman moved to ovmenu-recover.sh
+    tar cvf - /var/lib/connman | gzip >$RECOVER_DIR/connman.tar.gz
 
     brightness=$(</sys/class/backlight/lcd/brightness)
     if [ -n brightness ]; then
@@ -449,26 +449,24 @@ function save_system() {
       echo "'brightness' doesn't exist"
       echo "BRIGHTNESS=9" >> $UPGRADE_CFG
     fi 
-    ## if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
-    ##     SSH_DAEMON=dropbear.socket
-    ## else
-    ##     # if there no dropbear.preset found -> enable the SSH like in this
-    ##     # old fw version!
-    ##     echo "SSH = enabled"
-    ##     echo "dropbear.socket=enabled" >> $UPGRADE_CFG
-    ##     # the SSH_DAEMON still stay empty for the next loop:
-    ##     SSH_DAEMON=
-    ## fi
-    
-    # Store variod, sensord and SSH status, is available
-    for daemon in sensord variod dropbear.socket; do
-      if /bin/systemctl --quiet is-enabled $daemon
-      then d_state=enabled
-      else d_state=disabled
-      fi;
-      if [ $daemon = dropbear.socket ]; then daemon="ssh_d"; fi
-      echo "$daemon => $d_state"
-      echo $daemon=$d_state >> $UPGRADE_CFG
+    if [ -f /lib/systemd/system-preset/50-disable_dropbear.preset ]; then
+        SSH_DAEMON=dropbear.socket
+    else
+        # if there no dropbear.preset found -> enable the SSH like in this
+        # old fw version!
+        echo "SSH = enabled"
+        echo "dropbear.socket=enabled" >> $UPGRADE_CFG
+        # the SSH_DAEMON still stay empty for the next loop:
+        SSH_DAEMON=
+    fi
+    # Store variod and sensord status- and SSH, is available
+    for DAEMON in variod sensord $SSH_DAEMON; do
+      if /bin/systemctl --quiet is-enabled $DAEMON
+      then DAEMON_STATUS=enabled
+      else DAEMON_STATUS=disabled
+      fi
+      echo "Daemon: $DAEMON = $DAEMON_STATUS"
+      echo $DAEMON=$DAEMON_STATUS >> $UPGRADE_CFG
     done
 
     echo "ROTATION=\"$rotation\""
