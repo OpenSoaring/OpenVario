@@ -1,4 +1,4 @@
-Version v3.2.21 - not yet released
+Version v3.2.21 - 2023/12/31
 ------------------------------
 - update opensoar (7.41.21)
 - update xcsoar (7.41)
