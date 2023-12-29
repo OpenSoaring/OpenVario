@@ -1,5 +1,6 @@
-Version v3.2.21 - not yet released
+Version v3.2.21.1 - 2024/01/24
 ------------------------------
+* patch 1 to v3.2.21 with solved bug with debug port
 - update opensoar (7.41.21)
 - update xcsoar (7.41)
 - (xcsoar-)bug with dead QuickMenu button solved
