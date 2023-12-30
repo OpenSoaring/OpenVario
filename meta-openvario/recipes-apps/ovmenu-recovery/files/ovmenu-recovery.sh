@@ -459,8 +459,8 @@ function recover_system(){
     # restore the bash history:
     cp -fv  $RECOVER_DIR/.bash_history $HOME_PART2/
     
-    if [ -e "$RECOVER_DIR/connman.tar.gz" ]; then
-      tar -zxf $RECOVER_DIR/connman.tar.gz --directory $PARTITION2/
+    if [ -e "$RECOVER_DIR/system-data.tar.gz" ]; then
+      tar -zxf $RECOVER_DIR/system-data.tar.gz --directory $PARTITION2/
     fi
 
     ## This is not possible yet! Wait until system restart... :(
@@ -586,7 +586,31 @@ function save_old_system() {
         ;;
     esac
     cp -fv   $HOME_PART2/.bash_history $RECOVER_DIR/
-
+    
+    #---------------------------------------
+    MAIN_DIR=$(pwd)
+    cd $PARTITION2/
+    ZIP_FILES="var/lib/connman"
+    if [ -f etc/udev/rules.d/libinput-ts.rules ]; then ZIP_FILES+=" etc/udev/rules.d/libinput-ts.rules"; fi
+    if [ -f etc/udev/rules.d/touchscreen.rules ]; then ZIP_FILES+=" etc/udev/rules.d/touchscreen.rules"; fi
+    if [ -f opt/conf/sensord.conf ];              then ZIP_FILES+=" opt/conf/sensord.conf"; fi
+    if [ -f opt/conf/variod.conf ];               then ZIP_FILES+=" opt/conf/variod.conf"; fi
+    
+    # check if necessary:
+    if [ -f etc/pointercal ];                     then ZIP_FILES+=" etc/pointercal"; fi
+    if [ -f etc/dropbear ];                       then ZIP_FILES+=" etc/dropbear"; fi
+    
+    # not necessary:
+    #  if [ -f etc/locale.conf ];   - not needed
+    #  if [ -d home/root ];         - extra handler
+    #  if [ -f boot/config.uEnv ];  - extra handler
+    
+    echo $ZIP_FILES
+    tar cvf - $ZIP_FILES | gzip >$RECOVER_DIR/system-data.tar.gz
+    
+    GZIP_EXIT=$?
+    cd $MAIN_DIR
+    #---------------------------------------
     if [ -d "$CLUB_DIR" ]; then
         echo "save gliderclub data from partition 2"
         mkdir -p $RECOVER_DIR/glider_club
