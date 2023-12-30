@@ -3,6 +3,10 @@ Version v3.2.21 - not yet released
 - update opensoar (7.41.21)
 - update xcsoar (7.41)
 - (xcsoar-)bug with dead QuickMenu button solved
+- (xcsoar-)bugfix with dead QuickMenu button
+- saving variod and sensord-settings
+- bugfix UPGRADE_TYPE 3 (upgrade old image type -> new one)
+- complete saving and restore system data at upgrade
 
 #### Version v3.2.20.5 - 2024/01/23
 ------------------------------
