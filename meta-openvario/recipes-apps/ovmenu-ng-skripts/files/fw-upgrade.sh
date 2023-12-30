@@ -439,7 +439,7 @@ function save_system() {
     mkdir -p $RECOVER_DIR
     
     rm -f $UPGRADE_CFG  # start with a new one
-    tar cvf - /var/lib/connman | gzip >$RECOVER_DIR/connman.tar.gz
+    # connman moved to ovmenu-recover.sh
 
     brightness=$(</sys/class/backlight/lcd/brightness)
     if [ -n brightness ]; then
