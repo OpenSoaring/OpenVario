@@ -19,15 +19,9 @@ RDEPENDS:${PN} = " \
 "
 
 SRC_URI = "\
-	file://update-maps.sh \
-	file://update-system.sh \
 	file://download-igc.sh \
-	file://transfer-opensoar.sh \
-	file://transfer-xcsoar.sh \
 	file://logbook.sh \
 	file://ov-calibrate-ts.sh \
-	file://reset-opensoar-data.sh \
-	file://reset-xcsoar-data.sh \
 	file://system-info.sh \
 	file://fw-upgrade.sh \
 	file://update-system-config.sh \
@@ -41,28 +35,20 @@ do_compile() {
 	:
 }
 
+
 do_install() {
 	echo "Installing ..."
 	install -d ${D}${bindir}
 	install -m 0755 \
-		${S}/update-maps.sh \
-		${S}/update-system.sh \
 		${S}/download-igc.sh \
-		${S}/transfer-opensoar.sh \
-		${S}/transfer-xcsoar.sh \
 		${S}/logbook.sh \
 		${S}/ov-calibrate-ts.sh \
-		${S}/reset-opensoar-data.sh \
-		${S}/reset-xcsoar-data.sh \
 		${S}/system-info.sh \
 		${S}/fw-upgrade.sh \
 		${S}/update-system-config.sh \
 		${S}/image_backup.sh \
 		${D}${bindir}/
 	cd ${D}${bindir}
-	ln -s -r transfer-xcsoar.sh upload-all.sh
-	ln -s -r transfer-xcsoar.sh upload-xcsoar.sh
-	ln -s -r transfer-xcsoar.sh download-all.sh
 }
 
 FILES:${PN} = " \
