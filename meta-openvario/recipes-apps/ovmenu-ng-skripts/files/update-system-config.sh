@@ -11,19 +11,22 @@ if [ -e "$HOME/recover_data/upgrade.cfg" ]; then
       echo "$BRIGHTNESS" > /sys/class/backlight/lcd/brightness
       echo " [####======] Brightness set to '$BRIGHTNESS'"
     fi
-    # ==================== SSH ===============================
-    if [ -n $SSH ]; then dropbear.socket=$SSH; fi
-    # =========== Daemons variod, sensord (and dropbear.socket) ====
-    # Restore variod and sensord status 
-    for daemon in variod sensord dropbear.socket
-      case $daemon in
-      enabled)  /bin/systemctl  enable --quiet --now $daemon
-                /bin/systemctl   start --quiet --now $daemon
-                echo " [#####=====] $daemon has been enabled."
-                ;;
-      disabled) /bin/systemctl disable --quiet --now $daemon
-                echo " [#####=====] $daemon has been disabled."
-                ;;
+    # =========== Daemons variod, sensord and dropbear.socket(ssh) ====
+    # Restore variod, sensord and ssh status 
+    for daemon in sensord variod dropbear.socket; do
+      case $daemon in 
+        dropbear.socket) d_state="$ssh_d";;
+        sensord)         d_state="$sensord";;
+        variod)          d_state="$variod";;
+      esac
+      case $d_state in
+        enabled)  /bin/systemctl  enable --quiet --now $daemon
+                  /bin/systemctl   start --quiet --now $daemon
+                  echo " [#####=====] $daemon has been enabled."
+                  ;;
+        disabled) /bin/systemctl disable --quiet --now $daemon
+                  echo " [#####=====] $daemon has been disabled."
+                  ;;
       esac
     done
     # ==================== Recover Data ======================
