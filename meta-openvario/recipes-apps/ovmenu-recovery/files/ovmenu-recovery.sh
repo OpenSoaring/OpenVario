@@ -470,9 +470,6 @@ function recover_system(){
 
     # copy back to /partition2/home/root:
     cp -fvr $RECOVER_DIR   $HOME_PART2/
-    ## if [ -e "$UPGRADE_CFG" ]; then
-    ##   cp -fv $UPGRADE_CFG   $PARTITION2/$UPGRADE_CFG
-    ## fi
     
     ls -l $HOME_PART2/.xcsoar >> $DEBUG_LOG
     echo "ready OV upgrade!"
