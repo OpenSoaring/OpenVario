@@ -187,6 +187,7 @@ main_menu() {
     menu_array+=("Linux Shell"   "Exit to the shell")
     menu_array+=("Reboot"        "Reboot")
     menu_array+=("Power OFF"     "Shutdown and Power OFF")
+    menu_array+=("Test OVM"          "Test with OpenVarioMenu")
 
     dialog --clear --nocancel --backtitle "OpenVario" \
     --title "[ M A I N - M E N U ]" \
@@ -207,6 +208,7 @@ main_menu() {
         "Linux Shell")  do_shell;;
         "Reboot")       do_reboot;; 
         "Power OFF")    do_power_off 3;;
+        "Test OVM")     /usr/bin/OpenVarioMenu;;
     esac
 }
 
@@ -688,10 +690,12 @@ dialog --nook --nocancel --pause \
 case $? in
     0) 
       TestStep  36
+      # /usr/bin/OpenVarioMenu
       $START_PROGRAM
     ;;
     *) 
        TestStep  37
+       # /usr/bin/OpenVarioMenu
        main_menu
     ;;
 esac
@@ -699,6 +703,13 @@ TestStep  38
 
 while true
 do
-  main_menu
+##  /usr/bin/OpenVarioMenu
+##  case $? in
+##          0) do_shell;;
+##        100) do_shell;;
+##        200) do_reboot;; 
+##        201) do_power_off 3;;
+##  esac
+  ## main_menu
 done
 
