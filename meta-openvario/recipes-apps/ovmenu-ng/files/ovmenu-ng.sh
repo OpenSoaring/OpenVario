@@ -694,28 +694,29 @@ function do_OVM() {
 #==============================================================================
 #==============================================================================
 #==============================================================================
-dialog --nook --nocancel --pause \
-"Starting OpenSoar (!)... \\n Press [ESC] for menu" \
-10 30 $TIMEOUT 2>&1
-
-case $? in
-    0) 
-      TestStep  36
-      do_OVM
-      # /usr/bin/OpenVarioMenu
-      # $START_PROGRAM
-    ;;
-    *) 
-       TestStep  37
-       # /usr/bin/OpenVarioMenu
-       main_menu
-    ;;
-esac
-TestStep  38
+##### dialog --nook --nocancel --pause \
+##### "Starting OpenSoar (!)... \\n Press [ESC] for menu" \
+##### 10 30 $TIMEOUT 2>&1
+##### 
+##### case $? in
+#####     0) 
+#####       TestStep  36
+#####       do_OVM
+#####       # /usr/bin/OpenVarioMenu
+#####       # $START_PROGRAM
+#####     ;;
+#####     *) 
+#####        TestStep  37
+#####        # /usr/bin/OpenVarioMenu
+#####        main_menu
+#####     ;;
+##### esac
+##### TestStep  38
 
 while true
 do
 ##  /usr/bin/OpenVarioMenu
-   main_menu
+##   main_menu
+   do_OVM
 done
 
