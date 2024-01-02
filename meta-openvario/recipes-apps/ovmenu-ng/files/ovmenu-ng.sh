@@ -208,7 +208,7 @@ main_menu() {
         "Linux Shell")  do_shell;;
         "Reboot")       do_reboot;; 
         "Power OFF")    do_power_off 3;;
-        "Test OVM")     /usr/bin/OpenVarioMenu;;
+        "Test OVM")     do_OVM;;
     esac
 }
 
@@ -680,6 +680,17 @@ function do_shell() {
     fi
 }
 
+function do_OVM() {
+   /usr/bin/OpenVarioMenu
+   wait
+   do_shell
+   ## case $? in
+   ##         0) do_shell;;
+   ##       100) do_shell;;
+   ##       200) do_reboot;; 
+   ##       201) do_power_off 3;;
+   ## esac
+}
 #==============================================================================
 #==============================================================================
 #==============================================================================
@@ -690,7 +701,8 @@ dialog --nook --nocancel --pause \
 case $? in
     0) 
       TestStep  36
-      /usr/bin/OpenVarioMenu
+      do_OVM
+      # /usr/bin/OpenVarioMenu
       # $START_PROGRAM
     ;;
     *) 
@@ -704,12 +716,6 @@ TestStep  38
 while true
 do
 ##  /usr/bin/OpenVarioMenu
-##  case $? in
-##          0) do_shell;;
-##        100) do_shell;;
-##        200) do_reboot;; 
-##        201) do_power_off 3;;
-##  esac
-  ## main_menu
+   main_menu
 done
 
