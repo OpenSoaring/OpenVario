@@ -29,6 +29,7 @@ RECOVER_PART2=${PARTITION2}${RECOVER_DIR}
 HOME_PART2=${PARTITION2}${HOME}
 UPGRADE_CFG=$RECOVER_DIR/upgrade.cfg
 UPGRADE_CFG2=$RECOVER_PART2/upgrade.cfg
+UPGRADE_CFG_USB=$USB_OPENVARIO/upgrade.cfg
 UPGRADE_TYPE=1
 
 #------------------------------------------------------------------------------
@@ -710,9 +711,15 @@ bootloader_check_and_restore
 
 # ov-recovery.itb will be overwritten with dd
 mkdir -p $RECOVER_DIR
-if [ -f "$UPGRADE_CFG2" ]; then
+# 1st search on USB (if manually defined upgrade.cfg)
+if [ -f "$UPGRADE_CFG_USB" ]; then
+  echo "'$UPGRADE_CFG_USB' found"
+  cp -fv "$UPGRADE_CFG_USB" "$RECOVER_DIR"
+  source $UPGRADE_CFG
+  mv "$UPGRADE_CFG_USB" "$USB_OPENVARIO/_upgrade.cfg"
+# 2nd search on (mmc2)HOME (if upgrade.cfg coming from fw-upgrade.sh)
+elif [ -f "$UPGRADE_CFG2" ]; then
   echo "'$UPGRADE_CFG2' found"
-  #cp -fv "$UPGRADE_CFG2" "$UPGRADE_CFG"
   cp -fv "$UPGRADE_CFG2" "$RECOVER_DIR"
   source $UPGRADE_CFG
 else
