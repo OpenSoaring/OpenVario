@@ -5,7 +5,7 @@ DEBUG_STOP="No"
 VERBOSE="Yes"
 WITH_TESTSTEPS="No"
 
-TIMEOUT=3
+TIMEOUT=0
 INPUT=/tmp/menu.sh.$$
 DIALOG_CANCEL=1
 ## HOME=/home/root
@@ -690,8 +690,8 @@ dialog --nook --nocancel --pause \
 case $? in
     0) 
       TestStep  36
-      # /usr/bin/OpenVarioMenu
-      $START_PROGRAM
+      /usr/bin/OpenVarioMenu
+      # $START_PROGRAM
     ;;
     *) 
        TestStep  37
