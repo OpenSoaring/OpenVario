@@ -269,14 +269,14 @@ EOF
 # # The function make no sense here, because system services not started yet
 function restore_settings() {
   # ... content from update-system-config.sh
-  if [ ! -e $PARTITION2/usr/bin/update-system-config.sh ]; then # => UPDATE_TYPE 2 and 4
-    if [  -e $USB_OPENVARIO/update-system-config.sh ]; then
+  if [ ! -f $PARTITION2/usr/bin/update-system-config.sh ]; then # => UPDATE_TYPE 2 and 4
+    if [  -f $USB_OPENVARIO/update-system-config.sh ]; then
       cp -f $USB_OPENVARIO/update-system-config.sh $PARTITION2/usr/bin/
       chmod 757 $PARTITION2/usr/bin/update-system-config.sh
       # chown root:root $PARTITION2/usr/bin/update-system-config.sh
     fi
     # copy also fw-upgrade.sh in the usr/bin dir too
-    if [  -e $USB_STICK/fw-upgrade.sh ]; then
+    if [  -f $USB_STICK/fw-upgrade.sh ]; then
       cp -f $USB_STICK/fw-upgrade.sh $PARTITION2/usr/bin/
       chmod 757 $PARTITION2/usr/bin/fw-upgrade.sh
       # chown root:root $PARTITION2/usr/bin/update-system-config.sh
@@ -391,15 +391,15 @@ function recover_system(){
        rm -rf $HOME_PART2/_xcsoar
        sync
        mv -fv $RECOVER_DIR/xcsoar $HOME_PART2/.xcsoar
-       if [ -e $USB_OPENVARIO/update-system-config.sh ]; then 
+       if [ -f $USB_OPENVARIO/update-system-config.sh ]; then 
          cp -fv $USB_OPENVARIO/update-system-config.sh $HOME_PART2/
        fi
        # copy also fw-upgrade.sh in the HOME dir too
-       if [ -e $USB_STICK/fw-upgrade.sh ]; then 
+       if [ -f $USB_STICK/fw-upgrade.sh ]; then 
          cp -fv $USB_STICK/fw-upgrade.sh $HOME_PART2/
        fi
        # copy also ov-recovery.itb in the USR_BIN dir too
-       if [ -e $USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb ]; then 
+       if [ -f $USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb ]; then 
          cp -fv $USB_OPENVARIO/images/$TARGET_HW/ov-recovery.itb \
                 $PARTITION2/usr/bin/
        fi
@@ -415,7 +415,7 @@ function recover_system(){
   mount ${TARGET}p1  $PARTITION1
   # recover OpenSoarData:
   if [ -d "$RECOVER_DIR" ]; then
-    if [ -e "$RECOVER_DIR/config.uEnv" ]; then
+    if [ -f "$RECOVER_DIR/config.uEnv" ]; then
       source $RECOVER_DIR/config.uEnv
       echo "sdcard/config.uEnv"      >> $DEBUG_LOG
       echo "------------------------"      >> $DEBUG_LOG
@@ -459,7 +459,7 @@ function recover_system(){
     # restore the bash history:
     cp -fv  $RECOVER_DIR/.bash_history $HOME_PART2/
     
-    if [ -e "$RECOVER_DIR/system-data.tar.gz" ]; then
+    if [ -f "$RECOVER_DIR/system-data.tar.gz" ]; then
       tar -zxf $RECOVER_DIR/system-data.tar.gz --directory $PARTITION2/
     fi
 
@@ -624,7 +624,7 @@ function save_old_system() {
 
 #------------------------------------------------------------------------------
 function check_old_image_type() {
-  if [ ! -e $PARTITION1/*.dtb ]; then
+  if [ ! -f $PARTITION1/*.dtb ]; then
     # very old image type (f.e. 17119)
     source $PARTITION1/config.uEnv
     case "$rotation" in
@@ -769,14 +769,14 @@ echo "List: '$RECOVER_DIR'"
 ls $RECOVER_DIR
 
 # image file name with path!
-if [ -e $PARTITION3/images/$IMAGEFILE ]; then
+if [ -f $PARTITION3/images/$IMAGEFILE ]; then
   # copy it from sd card to ramdisk!
   # NO LINK: later mmcblk0 is overwritten
   # maybe this isn't necessary?
   cp "$PARTITION3/images/$IMAGEFILE" $HOME/
   IMAGEFILE="$HOME/$IMAGEFILE"
   sync
-elif [ -e $USB_OPENVARIO/images/$IMAGEFILE ]; then
+elif [ -f $USB_OPENVARIO/images/$IMAGEFILE ]; then
   IMAGEFILE="$USB_OPENVARIO/images/$IMAGEFILE"
 else
   IMAGEFILE+=" (Not available!)"
@@ -786,7 +786,7 @@ echo "Detected image file: '$IMAGEFILE'!"  >> $DEBUG_LOG
 debug_stop "Detected image file: '$IMAGEFILE'!"
 
 
-if [ -e "$IMAGEFILE" ]; then
+if [ -f "$IMAGEFILE" ]; then
   printv "IMAGEFILE          = '$IMAGEFILE' "
   printv "======================================"
   printv "SSH                = $SSH"
@@ -802,7 +802,7 @@ fi
 # set dmesg minimum kernel level:
 dmesg -n 1
 
-if [ -e "$IMAGEFILE" ]; then
+if [ -f "$IMAGEFILE" ]; then
   echo "Update $IMAGEFILE !!!!"
   save_old_system
   updateall
