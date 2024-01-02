@@ -1,11 +1,11 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r5"
+PR="r6"
 ### RCONFLICTS:${PN}="xcsoar xcsoar-testing"
 RCONFLICTS:${PN}="xcsoar-testing"
 
-### SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=master" 
+### SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=master    file://ovmenu-xcs.service" 
 
 ### 
 SRC_URI = "git:///mnt/d/Projects/OpenSoaring/OpenSoar/.git/;protocol=file;branch=dev-branch    file://ovmenu-xcs.service"
