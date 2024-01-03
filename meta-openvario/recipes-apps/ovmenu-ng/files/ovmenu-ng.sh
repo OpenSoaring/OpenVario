@@ -130,7 +130,11 @@ function do_shell() {
 while true
 do
    /usr/bin/OpenVarioMenu
+   exit_value=$?
    wait
-   do_shell
+  case $exit_value in
+    111) /usr/bin/fw-upgrade.sh;;
+    *) do_shell;;
+  esac
 done
 
