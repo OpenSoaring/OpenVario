@@ -3,13 +3,28 @@
 # download in /logs only?
 DATA_FOLDER="OpenSoarData"
 if [ "$MAIN_APP" = "xcsoar" ]; then
-  $DATA_FOLDER="XCSoarData"
+  $DATA_FOLDER="data/XCSoarData"
+elif [ "$MAIN_APP" = "OpenSoar" ]; then
+  $DATA_FOLDER="data/OpenSoarData"
+else 
+  $DATA_FOLDER=".xcsoar"
 fi
-SOAR_DATA_PATH="/home/root/data/$DATA_FOLDER"
+
+SOAR_DATA_PATH="/home/root/$DATA_FOLDER"
+
+# =========================================================================
+# =========================================================================
+# =========================================================================
+if [  ]; then
+
+if [ -z $DATA_FOLDER ]; then
+  echo "DATA_FOLDER empty and not valid!"
+else
+
 
 IGC_PATH="$SOAR_DATA_PATH/logs/"
-
 USB_PATH="/usb/usbstick/openvario/igc"
+
 mkdir -p $USB_PATH    # if not exists
 
 # trap and delete temp files
@@ -51,3 +66,14 @@ unset IFS
 
 dialog --begin 3 4 --backtitle "OpenVario" --title "Download IGC" --tailbox /tmp/tail.$$ 22 50
 
+
+fi
+# =========================================================================
+# =========================================================================
+# =========================================================================
+else
+  echo "With OpenVarioMenu the Downloading of IGC-Files has to be rebuild!"
+  echo "No IGC-File can be downloded now!"
+  echo "======================================================="
+  echo "DONE!"
+fi
