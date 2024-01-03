@@ -1,4 +1,16 @@
 #!/bin/sh
+#
+# transfers.sh
+# Data backup transfer script to and from usbstick for Openvario and 
+# OpenSoar or XCSoar
+#
+# Created by lordfolken         2022-02-08
+# Enhanced by 7lima & Blaubart  2022-06-19
+#
+# backups are stored at USB stick at:
+# openvario/download/OpenSoarData/ (or ../XCSoarData/)
+# uploads to OpenVario are stored at USB stick at:
+# openvario/upload/OpenSoarData/ (or ../XCSoarData/)
 
 # Transfer script for Up/Downloadng data to usbstick
 # echo "Transfer to and from OpenVario and USB Stick"
