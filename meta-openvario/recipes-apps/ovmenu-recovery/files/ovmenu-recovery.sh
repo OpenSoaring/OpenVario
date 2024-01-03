@@ -29,6 +29,7 @@ RECOVER_PART2=${PARTITION2}${RECOVER_DIR}
 HOME_PART2=${PARTITION2}${HOME}
 UPGRADE_CFG=$RECOVER_DIR/upgrade.cfg
 UPGRADE_CFG2=$RECOVER_PART2/upgrade.cfg
+UPGRADE_CFG2_B=$RECOVER_PART2/_upgrade.cfg
 UPGRADE_CFG_USB=$USB_OPENVARIO/upgrade.cfg
 UPGRADE_TYPE=1
 
@@ -714,13 +715,19 @@ mkdir -p $RECOVER_DIR
 # 1st search on USB (if manually defined upgrade.cfg)
 if [ -f "$UPGRADE_CFG_USB" ]; then
   echo "'$UPGRADE_CFG_USB' found"
-  cp -fv "$UPGRADE_CFG_USB" "$RECOVER_DIR"
+  cp -fv "$UPGRADE_CFG_USB" "$UPGRADE_CFG"
   source $UPGRADE_CFG
   mv "$UPGRADE_CFG_USB" "$USB_OPENVARIO/_upgrade.cfg"
 # 2nd search on (mmc2)HOME (if upgrade.cfg coming from fw-upgrade.sh)
 elif [ -f "$UPGRADE_CFG2" ]; then
   echo "'$UPGRADE_CFG2' found"
-  cp -fv "$UPGRADE_CFG2" "$RECOVER_DIR"
+  cp -fv "$UPGRADE_CFG2" "$UPGRADE_CFG"
+  source $UPGRADE_CFG
+elif [ -f "$UPGRADE_CFG2_B" ]; then
+  # in this case use 
+  echo "'$UPGRADE_CFG2_B' found"
+  cp -fv "$UPGRADE_CFG2_B" "$UPGRADE_CFG"
+  error_stop "Using old backup config '$UPGRADE_CFG2_B'?"
   source $UPGRADE_CFG
 else
   error_stop "'$UPGRADE_CFG2' NOT found!"
