@@ -1,2 +1,1 @@
-OV-VERSION = "3.2.21.2"
 OV_VERSION="3.2.21.2"

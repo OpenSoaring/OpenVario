@@ -39,7 +39,7 @@ do_image_openvario_sdimg[depends] += " \
             "
 
 # SD card image name
-SDIMG_LINK = "OV-${OV-VERSION}-CB2-${SHORT_OV_MACHINE}.img"
+SDIMG_LINK = "OV-${OV_VERSION}-CB2-${SHORT_OV_MACHINE}.img"
 SDIMG = "${IMGDEPLOYDIR}/${SDIMG_LINK}"
 
 IMAGE_CMD:openvario-sdimg () {
