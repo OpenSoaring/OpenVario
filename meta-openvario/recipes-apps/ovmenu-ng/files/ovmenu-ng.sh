@@ -10,6 +10,11 @@ RECOVER_DIR=$HOME/recover_data
 DEBUG_LOG=$HOME/start-debug.log
 
 #------------------------------------------------------------------------------
+function error_stop() {
+  echo "Error-Stop: $1"
+  read -p "Press enter to continue"
+}
+#------------------------------------------------------------------------------
 function debug_stop() {
     if [ "$DEBUG_STOP" = "Yes" ]; then
       echo "Debug-Stop: $1"
@@ -132,9 +137,10 @@ do
    /usr/bin/OpenVarioMenu
    exit_value=$?
    wait
-  case $exit_value in
-    111) /usr/bin/fw-upgrade.sh;;
-    *) do_shell;;
-  esac
+   debug_stop "End OpenVarioMenu with $exit_value" 
+   case $exit_value in
+     111) /usr/bin/fw-upgrade.sh;;
+     *) do_shell;;
+   esac
 done
 
