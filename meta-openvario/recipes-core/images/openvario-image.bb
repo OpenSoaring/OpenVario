@@ -13,7 +13,6 @@ IMAGE_INSTALL += "\
     sensord \
     variod \
     ovmenu-ng \
-    ovmenu-xcs \
 "
 
 IMAGE_INSTALL += "e2fsprogs-mke2fs "
