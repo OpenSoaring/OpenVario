@@ -23,6 +23,9 @@ function debug_stop() {
 }
 
 #=========================================================================
+# this second resolve the 'blind shell' issue?
+sleep 1
+#=========================================================================
 # a hidden possibility to change this file with a file from the USB-DIR
 if [ -z "$1" ]; then
   if [ "$0" = "/usr/bin/ovmenu-ng.sh" ]; then
@@ -132,7 +135,8 @@ function do_shell() {
 #==============================================================================
 #==============================================================================
 
-sleep 0.2
+clear
+sync
 
 while true
 do
