@@ -19,11 +19,3 @@ BOOST_SHA256HASH = "cc4b893acf645c9d4b698e9a0f08ca8846aa5d6c68275c14c3e7949c2410
 
 require opensoar.inc
 
-do_compile:append() {
-	oe_runmake output/UNIX/bin/OpenVarioMenu
-}
-
-do_install:append() {
-	install -m755 ${S}/output/UNIX/bin/OpenVarioMenu ${D}${bindir}
-}
-
