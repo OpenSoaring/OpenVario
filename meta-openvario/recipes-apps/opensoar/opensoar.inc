@@ -73,12 +73,12 @@ do_compile() {
 	ln -sf convert.im7 ${STAGING_DIR_NATIVE}/usr/bin/convert
 	export FONTCONFIG_PATH=/etc/fonts
 	oe_runmake
-	oe_runmake output/UNIX/bin/OpenVarioMenu
+	oe_runmake output/UNIX/bin/OpenVarioBaseMenu
 }
 
 do_install() {
 	oe_runmake install-bin install-mo DESTDIR=${D}
-	install -m755 ${S}/output/UNIX/bin/OpenVarioMenu ${D}${bindir}
+	install -m755 ${S}/output/UNIX/bin/OpenVarioBaseMenu ${D}${bindir}
 }
 
 FILES:${PN} = " \
