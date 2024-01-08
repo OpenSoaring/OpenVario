@@ -3,7 +3,7 @@
 
 PR="r7"
 ### RCONFLICTS:${PN}="xcsoar xcsoar-testing"
-RCONFLICTS:${PN}="xcsoar-testing"
+RCONFLICTS:${PN}="xcsoar-testing ovmenu-x"
 
 ### SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=master " 
 
