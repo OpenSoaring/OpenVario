@@ -140,10 +140,10 @@ sync
 
 while true
 do
-   /usr/bin/OpenVarioMenu
+   /usr/bin/OpenVarioBaseMenu
    exit_value=$?
    wait
-   debug_stop "End OpenVarioMenu with $exit_value" 
+   debug_stop "End OpenVarioBaseMenu with $exit_value" 
    case $exit_value in
      111) /usr/bin/fw-upgrade.sh;;
      *) do_shell;;
