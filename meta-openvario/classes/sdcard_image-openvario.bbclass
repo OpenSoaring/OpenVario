@@ -6,10 +6,13 @@ require VERSION.inc
 #
 # The disk layout used is:
 #-------------------------
-# 0x000000    0                      -> 8*1024                           - reserverd
-# 0x002000    8*1024                 ->                                  - arm combined spl/u-boot or aarch64 spl
-# 0x00A000    40*1024                ->                                  - aarch64 u-boot
-# 0x200000    2048*1024              -> BOOT_SPACE                       - bootloader and kernel
+# 0x12345678
+# 0x00000000                0          -> 8*1024                           - reserverd
+# 0x00002000           8*1024          ->                                  - arm combined spl/u-boot or aarch64 spl
+# 0x0000A000          40*1024          ->                                  - aarch64 u-boot
+# 0x00200000      2*1024*1024          -> BOOT_SPACE                       - bootloader and kernel
+# 0x02A00000     40*1024*1024          -> system partition
+# 0x40000000    512*1024*1024          -> data partition
 #-------------------------
 
 # Use an uncompressed ext4 by default as rootfs
