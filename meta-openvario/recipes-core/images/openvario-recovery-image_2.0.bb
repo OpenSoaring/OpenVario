@@ -40,11 +40,8 @@ do_configure () {
 
 do_mkimage () {
     # show mkimage version:
-    # MK_IMAGE=mkimage - this isn't the correct version TODO: check it!
-    MK_IMAGE=/usr/bin/mkimage
-    ## echo "========================================="
-    ## $MK_IMAGE -V
-    ## echo "========================================="
+    MK_IMAGE=mkimage
+    $MK_IMAGE -V
     # Build ITB with provided config
     $MK_IMAGE -A arm -f ${S}/openvario-recovery.its ${S}/ov-recovery.itb
 }
