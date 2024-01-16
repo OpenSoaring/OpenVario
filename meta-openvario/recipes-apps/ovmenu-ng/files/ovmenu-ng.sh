@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEBUG_STOP="No"
+DEBUG_STOP=No
 
 INPUT=/tmp/menu.sh.$$
 DATADIR=$HOME/data
@@ -26,6 +26,7 @@ function debug_stop() {
 # this second resolve the 'blind shell' issue?
 sleep 1
 #=========================================================================
+source /home/config.uEnv
 # a hidden possibility to change this file with a file from the USB-DIR
 if [ -z "$1" ]; then
   if [ "$0" = "/usr/bin/ovmenu-ng.sh" ]; then
@@ -137,12 +138,17 @@ function do_shell() {
 
 clear
 sync
-
-source /home/config.uEnv
+debug_stop "main_app = $main_app"
 case "$main_app" in
-  "OpenSoar": /usr/bin/OpenSoar -fly ;;
-  "xcsoar"|"XCSoar": /usr/bin/xcsoar -fly ;;
-  "": ;;
+  "OpenSoar") 
+        debug_stop "/usr/bin/OpenSoar -fly -datapath=data/OpenSoarData"
+        /usr/bin/OpenSoar -fly -datapath=data/OpenSoarData
+        ;;
+  "xcsoar"|"XCSoar") 
+        debug_stop "/usr/bin/xcsoar -fly -datapath=data/XCSoarData"
+        /usr/bin/xcsoar -fly  -datapath=data/XCSoarData
+        ;;
+  *) ;;
 esac
 
 while true
@@ -152,7 +158,8 @@ do
    wait
    debug_stop "End OpenVarioBaseMenu with $exit_value" 
    case $exit_value in
-     111) /usr/bin/fw-upgrade.sh;;
+     111) /usr/bin/fw-upgrade.sh ;;
+     134) /usr/bin/OpenVarioBaseMenu ;;  # Crash in OpenVarioBaseMenu...
      *) do_shell;;
    esac
 done
