@@ -138,6 +138,13 @@ function do_shell() {
 clear
 sync
 
+source /home/config.uEnv
+case "$main_app" in
+  "OpenSoar": /usr/bin/OpenSoar -fly ;;
+  "xcsoar"|"XCSoar": /usr/bin/xcsoar -fly ;;
+  "": ;;
+esac
+
 while true
 do
    /usr/bin/OpenVarioBaseMenu
