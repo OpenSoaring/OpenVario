@@ -130,6 +130,7 @@ function do_shell() {
     else
         /bin/sh 2>&1
     fi
+    
 }
 
 #==============================================================================
@@ -159,7 +160,10 @@ do
    debug_stop "End OpenVarioBaseMenu with $exit_value" 
    case $exit_value in
      111) /usr/bin/fw-upgrade.sh ;;
-     134) /usr/bin/OpenVarioBaseMenu ;;  # Crash in OpenVarioBaseMenu...
+     134 | 1)
+       error_stop "Crash in OpenVarioBaseMenu with $exit_value" 
+       /usr/bin/OpenVarioBaseMenu
+       ;;  # Crash in OpenVarioBaseMenu...
      *) do_shell;;
    esac
 done
