@@ -6,14 +6,14 @@ PR="r2"
 RCONFLICTS:${PN}="xcsoar-testing"
 
 ### 
-SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=master"
+### SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=master"
 ### 
-### # Commit version for 7.40.20.2
-### SRCREV = "1ce4f0a1bdb1e030fd1d8bb90ddd2ad96e4b53fd"
-
-#  SRCREV:pn-opensoar = "${AUTOREV}"
-### SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;tag=opensoar-7.40.20.2"
+### 
+SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;tag=v7.40.20.2"
 SRCREV = "${AUTOREV}"
+
+# OpenSoar Tag: v7.40.20.2
+# SRCREV = "2e0851053275bf76588fb97a8d344d4e40061393"
 
 
 BOOST_VERSION = "1.83.0"
