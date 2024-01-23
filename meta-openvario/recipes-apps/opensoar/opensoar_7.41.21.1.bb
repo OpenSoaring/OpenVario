@@ -2,13 +2,9 @@
 # Released under the MIT license (see COPYING.MIT for the terms)
 
 PR="r7"
-### RCONFLICTS:${PN}="xcsoar xcsoar-testing"
-RCONFLICTS:${PN}="xcsoar-testing ovmenu-x"
+RCONFLICTS:${PN}="opensoar-test "
 
-### SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=master " 
-
-SRC_URI = "git:///mnt/d/Projects/OpenSoaring/OpenSoar/.git/;protocol=file;branch=dev-branch "
-
+SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=master " 
 # SRCREV = "${AUTOREV}"
 
 # OpenSoar Tag: v7.41.21
