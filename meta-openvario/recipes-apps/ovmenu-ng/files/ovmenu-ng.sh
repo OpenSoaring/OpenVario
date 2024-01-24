@@ -9,6 +9,8 @@ USB_OPENVARIO=$USB_STICK/openvario
 RECOVER_DIR=$HOME/recover_data
 DEBUG_LOG=$HOME/start-debug.log
 
+# trap and delete temp files
+trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 #------------------------------------------------------------------------------
 function error_stop() {
   echo "Error-Stop: $1"
@@ -110,9 +112,6 @@ if [ ! -d $DATADIR/OpenSoarData ]; then
 else
   echo "mmcblk0p3 is mounted at '$DATADIR'"  >> $DEBUG_LOG
 fi
-
-# trap and delete temp files
-trap "rm $INPUT;rm /tmp/tail.$$; exit" SIGHUP SIGINT SIGTERM
 
 #------------------------------------------------------------------------------
 function do_shell() {
