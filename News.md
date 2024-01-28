@@ -1,3 +1,7 @@
+#### Version v3.2.21.2 - not yet released
+------------------------------
+* patch 2 to v3.2.21 -> preparing OpenVarioBaseMenu
+
 #### Version v3.2.21.1 - 2024/01/24
 ------------------------------
 * patch 1 to v3.2.21 with solved bug with debug port
