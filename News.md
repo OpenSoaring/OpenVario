@@ -1,13 +1,15 @@
-Version v3.2.21.1 - 2024/01/24
+#### Version v3.2.21.1 - 2024/01/24
 ------------------------------
 * patch 1 to v3.2.21 with solved bug with debug port
 - update opensoar (7.41.21)
 - update xcsoar (7.41)
 - (xcsoar-)bug with dead QuickMenu button solved
-- (xcsoar-)bugfix with dead QuickMenu button
 - saving variod and sensord-settings
 - bugfix UPGRADE_TYPE 3 (upgrade old image type -> new one)
 - complete saving and restore system data at upgrade
+
+* Binaries OpenSoar:  https://opensoar.de/releases/v7.41.21
+* Images  OpenVario: https://opensoar.de/releases/v7.41.21/OV-3.2.21.1/ 
 
 #### Version v3.2.20.5 - 2024/01/23
 ------------------------------
@@ -15,7 +17,7 @@ Version v3.2.21.1 - 2024/01/24
 * complete upgrade possible via USB stick without any additional manually interactions (like removing SD card, saving the old data, restoring the data folder, setting device feature like SSH, rortation, brightness...)
 * this is the 5th patch of this release (with some solved bugs in the older ones)
 * Binaries OpenSoar:  https://opensoar.de/releases/v7.40.20.2
-* Images  OpenVario: https://opensoar.de/releases/v7.40.20.2/3.2.20.5/ 
+* Images  OpenVario: https://opensoar.de/releases/v7.40.20.2/OV-3.2.20.5/ 
 
 - Important Bugfix serial port ttyS1
 
