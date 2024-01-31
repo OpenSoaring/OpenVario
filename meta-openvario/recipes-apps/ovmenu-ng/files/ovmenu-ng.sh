@@ -138,22 +138,22 @@ function do_shell() {
 
 clear
 sync
-debug_stop "main_app = $main_app"
-case "$main_app" in
-  "OpenSoar") 
-        debug_stop "/usr/bin/OpenSoar -fly -datapath=data/OpenSoarData"
-        /usr/bin/OpenSoar -fly -datapath=data/OpenSoarData
-        ;;
-  "xcsoar"|"XCSoar") 
-        debug_stop "/usr/bin/xcsoar -fly -datapath=data/XCSoarData"
-        /usr/bin/xcsoar -fly  -datapath=data/XCSoarData
-        ;;
-  *) ;;
-esac
+### debug_stop "main_app = $main_app"
+### case "$main_app" in
+###   "OpenSoar") 
+###         debug_stop "/usr/bin/OpenSoar -fly -datapath=data/OpenSoarData"
+###         /usr/bin/OpenSoar -fly -datapath=data/OpenSoarData
+###         ;;
+###   "xcsoar"|"XCSoar") 
+###         debug_stop "/usr/bin/xcsoar -fly -datapath=data/XCSoarData"
+###         /usr/bin/xcsoar -fly  -datapath=data/XCSoarData
+###         ;;
+###   *) ;;
+### esac
 
+/usr/bin/OpenVarioBaseMenu 0
 while true
 do
-   /usr/bin/OpenVarioBaseMenu
    exit_value=$?
    wait
    debug_stop "End OpenVarioBaseMenu with $exit_value" 
@@ -161,9 +161,15 @@ do
      111) /usr/bin/fw-upgrade.sh ;;
      134 | 1)
        error_stop "Crash in OpenVarioBaseMenu with $exit_value" 
-       /usr/bin/OpenVarioBaseMenu
        ;;  # Crash in OpenVarioBaseMenu...
+     101) 
+        error_stop "Stop before clear in shell!" 
+        do_shell;;
+     200) do_shell;;
+     201) /sbin/reboot;;
+     202) /sbin/poweroff;;
      *) do_shell;;
    esac
+   /usr/bin/OpenVarioBaseMenu
 done
 
