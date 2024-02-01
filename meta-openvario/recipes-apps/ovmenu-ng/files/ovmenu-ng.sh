@@ -152,24 +152,33 @@ sync
 ### esac
 
 /usr/bin/OpenVarioBaseMenu 0
+exit_value=$?
 while true
 do
-   exit_value=$?
    wait
    debug_stop "End OpenVarioBaseMenu with $exit_value" 
    case $exit_value in
      111) /usr/bin/fw-upgrade.sh ;;
      134 | 1)
-       error_stop "Crash in OpenVarioBaseMenu with $exit_value" 
+        echo "\n"
+        error_stop "Crash in OpenVarioBaseMenu with $exit_value" 
        ;;  # Crash in OpenVarioBaseMenu...
      101) 
+        echo "\n"
+        echo "Finish OpenVarioBaseMenu with $exit_value"
         error_stop "Stop before clear in shell!" 
+        # error_stop "Press any key!" 
         do_shell;;
      200) do_shell;;
      201) /sbin/reboot;;
      202) /sbin/poweroff;;
-     *) do_shell;;
+     100) do_shell;;
+     *)
+        echo "\n"
+        error_stop "OpenVarioBaseMenu finished with unknown '$exit_value'" 
+        ;;  # Crash in OpenVarioBaseMenu...
    esac
    /usr/bin/OpenVarioBaseMenu
+   exit_value=$?
 done
 
