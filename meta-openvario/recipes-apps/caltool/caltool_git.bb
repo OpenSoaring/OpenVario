@@ -14,8 +14,7 @@ INSANE_SKIP:${PN} = "ldflags"
 
 S = "${WORKDIR}/git"
 
-#  SRC_URI = "git://git-ro.openvario.org/ovmenu.git;protocol=http;branch=master;rev=master"
-#  SRC_URI = "git://git-ro.openvario.org/ovmenu.git;protocol=http;branch=master;rev=master"
+#  old uri: SRC_URI = "git://git-ro.openvario.org/ovmenu.git;protocol=http;branch=master;rev=master"
 SRC_URI = "git://github.com/Openvario/caltool.git;protocol=https;branch=master " 
 SRCREV = "${AUTOREV}"
 
@@ -29,7 +28,6 @@ do_install() {
 	install -d ${D}/opt/conf
 	install -m 0755 ${S}/caltool ${D}/opt/bin
 }
-# 	install -m 0755 ${S}/caltool/caltool ${D}/opt/bin
 
 PACKAGES = "${PN}"
 INHIBIT_PACKAGE_DEBUG_SPLIT = '1'
