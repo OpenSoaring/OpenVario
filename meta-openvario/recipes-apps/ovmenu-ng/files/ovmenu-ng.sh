@@ -159,6 +159,10 @@ do
    debug_stop "End OpenVarioBaseMenu with $exit_value" 
    case $exit_value in
      111) /usr/bin/fw-upgrade.sh ;;
+     112) /usr/bin/ov-calibrate-ts.sh
+          /usr/bin/OpenVarioBaseMenu 0
+          exit_value=$?
+	  ;;
      134 | 1)
         echo "\n"
         error_stop "Crash in OpenVarioBaseMenu with $exit_value" 
@@ -166,8 +170,7 @@ do
      101) 
         echo "\n"
         echo "Finish OpenVarioBaseMenu with $exit_value"
-        error_stop "Stop before clear in shell!" 
-        # error_stop "Press any key!" 
+        error_stop "Stopped before clear in shell!" 
         do_shell;;
      200) do_shell;;
      201) /sbin/reboot;;
