@@ -26,6 +26,7 @@ DEPENDS = "	\
 		c-ares \
 		fmt \
 		dbus \
+		wpa-supplicant \
 "
 
 RDEPENDS:${PN} = "\
