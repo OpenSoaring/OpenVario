@@ -1,19 +1,29 @@
-#### Version v3.2.21.2 - not yet released
+#### Version v3.2.21.3  - not yet released
 ------------------------------
-* patch 2 to v3.2.21 -> preparing OpenVarioBaseMenu
+* patch 3 to v3.2.21 -> preparing OpenVarioBaseMenu
+(Preparation for OpenSoar v7.41.22 and OpenVario 3.2.22!)
+
+#### Version v3.2.21.2 - 2024/02/10
+------------------------------
+* patch 2 to v3.2.21 with reverted PR362 ("relax CPU clock and voltage constraints to provide higher performance, lower power and still prevent system freeze")
+* The stability of the OpenVario has obviously dropped significantly since the PR362 - there were significantly more freezes on several systems!
+* same patch like v3.2.20.6 for the v3.2.20 version
 
 #### Version v3.2.21.1 - 2024/01/24
 ------------------------------
 * patch 1 to v3.2.21 with solved bug with debug port
-- update opensoar (7.41.21)
-- update xcsoar (7.41)
-- (xcsoar-)bug with dead QuickMenu button solved
-- saving variod and sensord-settings
-- bugfix UPGRADE_TYPE 3 (upgrade old image type -> new one)
-- complete saving and restore system data at upgrade
+* update opensoar (7.41.21)
+* update xcsoar (7.41)
+* (xcsoar-)bug with dead QuickMenu button solved
+* (xcsoar-)bugfix with dead QuickMenu button
+* saving variod and sensord-settings
+* bugfix UPGRADE_TYPE 3 (upgrade old image type -> new one)
+* complete saving and restore system data at upgrade
 
-* Binaries OpenSoar:  https://opensoar.de/releases/v7.41.21
-* Images  OpenVario: https://opensoar.de/releases/v7.41.21/OV-3.2.21.1/ 
+#### Version v3.2.20.6 - 2024/02/10
+------------------------------
+* patch 6 to v3.2.20 with reverted PR362 ("relax CPU clock and voltage constraints to provide higher performance, lower power and still prevent system freeze")
+* The stability of the OpenVario has obviously dropped significantly since the PR362 - there were significantly more freezes on several systems!
 
 #### Version v3.2.20.5 - 2024/01/23
 ------------------------------
