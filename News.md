@@ -1,12 +1,17 @@
-#### OpenVarioNG with upgrade function:
-* complete upgrade possible via USB stick without any additional manual interactions (like removing SD card, saving the old data, restoring the data folder, setting device feature like SSH, rortation, brightness...)
-* this is the 5th patch of this release (with some solved bugs in the older ones)
-* Binaries OpenSoar:  https://opensoar.de/releases/v7.40.20.2
-* Images  OpenVario: https://opensoar.de/releases/v7.40.20.2/3.2.20.5/ 
+#### Version v3.2.20.6 - 2024/02/10
+------------------------------
+* patch 6 to v3.2.20 with reverted PR362 ("relax CPU clock and voltage constraints to provide higher performance, lower power and still prevent system freeze")
+* The stability of the OpenVario has obviously dropped significantly since the PR362 - there were significantly more freezes on several systems!
 
 #### Version v3.2.20.5 - 2024/01/23
 ------------------------------
-- Important Bugfix serial port ttyS1
+##### OpenVarioNG with upgrade function:
+* complete upgrade possible via USB stick without any additional manually interactions (like removing SD card, saving the old data, restoring the data folder, setting device feature like SSH, rortation, brightness...)
+* this is the 5th patch of this release (with some solved bugs in the older ones)
+* Important Bugfix serial debug port ttyS1
+
+* Binaries OpenSoar:  https://opensoar.de/releases/v7.40.20.2
+* Images  OpenVario: https://opensoar.de/releases/v7.40.20.2/3.2.20.5/ 
 
 #### Version v3.2.20.4 - 2023/12/22
 ------------------------------
