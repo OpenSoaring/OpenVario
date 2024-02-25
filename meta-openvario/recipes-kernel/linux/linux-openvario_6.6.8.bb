@@ -47,6 +47,7 @@ SRC_URI:append:sunxi = " \
 	file://ov-ch70s.dts \
 	file://ov-pq70.dts \
 	file://ov-am70s.dts \
+	file://ov-hdmi.dts \
 	\
 	file://sunxi.cfg \
 	file://drm.cfg \
