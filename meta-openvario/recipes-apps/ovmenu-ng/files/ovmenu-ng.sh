@@ -132,36 +132,40 @@ function do_shell() {
     
 }
 
+#------------------------------------------------------------------------------
+function start_mainapp() {
+  debug_stop "main_app = $main_app"
+  case "$main_app" in
+    "OpenSoar") 
+          debug_stop "/usr/bin/OpenSoar -fly -datapath=data/OpenSoarData"
+          /usr/bin/OpenSoar -fly -datapath=data/OpenSoarData
+          ;;
+    "xcsoar"|"XCSoar") 
+          debug_stop "/usr/bin/xcsoar -fly -datapath=data/XCSoarData"
+          /usr/bin/xcsoar -fly  -datapath=data/XCSoarData
+          ;;
+    *) ;;
+  esac
+}
 #==============================================================================
 #==============================================================================
 #==============================================================================
 
 clear
 sync
-### debug_stop "main_app = $main_app"
-### case "$main_app" in
-###   "OpenSoar") 
-###         debug_stop "/usr/bin/OpenSoar -fly -datapath=data/OpenSoarData"
-###         /usr/bin/OpenSoar -fly -datapath=data/OpenSoarData
-###         ;;
-###   "xcsoar"|"XCSoar") 
-###         debug_stop "/usr/bin/xcsoar -fly -datapath=data/XCSoarData"
-###         /usr/bin/xcsoar -fly  -datapath=data/XCSoarData
-###         ;;
-###   *) ;;
-### esac
 
-/usr/bin/OpenVarioBaseMenu 0
+### /usr/bin/OpenVarioBaseMenu 0
+start_mainapp
 exit_value=$?
 while true
 do
    wait
-   debug_stop "End OpenVarioBaseMenu with $exit_value" 
+   debug_stop "End OpenSoar with $exit_value" 
    case $exit_value in
      134 | 138 | 139 | 1)
         echo "\n"
-        error_stop "Crash in OpenVarioBaseMenu with $exit_value" 
-       ;;  # Crash in OpenVarioBaseMenu...
+        error_stop "Crash in OpenSoar with $exit_value" 
+       ;;  # Crash in OpenSoar...
      200) # should never happen: 
          error_stop "Stopped before clear in shell (100)!" 
          do_shell;;
@@ -170,19 +174,21 @@ do
      203) do_shell;;
      204) 
         echo "\n"
-        echo "Finish OpenVarioBaseMenu with $exit_value"
+        echo "Finish OpenSoar with $exit_value"
         error_stop "Stopped before clear in shell!" 
         do_shell;;
      205) /usr/bin/fw-upgrade.sh ;;
      206) /usr/bin/ov-calibrate-ts.sh ;;
+     207) /usr/bin/OpenVarioBaseMenu ;;
      100 | 0) 
         do_shell;;
      *)
         echo "\n"
-        error_stop "OpenVarioBaseMenu finished with unknown '$exit_value'" 
-        ;;  # Crash in OpenVarioBaseMenu...
+        error_stop "OpenSoar finished with unknown '$exit_value'" 
+        ;;  # Crash in OpenSoar...
    esac
-   /usr/bin/OpenVarioBaseMenu
+   ### /usr/bin/OpenVarioBaseMenu
+   start_mainapp
    exit_value=$?
 done
 
