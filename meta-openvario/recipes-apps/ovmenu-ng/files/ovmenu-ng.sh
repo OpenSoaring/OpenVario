@@ -179,7 +179,7 @@ do
         do_shell;;
      205) /usr/bin/fw-upgrade.sh ;;
      206) /usr/bin/ov-calibrate-ts.sh ;;
-     207) /usr/bin/OpenVarioBaseMenu ;;
+     207) do_shell;;  ## /usr/bin/OpenVarioBaseMenu ;;
      100 | 0) 
         do_shell;;
      *)
