@@ -185,8 +185,18 @@ do
      *)
         echo "\n"
        # Crash in OpenSoar...
-        error_stop "OpenSoar finished with unknown '$exit_value'" 
-        do_shell ;; # do_shell only if ENTER!
+        ## error_stop "OpenSoar finished with unknown '$exit_value'"
+        echo "OpenSoar finished with unknown '$exit_value'\n"
+        read -s -n1  key
+        case $key in
+        
+          $'\e') echo "Escape"
+                 read -s -n1  key
+                 do_shell ;; # with ESC got shell
+          ;;
+          $'\n') ;; # restart only if ENTER!
+          *) do_shell ;; 
+        esac
    esac
    ### /usr/bin/OpenVarioBaseMenu
    start_mainapp
