@@ -163,11 +163,14 @@ do
    debug_stop "End OpenSoar with $exit_value" 
    case $exit_value in
      134 | 138 | 139 | 1)
+        # Crash in OpenSoar...
         echo "\n"
-        error_stop "Crash in OpenSoar with $exit_value" 
-       ;;  # Crash in OpenSoar...
-     200) # should never happen: 
-         error_stop "Stopped before clear in shell (100)!" 
+        error_stop "Crash (1) in OpenSoar with $exit_value" 
+        do_shell
+       ;;
+     200)
+         # should never happen: 
+         error_stop "Stopped before clear in shell ($exit_value)!" 
          do_shell;;
      201) /sbin/reboot;;
      202) /sbin/poweroff;;
@@ -176,25 +179,28 @@ do
         echo "\n"
         echo "Finish OpenSoar with $exit_value"
         error_stop "Stopped before clear in shell!" 
-        do_shell;;
+        do_shell ;;
      205) /usr/bin/fw-upgrade.sh ;;
      206) /usr/bin/ov-calibrate-ts.sh ;;
-     207) do_shell;;  ## /usr/bin/OpenVarioBaseMenu ;;
+     207)
+          ## /usr/bin/OpenVarioBaseMenu
+          do_shell ;;
      100 | 0) 
-        do_shell;;
+        do_shell ;;
      *)
         echo "\n"
-       # Crash in OpenSoar...
+        # Crash in OpenSoar...
         ## error_stop "OpenSoar finished with unknown '$exit_value'"
         echo "OpenSoar finished with unknown '$exit_value'\n"
         read -s -n1  key
         case $key in
         
-          $'\e') echo "Escape"
-                 read -s -n1  key
-                 do_shell ;; # with ESC got shell
-          ;;
-          $'\n') ;; # restart only if ENTER!
+          $'\e')
+                 # with ESC got shell
+                 do_shell ;;
+          $'\n')
+                 # restart only if ENTER!
+                 ;; 
           *) do_shell ;; 
         esac
    esac
