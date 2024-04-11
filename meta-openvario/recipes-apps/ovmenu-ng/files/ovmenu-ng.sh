@@ -169,8 +169,8 @@ do
         do_shell
        ;;
      200)
-         # should never happen: 
-         error_stop "Stopped before clear in shell ($exit_value)!" 
+         # happen with Quit Command from QuickMenu: 
+         # error_stop "Stopped before clear in shell ($exit_value)!" 
          do_shell;;
      201) /sbin/reboot;;
      202) /sbin/poweroff;;
