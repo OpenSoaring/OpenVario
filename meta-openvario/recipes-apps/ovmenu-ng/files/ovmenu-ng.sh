@@ -165,7 +165,7 @@ do
      134 | 138 | 139 | 1)
         # Crash in OpenSoar...
         echo "\n"
-        error_stop "Crash (1) in OpenSoar with $exit_value" 
+        error_stop "Crash (1) in OpenSoar with Exit value: $exit_value" 
         do_shell
        ;;
      200)
@@ -185,13 +185,16 @@ do
      207)
           ## /usr/bin/OpenVarioBaseMenu
           do_shell ;;
-     100 | 0) 
+     208 | 209)
+          ## RESTART, NEWSTART w/o stop!
+          ;;
+     100 | 0 | 1) 
         do_shell ;;
      *)
         echo "\n"
         # Crash in OpenSoar...
         ## error_stop "OpenSoar finished with unknown '$exit_value'"
-        echo "OpenSoar finished with unknown '$exit_value'\n"
+        echo "OpenSoar finished with unknown Exit value: '$exit_value'\n"
         read -s -n1  key
         case $key in
         
