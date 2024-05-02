@@ -3,6 +3,8 @@ SECTION = "kernel"
 LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://COPYING;md5=6bc538ed5bd9a7fc9398086aedcd7e46"
 
+PR = "2"
+
 inherit kernel kernel-yocto siteinfo
 
 S = "${WORKDIR}/git"
@@ -36,7 +38,7 @@ SRC_URI = " \
 "
 
 SRC_URI:append:sunxi = " \
-	file://0004-Set-minimum-CPU-voltage-to-1.2V.patch\
+	file://0004-Set-minimum-CPU-voltage-to-1.1V.patch\
 	\
 	file://openvario-common.dts \
 	\
@@ -64,6 +66,7 @@ KMETA = ".kernel-meta"
 
 do_configure:prepend:sunxi() {
 	cp ${WORKDIR}/*.dts ${S}/arch/arm/boot/dts/
+	cp ${WORKDIR}/0004-Set-minimum-CPU-voltage-to-1.1V.patch ${S}/
 }
 
 FILES_${KERNEL_PACKAGE_NAME}-base:append = " ${nonarch_base_libdir}/modules/${KERNEL_VERSION}/modules.builtin.modinfo"

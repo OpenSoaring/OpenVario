@@ -49,6 +49,7 @@ SRC_URI:append:cubieboard2 = " \
 	file://0001-Added-RGB-swap-for-RGB-LCD.patch \
 	file://0001-Environment-Openvario-mainline.patch \
 	file://0001-video_bmp-implement-BMP-RLE-to-32-bit.patch \
+	file://0004-Set-minimum-CPU-voltage-to-1.1V.patch \
 	\
 	file://ini2c.py \
 	file://bootenv.ini \
