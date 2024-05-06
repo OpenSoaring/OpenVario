@@ -3,13 +3,16 @@ SECTION = "kernel"
 LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://COPYING;md5=6bc538ed5bd9a7fc9398086aedcd7e46"
 
-PR = "2"
+PR = "1"
 
 inherit kernel kernel-yocto siteinfo
 
 S = "${WORKDIR}/git"
 
 KBRANCH = "linux-6.6.y"
+
+# KERNEL_CFG=no-debug.cfg
+KERNEL_CFG = "debug.cfg"
 
 SRCREV = "8dfb9086136c1092a4e613c0878a5b1e88d5f328"
 
@@ -19,7 +22,7 @@ SRC_URI = " \
 	file://defconfig \
 	\
 	file://systemd.cfg \
-	file://no_debug.cfg \
+	file://${KERNEL_CFG} \
         file://openvario.cfg \
 	file://cpufreq.cfg \
         file://usbhost.cfg \
