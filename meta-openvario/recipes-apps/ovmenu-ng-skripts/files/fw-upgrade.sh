@@ -234,14 +234,14 @@ function select_image() {
       esac
     else
       # grep a version in form '##.##.##-##' like '3.0.2-20' 
-      TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
+      TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9A-Z]+[-][0-9A-Z]+')
       if [ -z "$TARGET_FW_VERSION" ]; then
         # ... or in form '##.##.##.##' like '3.2.20.1' 
-        TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+')
+        TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9A-Z]+[.][0-9A-Z]+')
       fi
       if [ -z "$TARGET_FW_VERSION" ]; then
         # ... or in form '##.##.##' like '3.0.2' 
-        TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
+        TARGET_FW_VERSION=$(echo $IMAGE_NAME | grep -oE '[0-9]+[.][0-9]+[.][0-9A-Z]+')
       fi
       TARGET_HW=$(echo $IMAGE_NAME | awk -F'-CB2-|.img' '{print $2}')
       # awk is splitting 'OV-3.0.2.20-CB2-CH57.img.gz' in:
@@ -333,14 +333,14 @@ function detect_base() {
       debug_stop "fdtfile = '$fdtfile'!!!!"
     else
       # 3.2.21:
-      BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+')
+      BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9A-Z]+')
       if [ -z "$BASE_FW_VERSION" ]; then
       # 3.0.1-19:
-        BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[-][0-9]+')
+        BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9A-Z]+[-][0-9A-Z]+')
       fi
       # 3.2.20.1
       if [ -z "$BASE_FW_VERSION" ]; then
-        BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+')
+        BASE_FW_VERSION=$(echo $VERSION_INFO | grep -oE '[0-9]+[.][0-9]+[.][0-9A-Z]+[.][0-9A-Z]+')
       fi
       if [ -z "$BASE_FW_VERSION" ]; then
         # this could be up to version 3.39.19 ( = '23229')
