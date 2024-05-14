@@ -112,7 +112,6 @@ backup)
 		      --relative --mkpath --checksum --safe-links \
 		      --progress \
 			/ "$USB_PATH/$BACKUP/$MAC"/ <<-LISTE
-				/etc/locale.conf
 				/etc/udev/rules.d/libinput-ts.rules
 				/etc/pointercal
 				/etc/dropbear
