@@ -14,7 +14,8 @@
 # CPU_FIX_FREQ=312000
 # CPU_FIX_FREQ=864000
 # CPU_FIX_FREQ=912000
-CPU_FIX_FREQ=1008000
+# CPU_FIX_FREQ=1008000
+CPU_FIX_FREQ=720000
 
 echo $CPU_FIX_FREQ > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
 echo $CPU_FIX_FREQ > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq

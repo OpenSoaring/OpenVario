@@ -17,7 +17,7 @@ index 641a8fa6d4..94a82c1474 100644
  			reg = <0>;
  			clocks = <&ccu CLK_CPU>;
  			clock-latency = <244144>; /* 8 32k periods */
-+			clock-frequency = <1008000>;
++			clock-frequency = <720000>;
  			operating-points = <
  				/* kHz	  uV */
 +				1008000	1450000
@@ -37,7 +37,7 @@ index 641a8fa6d4..94a82c1474 100644
  			reg = <1>;
  			clocks = <&ccu CLK_CPU>;
  			clock-latency = <244144>; /* 8 32k periods */
-+			clock-frequency = <1008000>;
++			clock-frequency = <720000>;
  			operating-points = <
  				/* kHz	  uV */
 +				1008000	1450000
