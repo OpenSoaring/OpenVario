@@ -4,11 +4,10 @@
 PR="r2"
 RCONFLICTS:${PN}="opensoar"
 
-### SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=master"
+SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=dev-branch"
 ### OpenSoar Tag: v7.41.21
-###  SRCREV = "2e0851053275bf76588fb97a8d344d4e40061393"
+###  SRCREV = ""
 
-SRC_URI = "git:///mnt/d/Projects/OpenSoaring/OpenSoar/.git/;protocol=file;branch=dev-branch "
 SRCREV = "${AUTOREV}"
 
 
