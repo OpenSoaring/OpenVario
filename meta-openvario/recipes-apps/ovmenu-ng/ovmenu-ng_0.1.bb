@@ -18,7 +18,6 @@ RDEPENDS:${PN} = " \
 	bash \
 	dialog \
 	ovmenu-ng-skripts \
-	ov-tools \
 	autofs-config \
 "
 
