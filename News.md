@@ -1,7 +1,29 @@
-#### Version v3.2.21.3  - not yet released
+#### Version v3.22.0  - 2024/05/27
 ------------------------------
-* patch 3 to v3.2.21 -> preparing OpenVarioBaseMenu
-(Preparation for OpenSoar v7.41.22 and OpenVario 3.2.22!)
+* Integration OpenVario menu in OpenSoar 'Setup System' menu
+* no more shell menu, python menu, x-menu or what ever ...
+* WLAN setting in OpenVario menu
+* Rotation setup only one time: Both for shell and GUI
+* internal audio menu for OpenSoar sound
+* lot of stabiliy tests, checks andf changes
+* start with correct kernel frequency in device tree
+* increase the kernel frequency to an small overclocked value: 
+  1.008GHz: Based on the very reliable setup of the Android version 
+  (Cubier) from the internal flash memory
+* This also leads to higher performance, the kernel temperature must be 
+  monitored carefully in the future (in summer)! 
+* Further small improvements regarding update stability! 
+* Bugfix: Pseudo-Freeze on high map resolution -> reduce max. resolution to ~"250km"
+* Multiple Close functions:
+  * Quit ('Q') - closes OpenSoar to the linux shell
+  * Shutdown ('X') - makes a shutdown of the device
+  * Reboot ('R') - makes a complete reboot of the device
+  * Restart ('Y') - makes a short internal restart of OpenSoar inside the application
+
+Known Issues:
+* Special characters e.g. in the setup of the Wifi passphrase (or other passphrases)
+* save the downloaded logger files to the USB stick
+* reenabling handling with club version
 
 #### Version v3.2.21.2 - 2024/02/10
 ------------------------------

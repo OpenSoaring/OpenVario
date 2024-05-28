@@ -15,6 +15,4 @@ IMAGE_INSTALL += "\
     ovmenu-ng \
 "
 
-IMAGE_INSTALL += "e2fsprogs-mke2fs "
-
 export IMAGE_BASENAME = "openvario-image"

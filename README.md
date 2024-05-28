@@ -14,7 +14,7 @@ This is a fork of the OpenVario project 'GitHub.com/Openvario/meta-openvario' to
 ### Fetching sources
 
 ```
-git clone --recurse-submodules https://github.com/Openvario/meta-openvario.git
+git clone --recurse-submodules https://github.com/OpenSoaring/OpenVario.git
 cd meta-openvario
 ```
 
@@ -37,13 +37,13 @@ source openembedded-core/oe-init-build-env .
 export MACHINE=ov-ch70
 ```
 
-Available machines for the OpenVario with the original adapter board are:
+Available machines for OpenVario with the original adapter board are:
 - ov-pq70
 - ov-ch70
 - ov-am43
 - ov-ch57
 
-Available machines for the OpenVario with the new adapter board DS2 are:
+Available machines for OpenVario with alternativ adapter board DS2 from Daniel Smolka are:
 - ov-ch70s
 - ov-am70s
 - ov-ch57s
