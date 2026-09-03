@@ -1,10 +1,11 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR = "r14"
+PR = "r7.45"
 RCONFLICTS:${PN}="xcsoar xcsoar-preview"
 
-SRCREV:pn-xcsoar-testing = "${AUTOREV}" 
+# xcsoar 7.45:
+SRCREV:pn-xcsoar-testing = "5bbf804b54cb57416e9de6c3247ad637d4066710" 
 
 SRC_URI = "git://github.com/XCSoar/XCSoar.git;protocol=https;branch=master \
 	file://ovmenu-x.service \
