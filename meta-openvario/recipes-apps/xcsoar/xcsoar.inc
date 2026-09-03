@@ -3,6 +3,7 @@ HOMEPAGE = "www.xcsoar.org"
 LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://COPYING;md5=393a5ca445f6965873eca0259a17f833"
 SECTION = "base/app"
+inherit pkgconfig update-alternatives
 
 DEPENDS = "	\
 		curl \
@@ -82,6 +83,12 @@ do_install() {
 
 FILES:${PN} = " \
 	${bindir}/xcsoar \
-	${bindir}/vali-xcs \
+	${bindir}/vali-xcs* \
 	${LC_LOCALE_PATH}/*/LC_MESSAGES/xcsoar.mo \
 "
+
+# vali-xcs is also supplied by opensoar (identical program) -> Alternatives
+# w/ higher priority
+ALTERNATIVE:${PN} = "vali-xcs"
+ALTERNATIVE_LINK_NAME[vali-xcs] = "${bindir}/vali-xcs"
+ALTERNATIVE_PRIORITY[vali-xcs] = "20"
