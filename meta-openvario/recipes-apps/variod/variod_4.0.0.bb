@@ -1,7 +1,8 @@
 require variod.inc
 
-PR = "r2"
+PR = "r3"
 
 SRC_URI:append = "git://github.com/Openvario/variod.git;protocol=https;branch=master"
 
-SRCREV = "aaa495919af67a6299b84fee0127ac64a1f6a8c3"
+# variod version 4.0.0:
+SRCREV = "ba43323b9b5bf55c3a0f705044c9ceb97107b004"
