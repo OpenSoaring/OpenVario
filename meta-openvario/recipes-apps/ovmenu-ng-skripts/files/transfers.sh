@@ -37,10 +37,26 @@ case "$TRANSFER_OPTION" in
         ;;
     download-data)
     # ----------
-        echo "Syncronizing $DATA_FOLDER with USB "
+        echo "Syncronizing Settings and Files from $DATA_FOLDER to USB"
         SRC_PATH="$SOAR_DATA_PATH"
         DEST_PATH="$USB_PATH/download/$DATA_FOLDER"
         mkdir -p $DEST_PATH
+        ;;
+    restore-data)
+    # ----------
+        echo "Restore Settings and Files from USB data to $DATA_FOLDER"
+        SRC_PATH="$USB_PATH/download/$DATA_FOLDER"
+        if [ ! -d $SRC_PATH ] && [ "$MAIN_APP" = "OpenSoar" ]; then
+          echo "Source path does not exist"
+          echo "  $SRC_PATH"
+          SRC_PATH=$USB_PATH/download/XCSoarData
+        fi
+        if [ ! -d $SRC_PATH ]; then
+          echo "Source path does not exist"
+          echo "  $SRC_PATH"
+          SRC_PATH=$USB_PATH/download/xcsoar
+        fi
+        DEST_PATH="$SOAR_DATA_PATH"
         ;;
     upload-data)
     # ----------
