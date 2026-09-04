@@ -1,15 +1,16 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r7.43"
+PR="r7.44"
 RCONFLICTS:${PN}="xcsoar-testing"
 
 SRC_URI = "git://github.com/XCSoar/XCSoar.git;protocol=https;branch=master "
 
-# Commit version for 7.43:
-SRCREV = "a7770b624ecdcddc37a7eb4bcda0ccb8394e9e58"
+# Commit version for 7.44:
+SRCREV = "a0dddd9088839c64bc1cdae9422044052b479b98"
 
-BOOST_VERSION = "1.85.0"
-BOOST_SHA256HASH = "7009fe1faa1697476bdc7027703a2badb84e849b7b0baad5086b087b971f8617"
+# dev branch is: boost 1.90:
+BOOST_VERSION = "1.90.0"
+BOOST_SHA256HASH = "49551aff3b22cbc5c5a9ed3dbc92f0e23ea50a0f7325b0d198b705e8ee3fc305"
 
 require xcsoar.inc
