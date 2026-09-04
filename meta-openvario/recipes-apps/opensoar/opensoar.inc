@@ -29,6 +29,8 @@ DEPENDS = "	\
 		dbus \
 		wpa-supplicant \
 		tiff \
+		netcdf-c \
+		netcdf-cxx4 \
 "
 DEPENDS_RESERVE = " \
 		sqlite3 \
@@ -36,8 +38,6 @@ DEPENDS_RESERVE = " \
 		\
 		libtiff \
 		libgeotiff \
-		netcdf \
-		netcdf_c++ \
 "
 
 RDEPENDS:${PN} = "\
@@ -54,11 +54,6 @@ LC_LOCALE_PATH = "${datadir}/locale"
 # PROJ_HASH="b0f919cb9e1f42f803a3e616c2b63a78e4d81ecfaed80978d570d3a5e29d10bc"
 # SQLITE_URL = "https://www.sqlite.org/2023/sqlite-autoconf-3420000.tar.gz"
 # SQLITE_HASH="7abcfd161c6e2742ca5c6c0895d1f853c940f203304a0b49da4e1eca5d088ca6"
-NETCDF_URL = "https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.10.0.tar.gz"
-NETCDF_HASH="ce160f9c1483b32d1ba8b7633d7984510259e4e439c48a218b95a023dc02fd4c"
-NETCDF_CXX_URL = "https://github.com/Unidata/netcdf-cxx4/archive/refs/tags/v4.3.1.tar.gz"
-NETCDF_CXX_HASH="E3FE3D2EC06C1C2772555BF1208D220AAB5FEE186D04BD265219B0BC7A978EDC"
-NETCDF_CXX_HASH="e3fe3d2ec06c1c2772555bf1208d220aab5fee186d04bd265219b0bc7a978edc"
 GEOTIFF_URL = "http://download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.7.4.tar.gz"
 GEOTIFF_HASH="c598d04fdf2ba25c4352844dafa81dde3f7fd968daa7ad131228cd91e9d3dc47"
 
@@ -68,8 +63,6 @@ BOOST_FILE = "boost_${@'${BOOST_VERSION}'.replace('.','_')}.tar.bz2"
 SRC_URI += " \
 	file://0007-Disable-touch-screen-auto-detection.patch \
 	${BOOST_URL};sha256sum=${BOOST_HASH};unpack=0 \
-	${NETCDF_URL};sha256sum=${NETCDF_HASH};unpack=0 \
-	${NETCDF_CXX_URL};sha256sum=${NETCDF_CXX_HASH};unpack=0 \
 "
 # SRC_URI += " ${SQLITE_URL};sha256sum=${SQLITE_HASH};unpack=0 "
 # SRC_URI += " ${LIBTIFF_URL};sha256sum=${LIBTIFF_HASH};unpack=0 "
