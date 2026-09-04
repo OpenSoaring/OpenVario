@@ -29,16 +29,11 @@ DEPENDS = "	\
 		dbus \
 		wpa-supplicant \
 		tiff \
+		libgeotiff \
 		netcdf-c \
 		netcdf-cxx4 \
 "
-DEPENDS_RESERVE = " \
-		sqlite3 \
-		proj \
-		\
-		libtiff \
-		libgeotiff \
-"
+
 
 RDEPENDS:${PN} = "\
         ttf-dejavu-sans-condensed \
@@ -47,15 +42,6 @@ RDEPENDS:${PN} = "\
 S = "${WORKDIR}/git"
 
 LC_LOCALE_PATH = "${datadir}/locale"
-
-# LIBTIFF_URL = "http://download.osgeo.org/libtiff/tiff-4.6.0.tar.xz"
-# LIBTIFF_HASH="e178649607d1e22b51cf361dd20a3753f244f022eefab1f2f218fc62ebaf87d2"
-# PROJ_URL = "http://download.osgeo.org/proj/proj-9.3.1.tar.gz"
-# PROJ_HASH="b0f919cb9e1f42f803a3e616c2b63a78e4d81ecfaed80978d570d3a5e29d10bc"
-# SQLITE_URL = "https://www.sqlite.org/2023/sqlite-autoconf-3420000.tar.gz"
-# SQLITE_HASH="7abcfd161c6e2742ca5c6c0895d1f853c940f203304a0b49da4e1eca5d088ca6"
-GEOTIFF_URL = "http://download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.7.4.tar.gz"
-GEOTIFF_HASH="c598d04fdf2ba25c4352844dafa81dde3f7fd968daa7ad131228cd91e9d3dc47"
 
 BOOST_URL = "https://archives.boost.io/release/${BOOST_VERSION}/source/${BOOST_FILE}"
 BOOST_HASH = "${BOOST_SHA256HASH}"
