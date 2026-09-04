@@ -33,7 +33,16 @@ EXTRA_OECMAKE = " \
 	-DNETCDF_ENABLE_EXAMPLES=OFF \
 	-DNETCDF_ENABLE_LIBXML2=OFF \
 	-DNETCDF_ENABLE_PLUGINS=OFF \
+	-DNETCDF_ENABLE_FILTER_SZIP=OFF \
+	-DNETCDF_ENABLE_FILTER_BZ2=OFF \
+	-DNETCDF_ENABLE_FILTER_BLOSC=OFF \
+	-DNETCDF_ENABLE_FILTER_ZSTD=OFF \
+	-DNETCDF_ENABLE_FILTER_TESTING=OFF \
 "
+
+# The compression filters are only used for netCDF-4/HDF5 data (disabled
+# here) and, like zlib, cmake would otherwise pick up x86 libzstd/libbz2 from
+# recipe-sysroot-native. Without an external bz2 netcdf-c uses its bundled copy.
 
 # nc-config and the build-settings file are development helpers
 FILES:${PN}-dev += " \
