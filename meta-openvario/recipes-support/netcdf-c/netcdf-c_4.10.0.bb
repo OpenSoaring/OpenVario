@@ -11,7 +11,10 @@ SRC_URI[sha256sum] = "ce160f9c1483b32d1ba8b7633d7984510259e4e439c48a218b95a023dc
 
 S = "${WORKDIR}/netcdf-c-${PV}"
 
-DEPENDS = "m4-native"
+# zlib: netcdf-c does find_package(ZLIB) unconditionally; without a target zlib
+# in the sysroot cmake picks the x86 one from recipe-sysroot-native and the
+# link of libnetcdf.so fails ("libz.so: file format not recognized")
+DEPENDS = "m4-native zlib"
 
 inherit cmake pkgconfig
 
