@@ -32,7 +32,7 @@ DEPENDS = "	\
 		libgeotiff \
 		netcdf-c \
 		netcdf-cxx4 \
-"
+    "
 
 
 RDEPENDS:${PN} = "\
