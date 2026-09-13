@@ -1,13 +1,13 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r24.11"
+PR="r24.12"
 
 require openvario.inc
 
 SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=master " 
-# v7.44.24.t11:
-SRCREV = "781ba1544b1585bad746376ecda21727e8b0521a"
+# v7.44.24:
+SRCREV = "ff94d37f9ab44454991a56befb7b6bb207ab6316"
 
 
 # dev branch is: boost 1.90:
