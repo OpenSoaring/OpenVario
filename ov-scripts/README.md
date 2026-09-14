@@ -23,6 +23,12 @@ branch, cleans and updates the submodules and resets hard. It does not run
 `git clean -xfd` at the top level, because that would delete the bitbake output
 of earlier builds along with everything else.
 
+If the work tree carries commits that the remote branch does not have, they are
+put on a branch `backup/<branch>-before-reset-<timestamp>` before the reset
+throws them away. This matters because the default remote is `origin`, that is
+GitHub, while a build often follows a local clone: a forgotten `OV_REMOTE` would
+otherwise discard work that exists nowhere else.
+
 `build` runs bitbake for every selected machine, in the order recovery
 initramfs, recovery image, OpenVario image. Since bitbake needs the environment
 that `oe-init-build-env` sets up, each call goes through `bash -c 'source ... &&

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import subprocess
+from datetime import datetime
 from pathlib import Path
 
 from . import proc
@@ -42,6 +44,7 @@ def update(cfg: Config, *, reset: bool = True) -> None:
               "git", "clean", "-xfd"], repo, dry_run=cfg.dry_run)
 
     if reset:
+        keep_what_would_be_lost(cfg)
         proc.run(["git", "reset", "--hard", f"{cfg.remote}/{cfg.branch}"],
                  repo, dry_run=cfg.dry_run)
         proc.run(["git", "submodule", "foreach", "--recursive",
@@ -49,6 +52,37 @@ def update(cfg: Config, *, reset: bool = True) -> None:
 
     proc.run(["git", "submodule", "update", "--init", "--recursive"],
              repo, dry_run=cfg.dry_run)
+
+
+def keep_what_would_be_lost(cfg: Config) -> None:
+    """Put a branch on commits that the coming reset would drop.
+
+    A hard reset onto the remote branch throws away everything the work tree
+    has on top of it. That is intended when the checkout only ever follows a
+    remote, but one wrong OV_REMOTE - the default is origin, that is GitHub,
+    while a build often follows a local clone - and the reset would discard
+    work that exists nowhere else. Rather than refusing, the commits are kept
+    under a dated branch, so the build can carry on and nothing is lost.
+    """
+    target = f"{cfg.remote}/{cfg.branch}"
+    result = subprocess.run(
+        ["git", "rev-list", "--count", f"{target}..HEAD"],
+        cwd=str(cfg.repo), capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return
+    try:
+        ahead = int(result.stdout.strip())
+    except ValueError:
+        return
+    if ahead == 0:
+        return
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    name = f"backup/{cfg.branch}-before-reset-{stamp}"
+    proc.say(f"    {ahead} commit(s) are not in {target}; keeping them as {name}")
+    proc.run(["git", "branch", name, "HEAD"], cfg.repo, dry_run=cfg.dry_run,
+             check=False)
 
 
 def run(cfg: Config, *, reset: bool = True) -> None:
