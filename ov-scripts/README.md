@@ -34,6 +34,22 @@ initramfs, recovery image, OpenVario image. Since bitbake needs the environment
 that `oe-init-build-env` sets up, each call goes through `bash -c 'source ... &&
 bitbake ...'` with `MACHINE` in the environment.
 
+## Tools on the host
+
+A build directly on the host needs the tools bitbake lists in `HOSTTOOLS`;
+without one of them it refuses to start, naming what it missed.
+`setup-host.sh` reports what is absent and what would install it:
+
+```
+bash ov-scripts/setup-host.sh              # report only
+bash ov-scripts/setup-host.sh --install    # and install with apt
+```
+
+The list of tools is read from the `bitbake.conf` of the oe-core in this
+checkout rather than kept here, so it stays right across releases - scarthgap
+asks for a few that kirkstone did not. The package names are Debian and Ubuntu.
+Building in a container makes this unnecessary; the image brings its own.
+
 ## The host check
 
 Before the first bitbake call, `build` compares this host with the Yocto state
