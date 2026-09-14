@@ -45,6 +45,9 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument("--image", help="image recipe to build")
     parser.add_argument("--no-recovery", action="store_true",
                         help="skip the two recovery images")
+    parser.add_argument("--container", metavar="IMAGE",
+                        help='run bitbake in this container image; pass "" to '
+                             "build on the host even when OV_CONTAINER is set")
     parser.add_argument("-n", "--dry-run", action="store_true",
                         help="only show what would be done")
 

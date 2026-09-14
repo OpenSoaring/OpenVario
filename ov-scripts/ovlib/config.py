@@ -23,12 +23,21 @@ The variables, all optional:
                     cloud folder (default: empty, nothing is published)
     OV_MIN_IMAGE_MB smallest plausible image in MiB; anything smaller is
                     treated as a failed build (default: 10)
+    OV_CONTAINER    image to run bitbake in, for instance
+                    ghcr.io/openvario/ovbuild-container:latest (default: empty,
+                    bitbake runs directly on the host)
+    OV_CONTAINER_RUNTIME
+                    docker or podman (default: docker)
+    OV_CONTAINER_ARGS
+                    extra arguments for the run command, appended to the
+                    defaults, for instance "-e HOME=/tmp"
 """
 
 from __future__ import annotations
 
 import os
 import re
+import shlex
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -84,6 +93,9 @@ class Config:
     deploy_dir: Path
     publish_dir: Path | None
     min_image_bytes: int
+    container: str
+    container_runtime: str
+    container_args: list[str]
     dry_run: bool = False
     versions: dict[str, str] = field(default_factory=dict)
 
@@ -197,6 +209,9 @@ def load(args) -> Config:
         publish_dir=(Path(os.environ["OV_PUBLISH_DIR"]).expanduser()
                      if os.environ.get("OV_PUBLISH_DIR") else None),
         min_image_bytes=int(os.environ.get("OV_MIN_IMAGE_MB", "10")) * 1024 * 1024,
+        container=os.environ.get("OV_CONTAINER", "").strip(),
+        container_runtime=os.environ.get("OV_CONTAINER_RUNTIME", "docker").strip(),
+        container_args=shlex.split(os.environ.get("OV_CONTAINER_ARGS", "")),
         dry_run=bool(getattr(args, "dry_run", False)),
         versions=versions,
     )
@@ -212,6 +227,8 @@ def load(args) -> Config:
         cfg.image = args.image
     if getattr(args, "no_recovery", False):
         cfg.build_recovery = False
+    if getattr(args, "container", None) is not None:
+        cfg.container = args.container.strip()
 
     return cfg
 
@@ -224,6 +241,7 @@ def describe(cfg: Config) -> str:
         f"image        : {cfg.image}" + ("  (plus recovery images)" if cfg.build_recovery else ""),
         f"deploy dir   : {cfg.deploy_dir}",
         f"publish dir  : {cfg.publish_dir if cfg.publish_dir else '(not set, nothing is published)'}",
+        f"bitbake runs : {'in ' + cfg.container + ' via ' + cfg.container_runtime if cfg.container else 'directly on this host'}",
         f"OV version   : {cfg.ov_version or '(unknown)'}",
         f"OpenSoar     : {cfg.opensoar_version or '(unknown, see below)'}",
     ]

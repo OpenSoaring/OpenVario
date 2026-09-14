@@ -34,6 +34,27 @@ initramfs, recovery image, OpenVario image. Since bitbake needs the environment
 that `oe-init-build-env` sets up, each call goes through `bash -c 'source ... &&
 bitbake ...'` with `MACHINE` in the environment.
 
+## With or without a container
+
+By default bitbake runs directly on the host, which needs a distribution the
+pinned Yocto release supports. Setting `OV_CONTAINER` to an image runs the very
+same shell line inside that image instead:
+
+```
+OV_CONTAINER=ghcr.io/openvario/ovbuild-container:latest bash ../ov-build.sh build
+```
+
+The checkout is mounted under the path it already has on the host, and the
+build runs as the calling user. Both matter: Yocto stores absolute paths in
+`tmp/` and in the sstate cache, so only an identical path lets a build inside
+the container and one outside share them, and bitbake refuses to run as root
+while everything it writes has to stay editable afterwards. `OV_CONTAINER_RUNTIME`
+switches between docker and podman, `OV_CONTAINER_ARGS` adds further arguments,
+and `--container ""` forces a host build even when the variable is set.
+
+Only the bitbake calls go into the container. Checkout and packaging stay
+outside, where git and the deploy directories are.
+
 `deploy` picks up what the build produced and assembles the upgrade package:
 the compressed SD card image, the first 2024 KiB of it as `bootsector.bin.gz`,
 the recovery image `ov-recovery.itb`, and the two scripts `fw-upgrade.sh` and

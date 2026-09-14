@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 from . import proc
 from .config import Config
 
@@ -26,12 +24,11 @@ def targets_for(cfg: Config) -> list[str]:
 
 def build_machine(cfg: Config, machine: str) -> None:
     proc.headline(f"Building for MACHINE={machine}")
-    env = os.environ.copy()
-    env["MACHINE"] = machine
     for target in targets_for(cfg):
         proc.say(f"--- {target} ({machine}) ---")
         proc.run_in_bitbake_env(f"bitbake {target}", cfg.repo,
-                                dry_run=cfg.dry_run, env=env)
+                                dry_run=cfg.dry_run,
+                                env_vars={"MACHINE": machine}, cfg=cfg)
 
 
 def run(cfg: Config) -> None:
