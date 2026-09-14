@@ -24,10 +24,12 @@ repo=$(cd "$here/.." && pwd)
 conf="$repo/openembedded-core/meta/conf/bitbake.conf"
 
 # Packages Yocto documents for Debian and Ubuntu hosts, plus the four that
-# cover the tools most often missing after a fresh WSL installation.
+# cover the tools most often missing after a fresh WSL installation. The Yocto
+# manual still names liblz4-tool here, but that is a transitional package which
+# releases after 24.04 dropped; lz4 is what carries the binaries now.
 BASE_PACKAGES="gawk wget git diffstat unzip texinfo gcc build-essential \
 chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils \
-iputils-ping python3-git python3-jinja2 python3-subunit zstd liblz4-tool file \
+iputils-ping python3-git python3-jinja2 python3-subunit zstd lz4 file \
 locales libacl1"
 
 # Which package provides a tool, where the name differs. Everything not listed
@@ -101,6 +103,30 @@ fi
 
 packages=$(echo "$BASE_PACKAGES $packages" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')
 
+# apt installs nothing at all when one name on the command line is unknown or
+# has no candidate, so a single package that a release has dropped keeps every
+# other one from being installed as well. Rather than judge the names here,
+# ask apt in a simulation and drop whatever it complains about: it knows about
+# virtual packages and providers, which a look at apt-cache policy does not.
+if command -v apt-get >/dev/null 2>&1; then
+    dropped=""
+    for _attempt in 1 2 3; do
+        # shellcheck disable=SC2086
+        bad=$(apt-get install -y --simulate $packages 2>&1 >/dev/null | sed -n \
+            -e "s/.*Unable to locate package \([^ ]*\).*/\1/p" \
+            -e "s/.*Package '\([^']*\)' has no installation candidate.*/\1/p" \
+            | sort -u)
+        [ -z "$bad" ] && break
+        for pkg in $bad; do
+            packages=$(echo " $packages " | sed "s/ $pkg / /g")
+            dropped="$dropped $pkg"
+        done
+    done
+    packages=$(echo "$packages" | tr -s ' ' | sed 's/^ *//;s/ *$//')
+    [ -n "$dropped" ] && echo "" && \
+        echo "Not offered by this release, left out:$dropped"
+fi
+
 echo ""
 echo "Packages to install:"
 echo "  sudo apt-get install -y $packages"
@@ -111,6 +137,15 @@ if [ "$INSTALL" = "y" ]; then
     sudo apt-get update
     # shellcheck disable=SC2086
     sudo apt-get install -y $packages
+    # Releases after 24.04 no longer ship lz4c, while HOSTTOOLS still asks for
+    # it. The binary it used to be is lz4 under another name, so a link is the
+    # accepted answer and is made here rather than left as homework.
+    if ! command -v lz4c >/dev/null 2>&1 && command -v lz4 >/dev/null 2>&1; then
+        echo ""
+        echo "lz4c is not part of the lz4 package on this release; linking it to lz4."
+        sudo ln -sf "$(command -v lz4)" /usr/bin/lz4c
+    fi
+
     echo ""
     echo "Checking again:"
     still=""
@@ -121,7 +156,6 @@ if [ "$INSTALL" = "y" ]; then
         echo "  all required tools are present now."
     else
         echo "  still missing:$still"
-        echo "  On some releases lz4c is gone from the lz4 package; a link helps:"
-        echo "      sudo ln -s /usr/bin/lz4 /usr/bin/lz4c"
+        echo "  Look for the package with: apt-file search bin/<tool>"
     fi
 fi
