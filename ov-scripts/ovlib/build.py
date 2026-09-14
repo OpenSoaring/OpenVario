@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from . import proc
+from . import hostcheck, proc
 from .config import Config
 
 RECOVERY_TARGETS = ["openvario-recovery-initramfs", "openvario-recovery-image"]
@@ -31,9 +31,12 @@ def build_machine(cfg: Config, machine: str) -> None:
                                 env_vars={"MACHINE": machine}, cfg=cfg)
 
 
-def run(cfg: Config) -> None:
+def run(cfg: Config, *, host_check: bool = True) -> None:
     if not cfg.machines:
         proc.die("no machines selected; set OV_MACHINES or pass --machines")
+    # A container brings its own userspace, so the host does not have to match.
+    if host_check and not cfg.container:
+        hostcheck.run(cfg, fatal=not cfg.dry_run)
     for machine in cfg.machines:
         conf = cfg.repo / "meta-openvario" / "conf" / "machine" / f"{machine}.conf"
         if not cfg.dry_run and not conf.is_file():

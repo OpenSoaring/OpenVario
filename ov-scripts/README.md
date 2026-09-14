@@ -34,6 +34,20 @@ initramfs, recovery image, OpenVario image. Since bitbake needs the environment
 that `oe-init-build-env` sets up, each call goes through `bash -c 'source ... &&
 bitbake ...'` with `MACHINE` in the environment.
 
+## The host check
+
+Before the first bitbake call, `build` compares this host with the Yocto state
+in the checkout and stops with one sentence rather than letting the build fail
+minutes later in a traceback. Two things are compared: the glibc of the host
+against `UNINATIVE_MAXGLIBCVERSION` of the oe-core in the tree, and, for Python
+3.12 and newer, whether the bitbake in the tree still uses `ast.Str`, which
+Python removed in that version.
+
+Both values are read from the tree, not from a table in the scripts, so a tree
+that has been updated passes on its own. The check is skipped when building in
+a container, because the container brings its own userspace; on a dry run it
+reports but does not stop; and `--no-host-check` overrides it.
+
 ## With or without a container
 
 By default bitbake runs directly on the host, which needs a distribution the

@@ -48,6 +48,9 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument("--container", metavar="IMAGE",
                         help='run bitbake in this container image; pass "" to '
                              "build on the host even when OV_CONTAINER is set")
+    parser.add_argument("--no-host-check", action="store_true",
+                        help="build even if this host looks too new for the "
+                             "Yocto state in the checkout")
     parser.add_argument("-n", "--dry-run", action="store_true",
                         help="only show what would be done")
 
@@ -90,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
             cfg.versions = config.read_versions(cfg.repo)
 
         if args.command in ("build", "all"):
-            build.run(cfg)
+            build.run(cfg, host_check=not args.no_host_check)
 
         if args.command in ("deploy", "all"):
             deploy.run(cfg)
