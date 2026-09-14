@@ -95,7 +95,23 @@ class Config:
 
     @property
     def opensoar_version(self) -> str:
-        return self.versions.get("OPENSOAR_VERSION", "")
+        """Version of OpenSoar that goes into the image.
+
+        Normally this comes from ov-versions.inc. On a tree that still has the
+        old VERSION.inc, which only knows the image version, fall back to the
+        recipe file name - but only when there is exactly one opensoar recipe.
+        With both 7.44.24 and 7.45.25 in the directory the name is ambiguous,
+        and guessing would silently publish under the wrong version; the old
+        shell script did guess, and returned both names at once.
+        """
+        from_file = self.versions.get("OPENSOAR_VERSION", "")
+        if from_file:
+            return from_file
+        recipes = sorted((self.repo / "meta-openvario" / "recipes-apps" / "opensoar")
+                         .glob("opensoar_*.bb"))
+        if len(recipes) == 1:
+            return recipes[0].stem.removeprefix("opensoar_")
+        return ""
 
     def deploy_image_dir(self, machine: str) -> Path:
         return self.repo / "tmp" / "deploy" / "images" / machine
@@ -209,8 +225,13 @@ def describe(cfg: Config) -> str:
         f"deploy dir   : {cfg.deploy_dir}",
         f"publish dir  : {cfg.publish_dir if cfg.publish_dir else '(not set, nothing is published)'}",
         f"OV version   : {cfg.ov_version or '(unknown)'}",
-        f"OpenSoar     : {cfg.opensoar_version or '(unknown)'}",
+        f"OpenSoar     : {cfg.opensoar_version or '(unknown, see below)'}",
     ]
+    if not cfg.opensoar_version:
+        lines.append(
+            "               OPENSOAR_VERSION is not set in "
+            "meta-openvario/ov-versions.inc and cannot be taken from the "
+            "recipe names either; published files land one directory higher.")
     if cfg.dry_run:
         lines.append("mode         : dry run, no command is executed")
     return "\n".join(lines)

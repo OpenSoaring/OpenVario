@@ -134,7 +134,12 @@ def deploy_machine(cfg: Config, machine: str) -> Path | None:
     copy(cfg, image_gz, version_dir / image_gz.name)
 
     if cfg.publish_dir:
-        target = cfg.publish_dir / f"v{cfg.opensoar_version}" / f"OV-{cfg.ov_version}"
+        # Without a known OpenSoar version there is no sensible directory to
+        # sort by, and a bare "v" would be worse than none at all.
+        target = cfg.publish_dir
+        if cfg.opensoar_version:
+            target = target / f"v{cfg.opensoar_version}"
+        target = target / f"OV-{cfg.ov_version}"
         proc.say(f"    publishing to {target}")
         copy(cfg, image_gz, target / image_gz.name)
         copy(cfg, archive, target / archive.name)
