@@ -11,6 +11,8 @@ voltage to 1.1V for the lowest CPU speeds.
 Rebased onto u-boot v2024.01, where operating-points is written as a list
 of separate <kHz uV> entries rather than one enclosing block. The values
 are unchanged from the version that applied to 2022.01.
+
+Upstream-Status: Inappropriate [OpenVario specific]
 ---
  arch/arm/dts/sun7i-a20.dtsi | 12 ++++++++----
  1 file changed, 8 insertions(+), 4 deletions(-)

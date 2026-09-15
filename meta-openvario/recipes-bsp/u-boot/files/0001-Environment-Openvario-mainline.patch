@@ -5,6 +5,8 @@ Subject: [PATCH 2/2] Environment-Openvario-mainline
 
 Rebased onto u-boot v2024.01; the surrounding code moved but the change
 itself is unaltered from the version that applied to 2022.01.
+
+Upstream-Status: Inappropriate [OpenVario specific]
 ---
  include/configs/sunxi-common.h | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)

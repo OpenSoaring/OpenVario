@@ -5,6 +5,8 @@ Subject: [PATCH 1/2] Added RGB swap for RGB LCD
 
 Rebased onto u-boot v2024.01; the hunks moved but the change itself is
 unaltered from the version that applied to 2022.01.
+
+Upstream-Status: Pending
 ---
  arch/arm/include/asm/arch-sunxi/lcdc.h | 1 +
  drivers/video/Kconfig                  | 5 +++++
