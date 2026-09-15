@@ -9,8 +9,9 @@ even on machines with no touch screen is installed: it is easier to
 click larger controls with the stick control and labels acually fit the
 buttons with the larger font sizes.
 
-The context lines were refreshed against the 7.44 and 7.45 sources, which
-carry the same surroundings; the change itself is the one line it always was.
+The context lines were refreshed against OpenSoar 7.45.25, which has gained a
+member right after the changed line. That is why this copy sits in a version
+directory: the sources of 7.44.24 still look like the one under files/.
 
 Upstream-Status: Inappropriate [OpenVario specific]
 ---
@@ -27,7 +28,7 @@ diff --git a/src/ui/event/poll/libinput/LibInputHandler.hpp b/src/ui/event/poll/
 -  unsigned n_pointers = 0, n_touch_screens = 0, n_keyboards = 0;
 +  unsigned n_pointers = 0, n_touch_screens = 1, n_keyboards = 0;
  
- public:
-   explicit LibInputHandler(EventQueue &_queue) noexcept;
+   /**
+    * Set when open_restricted fails.  Cleared after a suspend/resume
 -- 
 2.25.1
