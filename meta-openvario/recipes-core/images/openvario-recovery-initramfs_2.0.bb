@@ -38,6 +38,14 @@ IMAGE_INIT_MANAGER  = "systemd"
 IMAGE_INITSCRIPTS   = " "
 IMAGE_FSTYPES = "cpio.gz"
 
+# Since scarthgap IMAGE_LINK_NAME carries IMAGE_NAME_SUFFIX, which defaults to
+# ".rootfs", so the deployed file would be called
+# openvario-base-initramfs-<machine>.rootfs.cpio.gz. An initramfs is not a
+# rootfs and oe-core says as much in image-artifact-names.bbclass: every
+# initramfs image should empty the suffix, as core-image-minimal-initramfs
+# does. That also keeps the name the recovery image recipe looks for.
+IMAGE_NAME_SUFFIX ?= ""
+
 ROOTFS_POSTPROCESS_COMMAND += "openvario_initramfs_generate_init ; "
 
 fakeroot openvario_initramfs_generate_init () {

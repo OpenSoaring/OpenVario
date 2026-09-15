@@ -30,8 +30,10 @@ BOOT_SPACE ?= "40960"
 # First partition begin at sector 2048 : 2048*1024 = 2097152
 IMAGE_ROOTFS_ALIGNMENT = "2048"
 
-SDIMG_ROOTFS = "${IMGDEPLOYDIR}/${IMAGE_NAME}.rootfs.${SDIMG_ROOTFS_TYPE}"
-SDIMG_ROOTFS_2 = "${IMGDEPLOYDIR}/${IMAGE_NAME}.rootfs.${SDIMG_ROOTFS_TYPE}"
+# IMAGE_NAME ends in IMAGE_NAME_SUFFIX itself since scarthgap, so spelling
+# .rootfs out here would ask for a file called ...rootfs-<date>.rootfs.ext4.
+SDIMG_ROOTFS = "${IMGDEPLOYDIR}/${IMAGE_NAME}.${SDIMG_ROOTFS_TYPE}"
+SDIMG_ROOTFS_2 = "${IMGDEPLOYDIR}/${IMAGE_NAME}.${SDIMG_ROOTFS_TYPE}"
 
 do_image_openvario_sdimg[depends] += " \
             parted-native:do_populate_sysroot \
