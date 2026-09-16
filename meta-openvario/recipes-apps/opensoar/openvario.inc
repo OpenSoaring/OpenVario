@@ -1,3 +1,3 @@
-OpenVario         = "3.25"
-OpenSoarVersion   = "7.45.25"
-XCSoarVersion     = "7.45"
+OpenVario         = "3.24.1"
+OpenSoarVersion   = "7.44.24.1"
+XCSoarVersion     = "7.44"
