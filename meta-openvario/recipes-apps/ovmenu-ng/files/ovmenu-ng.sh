@@ -180,7 +180,22 @@ do
         echo "Finish OpenSoar with $exit_value"
         error_stop "Stopped before clear in shell!" 
         do_shell ;;
-     205) /usr/bin/fw-upgrade.sh ;;
+     205)
+        # OpenSoar leaves the image it was asked to flash in
+        # $HOME/fw-upgrade.request ("IMAGEFILE=/path"), because it
+        # cannot flash the root file system it is running from.
+        # fw-upgrade.sh takes the image as its first argument and then
+        # skips its selection menu; without the file (older programs)
+        # the menu comes up as before.
+        REQUEST=$HOME/fw-upgrade.request
+        if [ -f "$REQUEST" ]; then
+          IMAGEFILE=""
+          source "$REQUEST"
+          rm -f "$REQUEST"
+          /usr/bin/fw-upgrade.sh "$IMAGEFILE"
+        else
+          /usr/bin/fw-upgrade.sh
+        fi ;;
      206) /usr/bin/ov-calibrate-ts.sh ;;
      207)
           ## /usr/bin/OpenVarioBaseMenu
