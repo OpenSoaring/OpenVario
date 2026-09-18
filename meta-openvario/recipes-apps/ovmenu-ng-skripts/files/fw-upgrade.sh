@@ -151,7 +151,7 @@ function select_image() {
     fi
     search_array+=("$USB_OPENVARIO"  "(USB)")
     for ((i=0; i<${#search_array[*]}; i=i+2)); do
-      images=${search_array[$i]}/images/O*V*-*.gz
+      images=${search_array[$i]}/download/O*V*-*.gz
       extension=${search_array[$i+1]}
       echo "$images:        $extension"
       
