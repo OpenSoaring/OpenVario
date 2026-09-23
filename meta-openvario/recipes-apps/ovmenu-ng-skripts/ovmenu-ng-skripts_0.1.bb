@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=c79ff39f19dfec6d
 SECTION = "base/app"
 
 S = "${WORKDIR}"
-PR = "r11"
+PR = "r12"
 
 inherit allarch
 
@@ -28,6 +28,7 @@ SRC_URI = "\
 	file://fw-upgrade.sh \
 	file://update-system-config.sh \
 	file://image_backup.sh \
+	file://set-main.sh \
 "
 
 
@@ -40,6 +41,7 @@ do_compile() {
 do_install() {
 	echo "Installing ..."
 	install -d ${D}${bindir}
+	install -m 0755 ${S}/set-main.sh ${D}${bindir}/set-main
 	install -m 0755 \
 		${S}/download-igc.sh \
 		${S}/transfers.sh \
@@ -56,4 +58,5 @@ do_install() {
 
 FILES:${PN} = " \
 	${bindir}/*.sh \
+	${bindir}/set-main \
 "
