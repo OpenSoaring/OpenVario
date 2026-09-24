@@ -111,10 +111,10 @@ function select_image() {
   files_nice=()   # define array with index + file description for dialogdialog
   search_array=()
 
-  if [ -d "$PARTITION3/images" ]; then
+  if [ -d "$PARTITION3/download" ]; then
     search_array+=("$PARTITION3"  "(data)")
   fi
-  if [ -d "$HOME_PART2/images" ]; then
+  if [ -d "$HOME_PART2/download" ]; then
     search_array+=("$HOME_PART2"  "(intern)")
   fi
   search_array+=("$USB_OPENVARIO"  "(USB)")
@@ -783,11 +783,11 @@ echo "List: '$RECOVER_DIR'"
 ls $RECOVER_DIR
 
 # image file name with path!
-if [ -f $PARTITION3/images/$IMAGEFILE ]; then
+if [ -f $PARTITION3/download/$IMAGEFILE ]; then
   # copy it from sd card to ramdisk!
   # NO LINK: later mmcblk0 is overwritten
   # maybe this isn't necessary?
-  cp "$PARTITION3/images/$IMAGEFILE" $HOME/
+  cp "$PARTITION3/download/$IMAGEFILE" $HOME/
   IMAGEFILE="$HOME/$IMAGEFILE"
   sync
 elif [ -f $USB_OPENVARIO/images/$IMAGEFILE ]; then

@@ -10,6 +10,7 @@ DEPENDS = "dialog"
 RDEPENDS:${PN} = "dialog \
 					bash \
 				"
+PR="r25.04"
 require ov-revision.inc
 
 inherit allarch
