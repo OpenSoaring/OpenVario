@@ -63,6 +63,17 @@ MAC=`ip li|grep -A 1 eth0|tail -n 1|cut -d ' ' -f 6|sed -e s/:/-/g`
 #### aug 2024-01-03 	sync&
 #### aug 2024-01-03 }
 
+# The stick is mounted by a systemd automount unit, which keeps an
+# "autofs" entry on $USB_PATH even while no stick is plugged in.
+# Without a real mount, rsync would fail or write the backup into the
+# mount point directory on the root file system, so refuse right away.
+ls "$USB_PATH" > /dev/null 2>&1    # lets systemd mount a stick
+if ! awk -v p="$USB_PATH" '$2 == p && $3 != "autofs" { found = 1 }
+                          END { exit !found }' /proc/mounts; then
+	>&2 echo " No USB stick found at $USB_PATH - nothing done."
+	exit 1
+fi
+
 case "$TRANSFER_OPTION" in
 backup)
 	echo ' [##========] System check ...'
