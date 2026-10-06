@@ -12,6 +12,7 @@ DEPENDS = "	\
 		librsvg-native \
 		imagemagick-native \
 		libinput \
+		libxkbcommon \
 		lua \
 		udev \
 		ttf-dejavu \
@@ -32,6 +33,7 @@ DEPENDS = "	\
 
 RDEPENDS:${PN} = "\
         ttf-dejavu-sans-condensed \
+        xkeyboard-config \
 "
 
 S = "${WORKDIR}/git"

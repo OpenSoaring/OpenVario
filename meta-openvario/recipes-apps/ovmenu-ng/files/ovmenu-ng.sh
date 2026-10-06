@@ -54,6 +54,13 @@ chmod -Rf 757 $HOME
 mv $HOME/start-debug-1.log $HOME/start-debug-2.log
 mv $DEBUG_LOG $HOME/start-debug-1.log
 source /boot/config.uEnv
+
+# XCSoar and OpenSoar read the layout of an attached keyboard from the
+# xkbcommon environment; "keyboard_layout=de" in config.uEnv selects
+# a German keyboard, without it the US layout applies
+if [ -n "$keyboard_layout" ]; then
+  export XKB_DEFAULT_LAYOUT="$keyboard_layout"
+fi
 if [[ -z "$brightness" ]]; then 
   brightness=10
 fi
