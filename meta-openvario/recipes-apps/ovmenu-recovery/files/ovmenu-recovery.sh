@@ -418,6 +418,9 @@ function recover_system(){
   # recover OpenSoarData:
   if [ -d "$RECOVER_DIR" ]; then
     if [ -f "$RECOVER_DIR/config.uEnv" ]; then
+      # an old config.uEnv without main_app must not inherit a value
+      # from elsewhere
+      main_app=
       source $RECOVER_DIR/config.uEnv
       echo "sdcard/config.uEnv"      >> $DEBUG_LOG
       echo "------------------------"      >> $DEBUG_LOG
@@ -455,6 +458,18 @@ function recover_system(){
           sed -i 's/^brightness=.*/brightness='$BRIGHTNESS'/' $PARTITION1/config.uEnv
           echo "Set BRIGHTNESS (4) '$BRIGHTNESS' UPDATE"  >> $DEBUG_LOG
         fi
+      fi
+      # keep the program the user chose to start, like rotation and
+      # brightness; without it the new image would fall back to its
+      # first-boot default
+      if [ -n "$main_app" ]; then
+        if grep -q '^main_app=' $PARTITION1/config.uEnv; then
+          sed -i 's/^main_app=.*/main_app='$main_app'/' $PARTITION1/config.uEnv
+        else
+          [ -n "$(tail -c1 $PARTITION1/config.uEnv)" ] && echo >> $PARTITION1/config.uEnv
+          echo "main_app=$main_app" >> $PARTITION1/config.uEnv
+        fi
+        echo "Set MAIN_APP '$main_app'"  >> $DEBUG_LOG
       fi
     fi
 
