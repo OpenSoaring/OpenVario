@@ -105,28 +105,26 @@ backup)
 	cat /sys/class/backlight/lcd/brightness > /home/root/brightness
 
 	echo ' [####======] Starting backup ...'
-	# Copy all directories and files from list below to backup directory recursively.
+	# Copy all directories and files from the list below to the backup
+	# directory recursively.  The touch screen files only exist after a
+	# calibration, and rsync reports a missing entry as an error, so they
+	# are listed only when present.
 	# We use --checksum here due to cubieboards not having an rtc clock
-	if 
+	OPTIONAL_FILES=
+	for FILE in /etc/udev/rules.d/libinput-ts.rules /etc/pointercal
+	do
+		if [ -e "$FILE" ]; then OPTIONAL_FILES="$OPTIONAL_FILES $FILE"; fi
+	done
+	if
+		printf '%s\n' /etc/dropbear /home/root /opt/conf /var/lib/connman \
+			/boot/config.uEnv $OPTIONAL_FILES |
 		rsync --files-from - --archive --recursive --quiet \
 			--relative --mkpath --checksum --safe-links --progress \
-			/ "$USB_PATH/$BACKUP/$MAC"/ <<-LISTE
-				/etc/udev/rules.d/libinput-ts.rules
-				/etc/dropbear
-				/home/root
-				/opt/conf
-				/var/lib/connman
-				/boot/config.uEnv
-			LISTE
+			/ "$USB_PATH/$BACKUP/$MAC"/
 		test ${RSYNC_EXIT:=$?} -eq 0
 	then
-		if 
-        rsync --files-from - --archive --recursive --quiet \
-		      --relative --mkpath --checksum --safe-links \
-		      --progress "$USB_PATH/$BACKUP/$MAC"  /etc/pointercal
-		test ${RSYNC_EXIT:=$?} -eq 0
 		echo ' [######====] All files and settings have been backed up.'
-	else 
+	else
 		>&2 echo " An rsync error $RSYNC_EXIT has occurred!"
 	fi;;
 	
