@@ -1,0 +1,287 @@
+From 98cb01668f267dd3ebf787b7eee6bfd1c99cb54e Mon Sep 17 00:00:00 2001
+From: Uwe Augustin <Info@FlapsOnline.de>
+Date: Tue, 6 Oct 2026 14:18:12 +0200
+Subject: [PATCH 08/16] OV: move the sensor and touch calibration out of
+ OpenVarioMenu
+
+XCSoar itself is going to offer both calibrations on an OpenVario, so
+that a pilot does not have to quit to the start menu for them.  The
+code moves unchanged into its own file, which both programs can link,
+instead of being copied.  The touch calibration takes the display and
+the event queue as parameters, because XCSoar has to hand over the
+screen and the input devices to the script just as the menu does.
+---
+ build/ov.mk              |   1 +
+ src/OV/Calibrate.cpp     | 102 +++++++++++++++++++++++++++++++++++++++
+ src/OV/Calibrate.hpp     |  26 ++++++++++
+ src/OV/OpenVarioMenu.cpp |  83 +------------------------------
+ 4 files changed, 131 insertions(+), 81 deletions(-)
+ create mode 100644 src/OV/Calibrate.cpp
+ create mode 100644 src/OV/Calibrate.hpp
+
+diff --git a/build/ov.mk b/build/ov.mk
+index 7566812004..3d32fe8a1e 100644
+--- a/build/ov.mk
++++ b/build/ov.mk
+@@ -35,6 +35,7 @@ OV_MENU_SOURCES = \
+ 	$(TEST_SRC_DIR)/FakeLogFile.cpp \
+ 	$(SRC)/Kobo/FakeSymbols.cpp \
+ 	$(SRC)/OV/System.cpp \
++	$(SRC)/OV/Calibrate.cpp \
+ 	$(SRC)/OV/OpenVarioMenu.cpp
+ OV_MENU_DEPENDS = DBUS WIDGET FORM DATA_FIELD SCREEN EVENT RESOURCE ASYNC LIBNET OS IO THREAD TIME MATH UTIL
+ OV_MENU_STRIP = y
+diff --git a/src/OV/Calibrate.cpp b/src/OV/Calibrate.cpp
+new file mode 100644
+index 0000000000..d9a5a4c0ab
+--- /dev/null
++++ b/src/OV/Calibrate.cpp
+@@ -0,0 +1,102 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Copyright The XCSoar Project
++
++#include "Calibrate.hpp"
++#include "Dialogs/Error.hpp"
++#include "Dialogs/Message.hpp"
++#include "Dialogs/ProcessDialog.hpp"
++#include "Form/Form.hpp"
++#include "UIGlobals.hpp"
++#include "lib/dbus/Connection.hxx"
++#include "lib/dbus/ScopeMatch.hxx"
++#include "lib/dbus/Systemd.hxx"
++#include "system/Process.hpp"
++#include "ui/display/Display.hpp"
++#include "ui/event/Queue.hpp"
++#include "util/ScopeExit.hxx"
++
++#include <cstdlib>
++#include <stdexcept>
++
++void
++CalibrateSensors() noexcept
++try {
++  /* make sure sensord is stopped while calibrating sensors */
++  auto connection = ODBus::Connection::GetSystem();
++  const ODBus::ScopeMatch job_removed_match{connection, Systemd::job_removed_match};
++
++  bool has_sensord = false;
++
++  if (Systemd::IsUnitActive(connection, "sensord.socket")) {
++    has_sensord = true;
++
++    try {
++      Systemd::StopUnit(connection, "sensord.socket");
++    } catch (...) {
++      std::throw_with_nested(std::runtime_error{"Failed to stop sensord"});
++    }
++  }
++
++  AtScopeExit(&connection, has_sensord){
++    if (has_sensord)
++      Systemd::StartUnit(connection, "sensord.socket");
++  };
++
++  /* calibrate the sensors */
++  static constexpr const char *calibrate_sensors[] = {
++    "/opt/bin/sensorcal", "-c", nullptr
++  };
++
++  static constexpr int STATUS_BOARD_NOT_INITIALISED = 2;
++  static constexpr int RESULT_BOARD_NOT_INITIALISED = 100;
++  int result = RunProcessDialog(UIGlobals::GetMainWindow(),
++                                UIGlobals::GetDialogLook(),
++                                "Calibrate Sensors", calibrate_sensors,
++                                [](int status){
++                                  return status == STATUS_BOARD_NOT_INITIALISED
++                                    ? RESULT_BOARD_NOT_INITIALISED
++                                    : 0;
++                                });
++  if (result != RESULT_BOARD_NOT_INITIALISED)
++    return;
++
++  /* initialise the sensors? */
++  if (ShowMessageBox("Sensorboard is virgin. Do you want to initialise it?",
++                     "Calibrate Sensors", MB_YESNO) != IDYES)
++    return;
++
++  static constexpr const char *init_sensors[] = {
++    "/opt/bin/sensorcal", "-i", nullptr
++  };
++
++  result = RunProcessDialog(UIGlobals::GetMainWindow(),
++                            UIGlobals::GetDialogLook(),
++                            "Calibrate Sensors", init_sensors,
++                            [](int status){
++                              return status == EXIT_SUCCESS
++                                ? mrOK
++                                : 0;
++                            });
++  if (result != mrOK)
++    return;
++
++  /* calibrate again */
++  RunProcessDialog(UIGlobals::GetMainWindow(),
++                   UIGlobals::GetDialogLook(),
++                   "Calibrate Sensors", calibrate_sensors,
++                   [](int status){
++                     return status == STATUS_BOARD_NOT_INITIALISED
++                       ? RESULT_BOARD_NOT_INITIALISED
++                       : 0;
++                   });
++} catch (...) {
++  ShowError(std::current_exception(), "Calibrate Sensors");
++}
++
++void
++CalibrateTouch(UI::Display &display, UI::EventQueue &event_queue) noexcept
++{
++  const UI::ScopeDropMaster drop_master{display};
++  const UI::ScopeSuspendEventQueue suspend_event_queue{event_queue};
++  Run("/usr/bin/ov-calibrate-ts.sh");
++}
+diff --git a/src/OV/Calibrate.hpp b/src/OV/Calibrate.hpp
+new file mode 100644
+index 0000000000..9650209ecc
+--- /dev/null
++++ b/src/OV/Calibrate.hpp
+@@ -0,0 +1,26 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Copyright The XCSoar Project
++
++#pragma once
++
++namespace UI {
++class Display;
++class EventQueue;
++}
++
++/**
++ * Calibrate the sensor board with "sensorcal", offering to initialise
++ * a board that has never been initialised.  The sensor daemon is
++ * stopped meanwhile, because it holds the sensors open.  Errors are
++ * shown to the user.
++ */
++void
++CalibrateSensors() noexcept;
++
++/**
++ * Run the touch screen calibration script of the OpenVario image.
++ * It draws on the console itself, so this process gives up the
++ * display and stops reading input until the script has finished.
++ */
++void
++CalibrateTouch(UI::Display &display, UI::EventQueue &event_queue) noexcept;
+diff --git a/src/OV/OpenVarioMenu.cpp b/src/OV/OpenVarioMenu.cpp
+index 9d2109834e..2a0e8033a0 100644
+--- a/src/OV/OpenVarioMenu.cpp
++++ b/src/OV/OpenVarioMenu.cpp
+@@ -20,15 +20,13 @@
+ #include "ui/event/Timer.hpp"
+ #include "Logger/FlightParser.hpp"
+ #include "Language/Language.hpp"
+-#include "lib/dbus/Connection.hxx"
+-#include "lib/dbus/ScopeMatch.hxx"
+-#include "lib/dbus/Systemd.hxx"
+ #include "DataFilePath.hpp"
+ #include "system/Process.hpp"
+ #include "io/FileLineReader.hpp"
+ #include "util/PrintException.hxx"
+ #include "util/ScopeExit.hxx"
+ #include "LocalPath.hpp"
++#include "OV/Calibrate.hpp"
+ 
+ #include <cassert>
+ #include <cstdio>
+@@ -132,81 +130,6 @@ private:
+                const PixelRect &rc) noexcept override;
+ };
+ 
+-static void
+-CalibrateSensors() noexcept
+-try {
+-  /* make sure sensord is stopped while calibrating sensors */
+-  auto connection = ODBus::Connection::GetSystem();
+-  const ODBus::ScopeMatch job_removed_match{connection, Systemd::job_removed_match};
+-
+-  bool has_sensord = false;
+-
+-  if (Systemd::IsUnitActive(connection, "sensord.socket")) {
+-    has_sensord = true;
+-
+-    try {
+-      Systemd::StopUnit(connection, "sensord.socket");
+-    } catch (...) {
+-      std::throw_with_nested(std::runtime_error{"Failed to stop sensord"});
+-    }
+-  }
+-
+-  AtScopeExit(&connection, has_sensord){
+-    if (has_sensord)
+-      Systemd::StartUnit(connection, "sensord.socket");
+-  };
+-
+-  /* calibrate the sensors */
+-  static constexpr const char *calibrate_sensors[] = {
+-    "/opt/bin/sensorcal", "-c", nullptr
+-  };
+-
+-  static constexpr int STATUS_BOARD_NOT_INITIALISED = 2;
+-  static constexpr int RESULT_BOARD_NOT_INITIALISED = 100;
+-  int result = RunProcessDialog(UIGlobals::GetMainWindow(),
+-                                UIGlobals::GetDialogLook(),
+-                                "Calibrate Sensors", calibrate_sensors,
+-                                [](int status){
+-                                  return status == STATUS_BOARD_NOT_INITIALISED
+-                                    ? RESULT_BOARD_NOT_INITIALISED
+-                                    : 0;
+-                                });
+-  if (result != RESULT_BOARD_NOT_INITIALISED)
+-    return;
+-
+-  /* initialise the sensors? */
+-  if (ShowMessageBox("Sensorboard is virgin. Do you want to initialise it?",
+-                     "Calibrate Sensors", MB_YESNO) != IDYES)
+-    return;
+-
+-  static constexpr const char *init_sensors[] = {
+-    "/opt/bin/sensorcal", "-i", nullptr
+-  };
+-
+-  result = RunProcessDialog(UIGlobals::GetMainWindow(),
+-                            UIGlobals::GetDialogLook(),
+-                            "Calibrate Sensors", init_sensors,
+-                            [](int status){
+-                              return status == EXIT_SUCCESS
+-                                ? mrOK
+-                                : 0;
+-                            });
+-  if (result != mrOK)
+-    return;
+-
+-  /* calibrate again */
+-  RunProcessDialog(UIGlobals::GetMainWindow(),
+-                   UIGlobals::GetDialogLook(),
+-                   "Calibrate Sensors", calibrate_sensors,
+-                   [](int status){
+-                     return status == STATUS_BOARD_NOT_INITIALISED
+-                       ? RESULT_BOARD_NOT_INITIALISED
+-                       : 0;
+-                   });
+-} catch (...) {
+-  ShowError(std::current_exception(), "Calibrate Sensors");
+-}
+-
+ void
+ SystemMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
+                           [[maybe_unused]] const PixelRect &rc) noexcept
+@@ -233,9 +156,7 @@ SystemMenuWidget::Prepare([[maybe_unused]] ContainerWindow &parent,
+ 
+   AddButton("Calibrate Sensors", CalibrateSensors);
+   AddButton("Calibrate Touch", [this](){
+-    const UI::ScopeDropMaster drop_master{display};
+-    const UI::ScopeSuspendEventQueue suspend_event_queue{event_queue};
+-    Run("/usr/bin/ov-calibrate-ts.sh");
++    CalibrateTouch(display, event_queue);
+   });
+ 
+   AddButton("System Settings", [this](){

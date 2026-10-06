@@ -18,4 +18,19 @@ SRCREV = "f18f5f0ca1055767e5fa215a2903d32085bbd321"
 BOOST_VERSION = "1.90.0"
 BOOST_SHA256HASH = "49551aff3b22cbc5c5a9ed3dbc92f0e23ea50a0f7325b0d198b705e8ee3fc305"
 
+# The OpenVario settings inside XCSoar, as proposed for XCSoar 7.46:
+# calibrations, firmware upgrade, system backup, the program to start
+# after boot and the display rotation kept across a reboot.
+SRC_URI += " \
+	file://0008-OV-move-the-sensor-and-touch-calibration-out-of-Open.patch \
+	file://0009-OV-System-detect-an-OpenVario-read-the-image-name-an.patch \
+	file://0010-OV-System-store-the-display-rotation-without-rotatin.patch \
+	file://0011-DisplayConfigPanel-keep-the-orientation-on-an-OpenVa.patch \
+	file://0012-DisplayConfigPanel-calibrate-the-touch-screen-on-an-.patch \
+	file://0013-SystemdConfigPanel-the-OpenVario-system-functions-be.patch \
+	file://0014-OpenVarioSystemWidget-start-the-firmware-upgrade-fro.patch \
+	file://0015-OpenVarioSystemWidget-back-up-and-restore-the-whole-.patch \
+	file://0016-OpenVario-remove-OpenVarioMenu-and-move-src-OV-to-sr.patch \
+"
+
 require xcsoar.inc
