@@ -188,17 +188,23 @@ do
         error_stop "Stopped before clear in shell!" 
         do_shell ;;
      205)
-        # OpenSoar leaves the image it was asked to flash in
-        # $HOME/fw-upgrade.request ("IMAGEFILE=/path"), because it
-        # cannot flash the root file system it is running from.
-        # fw-upgrade.sh takes the image as its first argument and then
-        # skips its selection menu; without the file (older programs)
-        # the menu comes up as before.
+        # The program cannot flash the root file system it runs from,
+        # so it quits with 205 after putting the chosen image into
+        # $HOME/data/images as the only entry (a hard link to the image
+        # in the download directory).  fw-upgrade.sh takes the image
+        # as its first argument and then skips its selection menu.
+        # Older programs left the path in $HOME/fw-upgrade.request
+        # instead; without either the menu comes up.
+        IMAGEFILE=""
+        for image in $HOME/data/images/*.img.gz; do
+          [ -f "$image" ] && IMAGEFILE="$image"
+        done
         REQUEST=$HOME/fw-upgrade.request
-        if [ -f "$REQUEST" ]; then
-          IMAGEFILE=""
+        if [ -z "$IMAGEFILE" ] && [ -f "$REQUEST" ]; then
           source "$REQUEST"
-          rm -f "$REQUEST"
+        fi
+        rm -f "$REQUEST"
+        if [ -n "$IMAGEFILE" ]; then
           /usr/bin/fw-upgrade.sh "$IMAGEFILE"
         else
           /usr/bin/fw-upgrade.sh

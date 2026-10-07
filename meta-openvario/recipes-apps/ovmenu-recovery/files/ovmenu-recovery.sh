@@ -798,7 +798,15 @@ echo "List: '$RECOVER_DIR'"
 ls $RECOVER_DIR
 
 # image file name with path!
-if [ -f $PARTITION3/download/$IMAGEFILE ]; then
+# data/images holds the image chosen in OpenSoar or XCSoar (a hard
+# link into data/download); data/download the ones fw-upgrade.sh lists
+if [ -f $PARTITION3/images/$IMAGEFILE ]; then
+  # copy it from sd card to ramdisk!
+  # NO LINK: later mmcblk0 is overwritten
+  cp "$PARTITION3/images/$IMAGEFILE" $HOME/
+  IMAGEFILE="$HOME/$IMAGEFILE"
+  sync
+elif [ -f $PARTITION3/download/$IMAGEFILE ]; then
   # copy it from sd card to ramdisk!
   # NO LINK: later mmcblk0 is overwritten
   # maybe this isn't necessary?
