@@ -43,7 +43,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 MACHINE_CONF_DIR = Path("meta-openvario/conf/machine")
-VERSIONS_INC = Path("meta-openvario/ov-versions.inc")
+VERSIONS_INC = Path("VERSION.inc")
 DEFAULT_CLONE_URL = "https://github.com/OpenSoaring/OpenVario"
 
 
@@ -107,23 +107,13 @@ class Config:
 
     @property
     def opensoar_version(self) -> str:
-        """Version of OpenSoar that goes into the image.
+        """Version of OpenSoar that goes into the image, from VERSION.inc.
 
-        Normally this comes from ov-versions.inc. On a tree that still has the
-        old VERSION.inc, which only knows the image version, fall back to the
-        recipe file name - but only when there is exactly one opensoar recipe.
-        With both 7.44.24 and 7.45.25 in the directory the name is ambiguous,
-        and guessing would silently publish under the wrong version; the old
-        shell script did guess, and returned both names at once.
+        The opensoar recipe takes its package version from the same value,
+        so the recipe file name no longer carries it and cannot serve as a
+        fallback.
         """
-        from_file = self.versions.get("OPENSOAR_VERSION", "")
-        if from_file:
-            return from_file
-        recipes = sorted((self.repo / "meta-openvario" / "recipes-apps" / "opensoar")
-                         .glob("opensoar_*.bb"))
-        if len(recipes) == 1:
-            return recipes[0].stem.removeprefix("opensoar_")
-        return ""
+        return self.versions.get("OPENSOAR_VERSION", "")
 
     def deploy_image_dir(self, machine: str) -> Path:
         return self.repo / "tmp" / "deploy" / "images" / machine
@@ -168,26 +158,23 @@ class Config:
 
 
 def read_versions(repo: Path) -> dict[str, str]:
-    """Parse meta-openvario/ov-versions.inc.
+    """Parse VERSION.inc in the repository root.
 
     The file uses shell assignment syntax so that bitbake and plain shell
     scripts can read the same source; here we need the same values without
     starting a shell.
     """
     versions: dict[str, str] = {}
-    # VERSION.inc in the root is where the image version lived before it moved
-    # into the layer; reading it as a fallback keeps the scripts working on an
-    # older checkout.
-    for candidate in (repo / VERSIONS_INC, repo / "VERSION.inc"):
-        if not candidate.is_file():
+    candidate = repo / VERSIONS_INC
+    if not candidate.is_file():
+        return versions
+    for line in candidate.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
             continue
-        for line in candidate.read_text(encoding="utf-8", errors="replace").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            m = re.match(r'([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"?([^"#]*)"?', line)
-            if m:
-                versions.setdefault(m.group(1), m.group(2).strip())
+        m = re.match(r'([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"?([^"#]*)"?', line)
+        if m:
+            versions.setdefault(m.group(1), m.group(2).strip())
     return versions
 
 
@@ -247,9 +234,8 @@ def describe(cfg: Config) -> str:
     ]
     if not cfg.opensoar_version:
         lines.append(
-            "               OPENSOAR_VERSION is not set in "
-            "meta-openvario/ov-versions.inc and cannot be taken from the "
-            "recipe names either; published files land one directory higher.")
+            "               OPENSOAR_VERSION is not set in VERSION.inc; "
+            "published files land one directory higher.")
     if cfg.dry_run:
         lines.append("mode         : dry run, no command is executed")
     return "\n".join(lines)

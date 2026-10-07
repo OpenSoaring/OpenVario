@@ -124,8 +124,8 @@ Command line options `--repo`, `--machines`, `--branch`, `--image` and
 without it, such as the experimental `ov-cubieboard`, cannot produce a named SD
 card image and is therefore left out.
 
-The versions come from `meta-openvario/ov-versions.inc`, the same file bitbake
-reads through `conf/distro/ovlinux.conf`.
+The versions come from `VERSION.inc` in the repository root, the same file
+bitbake reads for the image name and the opensoar and xcsoar package versions.
 
 ## Wrapper outside the repository
 

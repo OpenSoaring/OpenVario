@@ -2,6 +2,17 @@
 # Released under the MIT license (see COPYING.MIT for the terms)
 
 PR="r7.45.3"
+
+# The exact release (7.45.3) comes from VERSION.inc in the repository
+# root; the file name only names the 7.45 series.  It has to match the
+# SRCREV below.
+require VERSION.inc
+PV = "${XCSOAR_VERSION}"
+
+# With the full release as version, bitbake would look for the patches
+# in xcsoar-7.45.3/ instead of xcsoar-7.45/; name the directory, so it
+# keeps its precedence over files/ whatever the release is.
+FILESEXTRAPATHS:prepend := "${THISDIR}/xcsoar-7.45:"
 RCONFLICTS:${PN}="xcsoar-testing"
 
 # SRC_URI = "git://github.com/XCSoar/XCSoar.git;protocol=https;branch=master "

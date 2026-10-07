@@ -3,7 +3,11 @@
 
 PR="r25.11"
 
-require openvario.inc
+# The version is set in VERSION.inc in the repository root, not by the
+# name of this file, so a new OpenSoar test build changes SRCREV here
+# and OPENSOAR_VERSION there, and nothing has to be renamed.
+require VERSION.inc
+PV = "${OPENSOAR_VERSION}"
 
 # SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work " 
 SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work-7.45.25 " 

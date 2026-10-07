@@ -149,7 +149,7 @@ def deploy_machine(cfg: Config, machine: str) -> Path | None:
 
 def run(cfg: Config) -> None:
     if not cfg.ov_version:
-        proc.die("OV_VERSION is unknown; meta-openvario/ov-versions.inc could "
-                 "not be read")
+        proc.die("OV_VERSION is unknown; VERSION.inc in the repository root "
+                 "could not be read")
     for machine in cfg.machines:
         deploy_machine(cfg, machine)
