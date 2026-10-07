@@ -1,0 +1,116 @@
+From 6ba247ffcfcdddc6f58fe4940f9a47aa8e8dce07 Mon Sep 17 00:00:00 2001
+From: Uwe Augustin <Info@FlapsOnline.de>
+Date: Tue, 6 Oct 2026 14:31:16 +0200
+Subject: [PATCH 10/16] OV/System: store the display rotation without rotating
+ again
+
+OpenvarioSetRotation() rotates the display, the console and stores the
+value for the next boot, all in one.  XCSoar's own display settings
+rotate the display already and only need the last step, so it becomes
+a function of its own.  The translation from the orientation to the
+number in config.uEnv moves into a helper that both use.
+---
+ src/OV/System.cpp | 49 ++++++++++++++++++++++++++++++-----------------
+ src/OV/System.hpp | 11 +++++++++++
+ 2 files changed, 42 insertions(+), 18 deletions(-)
+
+diff --git a/src/OV/System.cpp b/src/OV/System.cpp
+index d9c822078c..f1726e6e49 100644
+--- a/src/OV/System.cpp
++++ b/src/OV/System.cpp
+@@ -78,7 +78,7 @@ DisplayOrientation
+ OpenvarioGetRotation()
+ {
+   std::map<std::string, std::string, std::less<>> map;
+-  LoadConfigFile(map, Path("/boot/config.uEnv"));
++  LoadConfigFile(map, Path(boot_config));
+ 
+   uint_least8_t result;
+   result = map.contains("rotation") ? std::stoi(map.find("rotation")->second) : 0;
+@@ -92,34 +92,47 @@ OpenvarioGetRotation()
+   }
+ }
+ 
+-void
+-OpenvarioSetRotation(DisplayOrientation orientation)
++/**
++ * The value of "rotation" in /boot/config.uEnv, which is also the
++ * value of /sys/class/graphics/fbcon/rotate.
++ */
++static constexpr unsigned
++ToConfigRotation(DisplayOrientation orientation) noexcept
+ {
+-  std::map<std::string, std::string, std::less<>> map;
+-
+-  Display::Rotate(orientation);
+-
+-  int rotation = 0; 
+   switch (orientation) {
+   case DisplayOrientation::DEFAULT:
+   case DisplayOrientation::LANDSCAPE:
+     break;
+   case DisplayOrientation::REVERSE_PORTRAIT:
+-    rotation = 1;
+-    break;
++    return 1;
+   case DisplayOrientation::REVERSE_LANDSCAPE:
+-    rotation = 2;
+-    break;
++    return 2;
+   case DisplayOrientation::PORTRAIT:
+-    rotation = 3;
+-    break;
++    return 3;
+   };
+ 
+-  File::WriteExisting(Path("/sys/class/graphics/fbcon/rotate"), fmt::format_int{rotation}.c_str());
++  return 0;
++}
++
++void
++OpenvarioSaveRotation(DisplayOrientation orientation)
++{
++  std::map<std::string, std::string, std::less<>> map;
++  LoadConfigFile(map, Path(boot_config));
++  map.insert_or_assign("rotation",
++                       fmt::format_int{ToConfigRotation(orientation)}.c_str());
++  WriteConfigFile(map, Path(boot_config));
++}
++
++void
++OpenvarioSetRotation(DisplayOrientation orientation)
++{
++  Display::Rotate(orientation);
++
++  File::WriteExisting(Path("/sys/class/graphics/fbcon/rotate"),
++                      fmt::format_int{ToConfigRotation(orientation)}.c_str());
+ 
+-  LoadConfigFile(map, Path("/boot/config.uEnv"));
+-  map.insert_or_assign("rotation", fmt::format_int{rotation}.c_str());
+-  WriteConfigFile(map, Path("/boot/config.uEnv"));
++  OpenvarioSaveRotation(orientation);
+ }
+ 
+ SSHStatus
+diff --git a/src/OV/System.hpp b/src/OV/System.hpp
+index b22e50a8d4..ac43367284 100644
+--- a/src/OV/System.hpp
++++ b/src/OV/System.hpp
+@@ -45,6 +45,17 @@ OpenvarioSetBrightness(uint_least8_t value) noexcept;
+ DisplayOrientation
+ OpenvarioGetRotation();
+ 
++/**
++ * Store the display orientation in /boot/config.uEnv, from where the
++ * image applies it to the console at the next boot.
++ */
++void
++OpenvarioSaveRotation(DisplayOrientation orientation);
++
++/**
++ * Rotate the display and the console now, and store the orientation
++ * for the next boot.
++ */
+ void
+ OpenvarioSetRotation(DisplayOrientation orientation);
+ 

@@ -1,0 +1,82 @@
+From caf831d37070f637dc954ee4586998f73be6300d Mon Sep 17 00:00:00 2001
+From: Uwe Augustin <Info@FlapsOnline.de>
+Date: Tue, 6 Oct 2026 17:48:15 +0200
+Subject: [PATCH 12/16] DisplayConfigPanel: calibrate the touch screen on an
+ OpenVario
+
+On an OpenVario, the touch screen is calibrated by a script of the
+image, and until now a pilot had to quit XCSoar and use the menu of
+the image for it.  The Screen page already holds the orientation,
+which the calibration depends on, so the calibration gets a button
+there instead of a page of its own.  The button is only added when
+the program runs on an OpenVario, and it is the last row, so that the
+row indices of the other settings do not depend on it.
+---
+ build/main.mk                                      |  4 +++-
+ doc/manual/en/ch11_configuration.tex               |  4 ++++
+ src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp | 14 ++++++++++++++
+ 3 files changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/build/main.mk b/build/main.mk
+index 1e8229f2d3..d7b99a0e80 100644
+--- a/build/main.mk
++++ b/build/main.mk
+@@ -827,7 +827,9 @@ ifeq ($(TARGET_IS_LINUX)$(TARGET_IS_KOBO)$(TARGET_IS_ANDROID),ynn)
+ XCSOAR_SOURCES += \
+ 	$(SRC)/Dialogs/Settings/Panels/SystemdConfigPanel.cpp \
+ 	$(SRC)/Linux/SystemdServiceList.cpp \
+-	$(SRC)/OV/System.cpp
++	$(SRC)/Dialogs/ProcessDialog.cpp \
++	$(SRC)/OV/System.cpp \
++	$(SRC)/OV/Calibrate.cpp
+ endif
+ 
+ include $(topdir)/build/net-wifi.mk
+diff --git a/doc/manual/en/ch11_configuration.tex b/doc/manual/en/ch11_configuration.tex
+index 7e03f61d17..fe3ab8e63f 100644
+--- a/doc/manual/en/ch11_configuration.tex
++++ b/doc/manual/en/ch11_configuration.tex
+@@ -1090,6 +1090,10 @@ orientation, brightness, and (where drawn by XCSoar) the mouse cursor.
+   Only available if the cursor is drawn by XCSoar.
+ \item[Invert cursor color]  Use a black cursor. Default is {\bf Off}
+   (white cursor). Only available if the cursor is drawn by XCSoar.
++\item[Calibrate touch screen]  Runs the touch screen calibration of the
++  OpenVario image: XCSoar hands over the screen until the calibration is
++  finished, and you touch the crosses that appear one after the other.
++  Only available on an OpenVario.
+ \end{description}
+ 
+ 
+diff --git a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
+index fb9369b240..da0297a897 100644
+--- a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
++++ b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
+@@ -35,7 +35,9 @@
+ #endif
+ 
+ #if defined(__linux__) && !defined(__ANDROID__) && !defined(KOBO)
++#include "OV/Calibrate.hpp"
+ #include "OV/System.hpp"
++#include "ui/event/Globals.hpp"
+ #endif
+ 
+ #include <memory>
+@@ -340,6 +342,18 @@ DisplayConfigPanel::Prepare(ContainerWindow &parent,
+   AddBoolean(_("Invert cursor color"), _("Enable black cursor"),
+              ui_settings.display.invert_cursor_colors);
+ #endif
++
++#if defined(__linux__) && !defined(__ANDROID__) && !defined(KOBO)
++  /* the touch screen of an OpenVario is calibrated by a script of the
++     image; the button sits here because the calibration belongs to
++     the screen, and it is the last row so that the indices above do
++     not depend on it */
++  if (IsOpenVario())
++    AddButton(_("Calibrate touch screen"), []{
++      CalibrateTouch(UIGlobals::GetMainWindow().GetDisplay(),
++                     *UI::event_queue);
++    });
++#endif
+ }
+ 
+ bool

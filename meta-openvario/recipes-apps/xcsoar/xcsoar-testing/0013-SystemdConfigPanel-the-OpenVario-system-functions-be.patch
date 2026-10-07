@@ -1,0 +1,270 @@
+From d01f515eead3c8d8f9638593ed51f277e0c4ac59 Mon Sep 17 00:00:00 2001
+From: Uwe Augustin <Info@FlapsOnline.de>
+Date: Tue, 6 Oct 2026 17:49:16 +0200
+Subject: [PATCH 13/16] SystemdConfigPanel: the OpenVario system functions
+ below the services
+
+On an OpenVario, XCSoar is started from the menu of the image, and
+until now a pilot had to quit to that menu to calibrate the sensors or
+to switch the device over to OpenSoar.  These functions belong
+together with sensord and variod, which the "System Services" page
+already controls, so they appear on that page below the service list
+instead of on a page of their own; the configuration dialog has
+enough pages already.  The page also shows which image the device is
+running, which is the first thing to know when reporting a problem.
+
+The part is only added when /boot/config.uEnv exists, so a desktop
+Linux machine sees the page as before.  The choice of the program to
+start after boot is written to that file when the dialog closes, like
+every other setting, and ovmenu-ng.sh reads it at the next boot.
+
+When config.uEnv names no program, the selection shows the running
+one, because the image has evidently started it; the comparison
+ignores the case, as the start script does.
+---
+ build/main.mk                                 |   1 +
+ doc/manual/en/ch11_configuration.tex          |  25 ++++
+ .../Settings/Panels/OpenVarioSystemWidget.cpp | 133 ++++++++++++++++++
+ .../Settings/Panels/OpenVarioSystemWidget.hpp |  16 +++
+ .../Settings/Panels/SystemdConfigPanel.cpp    |  11 ++
+ 5 files changed, 186 insertions(+)
+ create mode 100644 src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
+ create mode 100644 src/Dialogs/Settings/Panels/OpenVarioSystemWidget.hpp
+
+diff --git a/build/main.mk b/build/main.mk
+index d7b99a0e80..63bdeaece7 100644
+--- a/build/main.mk
++++ b/build/main.mk
+@@ -827,6 +827,7 @@ ifeq ($(TARGET_IS_LINUX)$(TARGET_IS_KOBO)$(TARGET_IS_ANDROID),ynn)
+ XCSOAR_SOURCES += \
+ 	$(SRC)/Dialogs/Settings/Panels/SystemdConfigPanel.cpp \
+ 	$(SRC)/Linux/SystemdServiceList.cpp \
++	$(SRC)/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp \
+ 	$(SRC)/Dialogs/ProcessDialog.cpp \
+ 	$(SRC)/OV/System.cpp \
+ 	$(SRC)/OV/Calibrate.cpp
+diff --git a/doc/manual/en/ch11_configuration.tex b/doc/manual/en/ch11_configuration.tex
+index fe3ab8e63f..b48d75095c 100644
+--- a/doc/manual/en/ch11_configuration.tex
++++ b/doc/manual/en/ch11_configuration.tex
+@@ -1097,6 +1097,31 @@ orientation, brightness, and (where drawn by XCSoar) the mouse cursor.
+ \end{description}
+ 
+ 
++%%%%%%%%%%%%%%%%%%
++\section{Setup / System Services}\label{sec:setup-system-services}
++
++This page is available on Linux.  The upper part lists the system
++services XCSoar knows (the SSH server, and on an OpenVario the sensor
++daemon \texttt{sensord} and the audio vario \texttt{variod}) and starts,
++stops or restarts them.
++
++On an OpenVario, the system functions of the OpenVario image follow
++below the list:
++
++\begin{description}
++\item[Firmware image]  The name of the OpenVario image the device is
++  running.  Please quote it when reporting a problem.
++\item[Start after boot]  The program the OpenVario starts when it is
++  switched on: XCSoar or OpenSoar.  The choice is stored when the
++  configuration dialogue is closed and takes effect with the next start
++  of the device.
++\item[Calibrate sensors]  Calibrates the pressure sensors of the
++  OpenVario sensor board.  The sensor daemon is stopped during the
++  calibration.  A sensor board that has never been initialised is
++  detected, and XCSoar offers to initialise it first.
++\end{description}
++
++
+ %%%%%%%%%%%%%%%%%%
+ \section{Setup / Time}
+ 
+diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
+new file mode 100644
+index 0000000000..2e699c71a4
+--- /dev/null
++++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
+@@ -0,0 +1,133 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Copyright The XCSoar Project
++
++#include "OpenVarioSystemWidget.hpp"
++#include "Dialogs/Error.hpp"
++#include "Form/DataField/Enum.hpp"
++#include "Language/Language.hpp"
++#include "OV/Calibrate.hpp"
++#include "OV/System.hpp"
++#include "UIGlobals.hpp"
++#include "Version.hpp"
++#include "Widget/RowFormWidget.hpp"
++#include "util/StringAPI.hxx"
++
++#include <string>
++#include <string_view>
++
++enum ControlIndex {
++  IMAGE,
++  MAIN_APP,
++  CALIBRATE_SENSORS,
++};
++
++/**
++ * The values of "main_app" which ovmenu-ng.sh knows.  The enum ids
++ * index this table.
++ */
++static constexpr const char *main_app_values[] = {
++  "xcsoar",
++  "OpenSoar",
++};
++
++static constexpr StaticEnumChoice main_app_list[] = {
++  { 0, "XCSoar" },
++  { 1, "OpenSoar" },
++  nullptr
++};
++
++class OpenVarioSystemWidget final : public RowFormWidget {
++  unsigned main_app;
++
++public:
++  OpenVarioSystemWidget() noexcept
++    :RowFormWidget(UIGlobals::GetDialogLook()) {}
++
++  /* virtual methods from class Widget */
++  void Prepare(ContainerWindow &parent, const PixelRect &rc) noexcept override;
++  bool Save(bool &changed) noexcept override;
++};
++
++/**
++ * The entry of #main_app_values for the program that is running.
++ * The name is taken from the product token, because the PRODUCT_NAME
++ * of the build only reaches a few files such as Version.cpp; elsewhere
++ * the macro says "XCSoar" even in a renamed build.
++ */
++[[gnu::pure]]
++static unsigned
++RunningApp() noexcept
++{
++  const std::string_view token{XCSoar_ProductToken};
++  const auto name = token.substr(0, token.find(' '));
++
++  for (unsigned i = 0; i < std::size(main_app_values); ++i)
++    if (name.size() == std::string_view{main_app_values[i]}.size() &&
++        StringIsEqualIgnoreCase(name.data(), main_app_values[i],
++                                name.size()))
++      return i;
++
++  return 0;
++}
++
++/**
++ * Which entry of #main_app_values does the image start?  ovmenu-ng.sh
++ * accepts "XCSoar" as well as "xcsoar", hence the comparison ignores
++ * the case.  A missing or unknown value counts as the running
++ * program: the image has started it.
++ */
++static unsigned
++LoadMainApp() noexcept
++try {
++  const std::string value = OpenvarioGetMainApp();
++  for (unsigned i = 0; i < std::size(main_app_values); ++i)
++    if (StringIsEqualIgnoreCase(value.c_str(), main_app_values[i]))
++      return i;
++
++  return RunningApp();
++} catch (...) {
++  return RunningApp();
++}
++
++void
++OpenVarioSystemWidget::Prepare(ContainerWindow &parent,
++                               const PixelRect &rc) noexcept
++{
++  RowFormWidget::Prepare(parent, rc);
++
++  const std::string image = OpenvarioGetImageName();
++  AddReadOnly(_("Firmware image"),
++              _("The OpenVario image this device is running."),
++              image.empty() ? _("Unknown") : image.c_str());
++
++  main_app = LoadMainApp();
++  AddEnum(_("Start after boot"),
++          _("The program the OpenVario starts when it is switched on.  "
++            "The change takes effect with the next start of the device."),
++          main_app_list, main_app);
++
++  AddButton(_("Calibrate sensors"), CalibrateSensors);
++}
++
++bool
++OpenVarioSystemWidget::Save(bool &_changed) noexcept
++{
++  if (SaveValueEnum(MAIN_APP, main_app)) {
++    try {
++      OpenvarioSetMainApp(main_app_values[main_app]);
++    } catch (...) {
++      ShowError(std::current_exception(), _("Start after boot"));
++      return false;
++    }
++
++    _changed = true;
++  }
++
++  return true;
++}
++
++std::unique_ptr<Widget>
++CreateOpenVarioSystemWidget() noexcept
++{
++  return std::make_unique<OpenVarioSystemWidget>();
++}
+diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.hpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.hpp
+new file mode 100644
+index 0000000000..82ed77e397
+--- /dev/null
++++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.hpp
+@@ -0,0 +1,16 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Copyright The XCSoar Project
++
++#pragma once
++
++#include <memory>
++
++class Widget;
++
++/**
++ * The OpenVario part of the "System Services" page: the image the
++ * device runs, the program it starts after boot and the system
++ * functions of the image.  Only to be shown on an OpenVario.
++ */
++std::unique_ptr<Widget>
++CreateOpenVarioSystemWidget() noexcept;
+diff --git a/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp b/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp
+index 534c2fe13f..6c98088c69 100644
+--- a/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp
++++ b/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp
+@@ -2,6 +2,9 @@
+ // Copyright The XCSoar Project
+ 
+ #include "SystemdConfigPanel.hpp"
++#include "OpenVarioSystemWidget.hpp"
++#include "OV/System.hpp"
++#include "Widget/TwoWidgets.hpp"
+ #include "Dialogs/Error.hpp"
+ #include "Dialogs/JobDialog.hpp"
+ #include "Form/Button.hpp"
+@@ -337,5 +340,13 @@ CreateSystemdConfigPanel()
+   auto panel = std::make_unique<ButtonPanelWidget>(
+     std::move(list), ButtonPanelWidget::Alignment::BOTTOM);
+   static_cast<SystemdListWidget &>(panel->GetWidget()).SetButtonPanel(*panel);
++
++  /* on an OpenVario, the services sensord and variod belong together
++     with the system functions of the image; they share this page
++     instead of getting one of their own */
++  if (IsOpenVario())
++    return std::make_unique<TwoWidgets>(std::move(panel),
++                                        CreateOpenVarioSystemWidget());
++
+   return panel;
+ }

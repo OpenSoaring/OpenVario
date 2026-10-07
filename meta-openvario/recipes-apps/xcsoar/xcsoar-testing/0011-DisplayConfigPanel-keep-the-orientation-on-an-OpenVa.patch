@@ -1,0 +1,90 @@
+From 898815c7dcea899478ecb49e5178b0da142dfdcd Mon Sep 17 00:00:00 2001
+From: Uwe Augustin <Info@FlapsOnline.de>
+Date: Tue, 6 Oct 2026 17:47:53 +0200
+Subject: [PATCH 11/16] DisplayConfigPanel: keep the orientation on an
+ OpenVario after a reboot
+
+XCSoar rotates its own display and the console, but the OpenVario
+image applies the "rotation" from /boot/config.uEnv at boot, before
+XCSoar runs.  The image copies the console rotation into that file
+only when XCSoar quits to its menu.  A pilot who simply switches the
+device off, or restarts it from XCSoar's exit dialog, gets the boot
+screen, the image's menu and the touch calibration in the old
+orientation.  Writing the value when the setting changes closes that
+gap.  "Default" keeps whatever the system is set up for, so it is not
+written.
+
+OV/System.cpp is built into XCSoar for this on every Linux target that
+has the "System Services" page, because an OpenVario build is an
+ordinary Linux build and the decision is taken at run time.
+---
+ build/main.mk                                 |  3 ++-
+ doc/manual/en/ch11_configuration.tex          |  2 ++
+ .../Settings/Panels/DisplayConfigPanel.cpp    | 20 +++++++++++++++++++
+ 3 files changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/build/main.mk b/build/main.mk
+index a6dc40592f..1e8229f2d3 100644
+--- a/build/main.mk
++++ b/build/main.mk
+@@ -826,7 +826,8 @@ endif
+ ifeq ($(TARGET_IS_LINUX)$(TARGET_IS_KOBO)$(TARGET_IS_ANDROID),ynn)
+ XCSOAR_SOURCES += \
+ 	$(SRC)/Dialogs/Settings/Panels/SystemdConfigPanel.cpp \
+-	$(SRC)/Linux/SystemdServiceList.cpp
++	$(SRC)/Linux/SystemdServiceList.cpp \
++	$(SRC)/OV/System.cpp
+ endif
+ 
+ include $(topdir)/build/net-wifi.mk
+diff --git a/doc/manual/en/ch11_configuration.tex b/doc/manual/en/ch11_configuration.tex
+index 57e845e131..7e03f61d17 100644
+--- a/doc/manual/en/ch11_configuration.tex
++++ b/doc/manual/en/ch11_configuration.tex
+@@ -1053,6 +1053,8 @@ orientation, brightness, and (where drawn by XCSoar) the mouse cursor.
+ \item[Display resolution*]  Used to adapt line widths, font size, landable
+   size and more.
+ \item[Display orientation]  Rotate the display on devices that support it.
++  On an OpenVario, the orientation is also stored for the next boot, so
++  that the boot screen and the menu of the OpenVario image use it, too.
+ \item[Screen brightness]  Adjust the screen brightness, where the platform
+   allows it.
+ \item[Full screen]  Let XCSoar use the whole screen, including the areas
+diff --git a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
+index 15812a8723..fb9369b240 100644
+--- a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
++++ b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
+@@ -34,6 +34,10 @@
+ #include "ui/event/Queue.hpp"
+ #endif
+ 
++#if defined(__linux__) && !defined(__ANDROID__) && !defined(KOBO)
++#include "OV/System.hpp"
++#endif
++
+ #include <memory>
+ #include <string>
+ 
+@@ -363,6 +367,22 @@ DisplayConfigPanel::Save(bool &_changed) noexcept
+     if (!Display::Rotate(ui_settings.display.orientation))
+       LogString("Display rotation failed");
+ 
++#if defined(__linux__) && !defined(__ANDROID__) && !defined(KOBO)
++    /* the OpenVario image rotates the console at boot, before
++       XCSoar runs; without this, the boot screen and the menu of the
++       image would come up in the old orientation.  "Default" means
++       "as the system is set up", so it leaves the setting alone. */
++    if (IsOpenVario() &&
++        ui_settings.display.orientation != DisplayOrientation::DEFAULT) {
++      try {
++        OpenvarioSaveRotation(ui_settings.display.orientation);
++      } catch (...) {
++        LogError(std::current_exception(),
++                 "Failed to store the rotation in /boot/config.uEnv");
++      }
++    }
++#endif
++
+ #ifdef SOFTWARE_ROTATE_DISPLAY
+     CommonInterface::main_window->SetDisplayOrientation(
+         ui_settings.display.orientation);
