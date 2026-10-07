@@ -143,15 +143,22 @@ function select_image() {
     files=()        # define file array 
     files_nice=()   # define array with index + file description for dialogdialog
   
-    if [ -d data ]; then
-      search_array+=("data"  "(data)")
+    # every entry is a whole directory: the data partition keeps its
+    # images in data/download (the chosen one also in data/images),
+    # while the USB stick has always carried them in openvario/images;
+    # one common subdirectory for all would miss the stick
+    if [ -d data/download ]; then
+      search_array+=("data/download"  "(data)")
     fi
-    if [ -d "$HOME" ]; then
-      search_array+=("$HOME"  "(intern)")
+    if [ -d "$HOME/download" ]; then
+      search_array+=("$HOME/download"  "(intern)")
     fi
-    search_array+=("$USB_OPENVARIO"  "(USB)")
+    search_array+=("$USB_OPENVARIO/images"  "(USB)")
+    if [ -d "$USB_OPENVARIO/download" ]; then
+      search_array+=("$USB_OPENVARIO/download"  "(USB)")
+    fi
     for ((i=0; i<${#search_array[*]}; i=i+2)); do
-      images=${search_array[$i]}/download/O*V*-*.gz
+      images=${search_array[$i]}/O*V*-*.gz
       extension=${search_array[$i+1]}
       echo "$images:        $extension"
       
