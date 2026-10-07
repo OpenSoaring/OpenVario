@@ -1,0 +1,830 @@
+From f76bd65c20b10aa970691dc656fe0b759eb6d073 Mon Sep 17 00:00:00 2001
+From: Uwe Augustin <Info@FlapsOnline.de>
+Date: Wed, 7 Oct 2026 16:21:45 +0200
+Subject: [PATCH] OpenVario: choose the firmware image in XCSoar and quit for
+ the upgrade
+
+Started from within XCSoar, fw-upgrade.sh did not get the screen on the
+device: XCSoar stayed visible with the button pressed, and an Enter
+started the upgrade without showing which image it would flash.
+
+A click on the firmware row now lists the images in data/download and
+on the USB stick (openvario/images), filtered to the hardware of the
+device with a button to show all.  The chosen image becomes the only
+entry of data/images, as a hard link into data/download; an image from
+the stick is copied there first, because a hard link cannot leave the
+data partition, and it stays available without the stick.  XCSoar then
+saves the profile and quits with exit code 205, which the start script
+of the image answers by running fw-upgrade.sh on the console with that
+image.
+
+This is the protocol of the OpenSoaring OpenVario image and not meant
+for upstream; the image carries it as a patch.
+---
+ build/main.mk                                 |   4 +-
+ .../Settings/Panels/OpenVarioSystemWidget.cpp | 116 ++++--
+ src/OpenVario/FirmwareImage.cpp               | 329 ++++++++++++++++++
+ src/OpenVario/FirmwareImage.hpp               |  80 +++++
+ src/OpenVario/FirmwareImagePicker.cpp         |  83 +++++
+ src/OpenVario/FirmwareImagePicker.hpp         |  18 +
+ src/OpenVario/System.cpp                      |  14 +
+ src/OpenVario/System.hpp                      |  16 +
+ src/XCSoar.cpp                                |  15 +-
+ 9 files changed, 643 insertions(+), 32 deletions(-)
+ create mode 100644 src/OpenVario/FirmwareImage.cpp
+ create mode 100644 src/OpenVario/FirmwareImage.hpp
+ create mode 100644 src/OpenVario/FirmwareImagePicker.cpp
+ create mode 100644 src/OpenVario/FirmwareImagePicker.hpp
+
+diff --git a/build/main.mk b/build/main.mk
+index fab75a1835..e973382f94 100644
+--- a/build/main.mk
++++ b/build/main.mk
+@@ -804,7 +804,9 @@ XCSOAR_SOURCES += \
+ 	$(SRC)/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp \
+ 	$(SRC)/Dialogs/ProcessDialog.cpp \
+ 	$(SRC)/OpenVario/System.cpp \
+-	$(SRC)/OpenVario/Calibrate.cpp
++	$(SRC)/OpenVario/Calibrate.cpp \
++	$(SRC)/OpenVario/FirmwareImage.cpp \
++	$(SRC)/OpenVario/FirmwareImagePicker.cpp
+ endif
+ 
+ include $(topdir)/build/net-wifi.mk
+diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
+index 49b0d87e96..cd159dcbb9 100644
+--- a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
++++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
+@@ -3,13 +3,19 @@
+ 
+ #include "OpenVarioSystemWidget.hpp"
+ #include "Dialogs/Error.hpp"
++#include "Dialogs/JobDialog.hpp"
+ #include "Dialogs/Message.hpp"
+ #include "Dialogs/ProcessDialog.hpp"
+ #include "Form/DataField/Enum.hpp"
+ #include "Form/Form.hpp"
+ #include "Interface.hpp"
++#include "Job/Job.hpp"
++#include "UIActions.hpp"
++#include "util/StaticString.hxx"
+ #include "Language/Language.hpp"
+ #include "OpenVario/Calibrate.hpp"
++#include "OpenVario/FirmwareImage.hpp"
++#include "OpenVario/FirmwareImagePicker.hpp"
+ #include "OpenVario/System.hpp"
+ #include "Profile/Profile.hpp"
+ #include "Profile/ProfileMap.hpp"
+@@ -17,9 +23,6 @@
+ #include "Version.hpp"
+ #include "Widget/RowFormWidget.hpp"
+ #include "system/Process.hpp"
+-#include "ui/display/Display.hpp"
+-#include "ui/event/Globals.hpp"
+-#include "ui/event/Queue.hpp"
+ #include "ui/window/SingleWindow.hpp"
+ #include "util/StringAPI.hxx"
+ 
+@@ -121,34 +124,86 @@ CheckNotFlying(const char *caption) noexcept
+ }
+ 
+ /**
+- * Hand the screen over to the upgrade script of the image.  The
+- * script lets the pilot choose an image (from the USB stick or the
+- * data partition), writes it to the SD card and restarts the device;
+- * cancelling it returns here.  It draws on the console, so XCSoar
+- * gives up the display and the input devices until it is done.
++ * The exit code that asks ovmenu-ng.sh for a firmware upgrade with the
++ * image in $HOME/data/images.
+  */
+-static void
+-UpgradeFirmware() noexcept
++static constexpr int EXIT_START_UPGRADE = 205;
++
++/**
++ * Put the chosen image into $HOME/data/images, copying it from the
++ * USB stick first if necessary, in a thread so the progress shows.
++ */
++class StageFirmwareJob final : public Job {
++  const Path image;
++
++public:
++  AllocatedPath entry;
++  std::exception_ptr error;
++
++  explicit StageFirmwareJob(Path _image) noexcept:image(_image) {}
++
++  void Run(OperationEnvironment &env) override {
++    try {
++      entry = StageFirmwareImage(image, env);
++    } catch (...) {
++      error = std::current_exception();
++    }
++  }
++};
++
++/**
++ * Let the pilot choose an image, put it into $HOME/data/images and
++ * quit with EXIT_START_UPGRADE.  The upgrade cannot run while XCSoar
++ * is still on the screen: the script draws on the console and
++ * rewrites the root file system.  So ovmenu-ng.sh starts fw-upgrade.sh
++ * with the one image it finds in data/images once XCSoar has ended.
++ *
++ * Signature of WndProperty::EditCallback.
++ */
++static bool
++EditFirmware([[maybe_unused]] const char *caption,
++             [[maybe_unused]] DataField &df,
++             [[maybe_unused]] const char *help_text) noexcept
+ {
+   if (!CheckNotFlying(_("Upgrade firmware")))
+-    return;
++    return false;
++
++  const auto image = PickFirmwareImage(_("Upgrade firmware"));
++  if (image == nullptr)
++    return false;
++
++  StaticString<0x200> text;
++  text.Format(_("Upgrade the firmware to\n%s?\n\n%s quits and the upgrade "
++                "starts; the device reboots afterwards."),
++              image.GetBase().c_str(), main_app_values[RunningApp()]);
++  if (ShowMessageBox(text, _("Upgrade firmware"),
++                     MB_OKCANCEL | MB_ICONQUESTION) != IDOK)
++    return false;
++
++  StageFirmwareJob job{image};
++  JobDialog(UIGlobals::GetMainWindow(), UIGlobals::GetDialogLook(),
++            _("Upgrade firmware"), job, true);
++  if (job.error) {
++    ShowError(job.error, _("Upgrade firmware"));
++    return false;
++  }
+ 
+-  if (ShowMessageBox(_("The upgrade script lets you choose an image and "
+-                       "restarts the device when it is done.  Settings "
+-                       "changed in this dialog since it was opened are "
+-                       "lost if the upgrade goes ahead.  Continue?"),
+-                     _("Upgrade firmware"),
+-                     MB_YESNO | MB_ICONQUESTION) != IDYES)
+-    return;
++  if (job.entry == nullptr)
++    /* cancelled while copying */
++    return false;
+ 
+-  /* the restart at the end of the upgrade does not give XCSoar the
+-     chance to save the profile */
++  /* nothing saves the profile once the upgrade has begun */
+   Profile::Save();
+ 
+-  auto &main_window = UIGlobals::GetMainWindow();
+-  const UI::ScopeDropMaster drop_master{main_window.GetDisplay()};
+-  const UI::ScopeSuspendEventQueue suspend_event_queue{*UI::event_queue};
+-  Run("/usr/bin/fw-upgrade.sh");
++  OpenvarioSetExitCode(EXIT_START_UPGRADE);
++  /* no further "Quit?" question: the pilot has confirmed already */
++  UIActions::SignalShutdown(true);
++  /* SignalShutdown() closes the main window, but while dialogs are
++     open that only cancels the top-most one; ending the event loop
++     makes every modal loop return, the configuration dialog
++     included, and the regular shutdown then runs */
++  UIGlobals::GetMainWindow().PostQuit();
++  return false;
+ }
+ 
+ /**
+@@ -239,12 +294,15 @@ OpenVarioSystemWidget::Prepare(ContainerWindow &parent,
+ {
+   RowFormWidget::Prepare(parent, rc);
+ 
++  /* a short caption leaves the row's width to the image name; a
++     click on it starts the upgrade */
+   const std::string image = OpenvarioGetImageName();
+-  AddReadOnly(_("Firmware image"),
+-              _("The OpenVario image this device is running."),
+-              image.empty() ? _("Unknown") : image.c_str());
+-
+-  AddButton(_("Upgrade firmware"), UpgradeFirmware);
++  AddText(_("Firmware"),
++          _("The OpenVario image this device is running.  Click to choose "
++            "another image and upgrade to it: the program quits and the "
++            "upgrade starts."),
++          image.empty() ? _("Unknown") : image.c_str())
++    ->SetEditCallback(EditFirmware);
+ 
+   main_app = LoadMainApp();
+   AddEnum(_("Start after boot"),
+diff --git a/src/OpenVario/FirmwareImage.cpp b/src/OpenVario/FirmwareImage.cpp
+new file mode 100644
+index 0000000000..44b3e3c55a
+--- /dev/null
++++ b/src/OpenVario/FirmwareImage.cpp
+@@ -0,0 +1,329 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Copyright The XCSoar Project
++
++#include "FirmwareImage.hpp"
++#include "Operation/Operation.hpp"
++#include "Formatter/ByteSizeFormatter.hpp"
++#include "Formatter/TimeFormatter.hpp"
++#include "time/BrokenDateTime.hpp"
++#include "io/FileReader.hxx"
++#include "io/FileOutputStream.hxx"
++#include "lib/fmt/SystemError.hxx"
++#include "lib/fmt/RuntimeError.hxx"
++#include "system/FileUtil.hpp"
++#include "LogFile.hpp"
++#include "Language/Language.hpp"
++#include "util/StaticString.hxx"
++
++#include <algorithm>
++#include <array>
++#include <cerrno>
++#include <cstddef>
++#include <cstdlib>
++#include <cstring>
++#include <memory>
++#include <span>
++#include <string_view>
++
++#include <dirent.h>
++#include <sys/stat.h>
++#include <sys/statvfs.h>
++#include <unistd.h>
++
++static constexpr const char *IMAGE_PATTERN = "*.img.gz";
++
++/** where the OpenVario mounts the USB stick */
++static constexpr const char *USB_IMAGE_DIRECTORIES[] = {
++  "/usb/usbstick/openvario/images",
++  "/usb/usbstick/openvario/download",
++};
++
++static AllocatedPath
++GetDataPartitionPath(const char *name) noexcept
++{
++  const char *home = getenv("HOME");
++  if (home == nullptr || *home == '\0')
++    home = "/home/root";
++
++  return AllocatedPath::Build(AllocatedPath::Build(Path{home}, Path{"data"}),
++                              Path{name});
++}
++
++AllocatedPath
++GetFirmwareDownloadPath() noexcept
++{
++  /* where fw-upgrade.sh and the recovery system look for images */
++  return GetDataPartitionPath("download");
++}
++
++AllocatedPath
++GetFirmwareUpgradePath() noexcept
++{
++  return GetDataPartitionPath("images");
++}
++
++/**
++ * "OV-3.2.20.1-CB2-CH57.img.gz" -> "OV-3.2.20.1-CB2-CH57"
++ */
++static std::string
++ImageDisplayName(Path filename) noexcept
++{
++  std::string name = filename.c_str();
++  for (const char *suffix : {".gz", ".img"}) {
++    const std::size_t suffix_length = strlen(suffix);
++    if (name.size() > suffix_length &&
++        name.compare(name.size() - suffix_length, suffix_length, suffix) == 0)
++      name.erase(name.size() - suffix_length);
++  }
++  return name;
++}
++
++std::string
++ImageDeviceType(const char *image_name) noexcept
++{
++  std::string device;
++  std::string_view rest = image_name;
++
++  while (!rest.empty()) {
++    const auto dash = rest.find('-');
++    const auto part = rest.substr(0, dash);
++    rest = dash == rest.npos ? std::string_view{} : rest.substr(dash + 1);
++
++    if (part.empty() || (part[0] >= '0' && part[0] <= '9') ||
++        part == "OV" || part == "testing")
++      /* the product prefix, the version (one or more numeric parts)
++         and the testing marker are not the hardware */
++      continue;
++
++    if (!device.empty())
++      device += '-';
++    device += part;
++  }
++
++  return device;
++}
++
++/**
++ * The second row of the picker: path, size and date.
++ */
++static std::string
++DescribeImage(Path path) noexcept
++{
++  std::string text = path.c_str();
++
++  if (File::Exists(path)) {
++    char size[32];
++    FormatByteSize(size, sizeof(size), File::GetSize(path));
++    char stamp[32];
++    FormatISO8601(stamp, BrokenDateTime{File::GetLastModification(path)});
++    text += ", ";
++    text += size;
++    text += ", ";
++    text += stamp;
++  }
++
++  return text;
++}
++
++class ImageCollector final : public File::Visitor {
++  std::vector<FirmwareImage> &images;
++  const bool deletable;
++
++public:
++  ImageCollector(std::vector<FirmwareImage> &_images, bool _deletable) noexcept
++    :images(_images), deletable(_deletable) {}
++
++  void Visit(Path path, Path filename) override {
++    /* the same directory may be reached under two names (a symlink);
++       one entry is enough */
++    for (const auto &i : images)
++      if (i.path == path)
++        return;
++
++    images.push_back({ImageDisplayName(filename), AllocatedPath(path),
++                      DescribeImage(path), deletable});
++  }
++};
++
++static void
++CollectImages(std::vector<FirmwareImage> &images, Path directory,
++              bool deletable) noexcept
++{
++  if (directory == nullptr || !Directory::Exists(directory))
++    return;
++
++  const std::size_t before = images.size();
++  ImageCollector collector(images, deletable);
++  Directory::VisitSpecificFiles(directory, IMAGE_PATTERN, collector, false);
++  LogFormat("firmware images: %u in %s", unsigned(images.size() - before),
++            directory.c_str());
++}
++
++std::vector<FirmwareImage>
++FindFirmwareImages() noexcept
++{
++  std::vector<FirmwareImage> images;
++
++  CollectImages(images, GetFirmwareDownloadPath(), true);
++
++  for (const char *usb : USB_IMAGE_DIRECTORIES)
++    CollectImages(images, Path{usb}, false);
++
++  std::sort(images.begin(), images.end(),
++            [](const FirmwareImage &a, const FirmwareImage &b) {
++              return a.name < b.name;
++            });
++  return images;
++}
++
++static void
++MakeDirectory(Path path)
++{
++  Directory::CreateRecursive(path);
++  if (!Directory::Exists(path))
++    throw FmtRuntimeError("Failed to create {}", path.c_str());
++}
++
++/**
++ * Copy the file in steps of 1 MiB, reporting the progress in MiB.
++ * The copy gets a temporary name until it is complete, so a cancelled
++ * or failed copy never looks like an image.
++ *
++ * @return false if the user cancelled
++ */
++static bool
++CopyWithProgress(Path src, Path dest, OperationEnvironment &env)
++{
++  FileReader reader{src};
++  const auto size = reader.GetSize();
++
++  struct statvfs fs;
++  if (const auto parent = dest.GetParent();
++      statvfs(parent.c_str(), &fs) == 0 &&
++      uint_least64_t(fs.f_bavail) * fs.f_frsize < size)
++    throw FmtRuntimeError("Not enough space for {} in {}",
++                          src.GetBase().c_str(), parent.c_str());
++
++  static constexpr std::size_t CHUNK = 1024 * 1024;
++  env.SetProgressRange(unsigned(size / CHUNK) + 1);
++
++  /* FileOutputStream writes to a hidden temporary file and renames it
++     on Commit(); without Commit() the temporary file is removed */
++  FileOutputStream out{dest};
++
++  auto buffer = std::make_unique<std::byte[]>(CHUNK);
++  uint_least64_t done = 0;
++  while (true) {
++    if (env.IsCancelled())
++      return false;
++
++    const std::size_t n = reader.Read({buffer.get(), CHUNK});
++    if (n == 0)
++      break;
++
++    out.Write({buffer.get(), n});
++    done += n;
++    env.SetProgressPosition(unsigned(done / CHUNK));
++  }
++
++  out.Commit();
++  return true;
++}
++
++/**
++ * Empty the upgrade directory.  Hard links are simply removed; a file
++ * that is the only name of its data is an image put there by an older
++ * version and is moved into the download directory.
++ */
++static void
++ClearUpgradeDirectory(Path upgrade, Path download)
++{
++  DIR *dir = opendir(upgrade.c_str());
++  if (dir == nullptr)
++    return;
++
++  std::vector<std::string> names;
++  while (const auto *e = readdir(dir))
++    if (strcmp(e->d_name, ".") != 0 && strcmp(e->d_name, "..") != 0)
++      names.emplace_back(e->d_name);
++  closedir(dir);
++
++  for (const auto &name : names) {
++    const auto path = AllocatedPath::Build(upgrade, Path{name.c_str()});
++
++    struct stat st;
++    if (lstat(path.c_str(), &st) < 0)
++      continue;
++
++    if (S_ISREG(st.st_mode) && st.st_nlink == 1) {
++      auto target = AllocatedPath::Build(download, Path{name.c_str()});
++      for (unsigned i = 1; File::ExistsAny(target); ++i)
++        target = AllocatedPath::Build(download,
++                                      Path{(name + "." + std::to_string(i)).c_str()});
++      if (rename(path.c_str(), target.c_str()) < 0)
++        throw FmtErrno("Failed to move {} to {}", path.c_str(), target.c_str());
++      LogFormat("firmware images: moved %s to %s", path.c_str(), target.c_str());
++      continue;
++    }
++
++    if (S_ISDIR(st.st_mode))
++      continue;
++
++    if (unlink(path.c_str()) < 0)
++      throw FmtErrno("Failed to remove {}", path.c_str());
++  }
++}
++
++AllocatedPath
++StageFirmwareImage(Path image, OperationEnvironment &env)
++{
++  const auto download = GetFirmwareDownloadPath();
++  const auto upgrade = GetFirmwareUpgradePath();
++  MakeDirectory(download);
++  MakeDirectory(upgrade);
++
++  const Path name = image.GetBase();
++
++  /* the source of the hard link must live on the data partition: an
++     image from the stick is copied into the download directory first */
++  AllocatedPath source{image};
++  if (image.GetParent() != download) {
++    source = AllocatedPath::Build(download, name);
++    if (source == image) {
++      /* already there under another spelling of the path */
++    } else if (File::Exists(source) &&
++               File::GetSize(source) == File::GetSize(image)) {
++      LogFormat("firmware images: %s is already in %s", name.c_str(),
++                download.c_str());
++    } else {
++      StaticString<256> text;
++      text.Format(_("Copying to the download directory: %s"), name.c_str());
++      env.SetText(text);
++      if (!CopyWithProgress(image, source, env))
++        return nullptr;
++      LogFormat("firmware images: copied %s to %s", image.c_str(),
++                source.c_str());
++    }
++  }
++
++  ClearUpgradeDirectory(upgrade, download);
++
++  auto entry = AllocatedPath::Build(upgrade, name);
++  if (link(source.c_str(), entry.c_str()) < 0) {
++    if (errno != EXDEV)
++      throw FmtErrno("Failed to link {} to {}", entry.c_str(), source.c_str());
++
++    /* the download directory is on another file system (not on the
++       device itself, where both are on the data partition): a copy
++       has to do */
++    StaticString<256> text;
++    text.Format(_("Copying: %s"), name.c_str());
++    env.SetText(text);
++    if (!CopyWithProgress(source, entry, env))
++      return nullptr;
++  }
++
++  sync();
++  LogFormat("firmware images: %s links to %s", entry.c_str(), source.c_str());
++  return entry;
++}
+diff --git a/src/OpenVario/FirmwareImage.hpp b/src/OpenVario/FirmwareImage.hpp
+new file mode 100644
+index 0000000000..9f4b858827
+--- /dev/null
++++ b/src/OpenVario/FirmwareImage.hpp
+@@ -0,0 +1,80 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Copyright The XCSoar Project
++
++#pragma once
++
++#include "system/Path.hpp"
++
++#include <string>
++#include <vector>
++
++class OperationEnvironment;
++
++/**
++ * One firmware image the upgrade could flash: the name shown to the
++ * user (file name without ".img.gz") and where it was found.
++ */
++struct FirmwareImage {
++  std::string name;
++  AllocatedPath path;
++
++  /** the second row of the list: path, size and date */
++  std::string detail;
++
++  /** found in the download directory, so the Delete button may remove
++      it; images on a USB stick stay where they are */
++  bool deletable;
++};
++
++/**
++ * The hardware an image is built for, read from its name: the parts
++ * after the version, so "OV-3.2.20.1-CB2-CH57" gives "CB2-CH57" and
++ * "OV-3.0.1-19-CB2-XXXX-testing" gives "CB2-XXXX".  Empty if the name
++ * has no such part.
++ */
++[[gnu::pure]]
++std::string
++ImageDeviceType(const char *image_name) noexcept;
++
++/**
++ * The directory $HOME/data/download on the data partition, where the
++ * images of the device are kept.
++ */
++AllocatedPath
++GetFirmwareDownloadPath() noexcept;
++
++/**
++ * The directory $HOME/data/images on the data partition.  It holds
++ * exactly one entry while an upgrade is pending: a hard link to the
++ * image chosen for it.  ovmenu-ng.sh hands that image to
++ * fw-upgrade.sh, and the recovery system looks for it there by name.
++ */
++AllocatedPath
++GetFirmwareUpgradePath() noexcept;
++
++/**
++ * Collect the *.img.gz files from the download directory and from the
++ * USB stick (openvario/images and openvario/download).  Each directory
++ * is read on its own level only.  Sorted by name, without duplicates.
++ */
++std::vector<FirmwareImage>
++FindFirmwareImages() noexcept;
++
++/**
++ * Make the given image the only entry of GetFirmwareUpgradePath().
++ *
++ * The entry is a hard link, so the image is not stored twice.  A hard
++ * link cannot leave its file system, so an image from the USB stick is
++ * first copied into the download directory (with progress, and
++ * cancellable); it then stays there like a downloaded one.  Hard links
++ * left from an earlier choice are removed.  A real file found there
++ * (an image an older version put into data/images) is moved into the
++ * download directory instead of being deleted.
++ *
++ * Throws on error.
++ *
++ * @return the path of the new entry, or nullptr if the user cancelled
++ * the copy
++ */
++AllocatedPath
++StageFirmwareImage(Path image, OperationEnvironment &env);
+diff --git a/src/OpenVario/FirmwareImagePicker.cpp b/src/OpenVario/FirmwareImagePicker.cpp
+new file mode 100644
+index 0000000000..070db31615
+--- /dev/null
++++ b/src/OpenVario/FirmwareImagePicker.cpp
+@@ -0,0 +1,83 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Copyright The XCSoar Project
++
++#include "FirmwareImagePicker.hpp"
++#include "FirmwareImage.hpp"
++#include "System.hpp"
++#include "Dialogs/ListPicker.hpp"
++#include "Form/Form.hpp"
++#include "Language/Language.hpp"
++#include "Look/DialogLook.hpp"
++#include "Renderer/TwoTextRowsRenderer.hpp"
++#include "UIGlobals.hpp"
++#include "util/StaticString.hxx"
++
++#include <algorithm>
++
++class ImageRowRenderer final : public ListItemRenderer {
++  const std::vector<FirmwareImage> &images;
++  TwoTextRowsRenderer row_renderer;
++
++public:
++  explicit ImageRowRenderer(const std::vector<FirmwareImage> &_images) noexcept
++    :images(_images) {}
++
++  unsigned CalculateLayout(const DialogLook &look) noexcept {
++    return row_renderer.CalculateLayout(*look.list.font, look.small_font);
++  }
++
++  void OnPaintItem(Canvas &canvas, const PixelRect rc,
++                   unsigned i) noexcept override {
++    row_renderer.DrawFirstRow(canvas, rc, images[i].name.c_str());
++    row_renderer.DrawSecondRow(canvas, rc, images[i].detail.c_str());
++  }
++};
++
++AllocatedPath
++PickFirmwareImage(const char *caption) noexcept
++{
++  /* the hardware this device runs on, from the running image's name;
++     empty on a PC, and then there is nothing to filter by */
++  const std::string device = ImageDeviceType(OpenvarioGetImageName().c_str());
++
++  /* the filter state survives between two openings of the picker */
++  static bool device_only = true;
++
++  while (true) {
++    auto images = FindFirmwareImages();
++
++    if (!device.empty() && device_only)
++      std::erase_if(images, [&device](const FirmwareImage &image) {
++        return image.name.find(device) == std::string::npos;
++      });
++
++    StaticString<32> filter_caption;
++    if (device.empty())
++      filter_caption.clear();
++    else if (device_only)
++      filter_caption = _("Show all");
++    else
++      filter_caption.Format(_("%s only"), device.c_str());
++
++    ImageRowRenderer renderer(images);
++    const int result =
++      ListPicker(caption, images.size(), 0,
++                 renderer.CalculateLayout(UIGlobals::GetDialogLook()),
++                 renderer, false,
++                 _("Choose the image to upgrade to.  Images are looked for "
++                   "in data/download and on the USB stick "
++                   "(openvario/images)."),
++                 nullptr,
++                 filter_caption.empty() ? nullptr : filter_caption.c_str());
++
++    if (result == mrExtra) {
++      device_only = !device_only;
++      continue;
++    }
++
++    if (result < 0)
++      return nullptr;
++
++    return std::move(images[result].path);
++  }
++}
+diff --git a/src/OpenVario/FirmwareImagePicker.hpp b/src/OpenVario/FirmwareImagePicker.hpp
+new file mode 100644
+index 0000000000..135bf67705
+--- /dev/null
++++ b/src/OpenVario/FirmwareImagePicker.hpp
+@@ -0,0 +1,18 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++// Copyright The XCSoar Project
++
++#pragma once
++
++#include "system/Path.hpp"
++
++/**
++ * Let the user choose a firmware image from FindFirmwareImages(),
++ * name in the first row and path, size and date in the second.  When
++ * the running image names the hardware (ImageDeviceType()), the list
++ * shows only images for that hardware, and a button switches to all
++ * images and back.
++ *
++ * @return the chosen image, or nullptr
++ */
++AllocatedPath
++PickFirmwareImage(const char *caption) noexcept;
+diff --git a/src/OpenVario/System.cpp b/src/OpenVario/System.cpp
+index 6e14dbc3f5..161b223fb1 100644
+--- a/src/OpenVario/System.cpp
++++ b/src/OpenVario/System.cpp
+@@ -126,3 +126,17 @@ try {
+ } catch (...) {
+   return false;
+ }
++
++static int openvario_exit_code = 0;
++
++void
++OpenvarioSetExitCode(int code) noexcept
++{
++  openvario_exit_code = code;
++}
++
++int
++OpenvarioGetExitCode() noexcept
++{
++  return openvario_exit_code;
++}
+diff --git a/src/OpenVario/System.hpp b/src/OpenVario/System.hpp
+index ec3a00c19c..1511a58101 100644
+--- a/src/OpenVario/System.hpp
++++ b/src/OpenVario/System.hpp
+@@ -122,3 +122,19 @@ HasRealMount(std::string_view mounts, std::string_view path) noexcept
+  */
+ bool
+ OpenvarioIsUsbStickMounted() noexcept;
++
++/**
++ * Ask the program to end with this exit code instead of its own: the
++ * start script of the OpenVario image reads it (205 runs the firmware
++ * upgrade with the image in $HOME/data/images).  The caller still has
++ * to make the program quit.
++ */
++void
++OpenvarioSetExitCode(int code) noexcept;
++
++/**
++ * @return the code set by OpenvarioSetExitCode(), or 0
++ */
++[[gnu::pure]]
++int
++OpenvarioGetExitCode() noexcept;
+diff --git a/src/XCSoar.cpp b/src/XCSoar.cpp
+index 8a23bdf97c..dda6d48dd3 100644
+--- a/src/XCSoar.cpp
++++ b/src/XCSoar.cpp
+@@ -6,6 +6,11 @@
+  * @file XCSoar.cpp
+  */
+ 
++#if defined(__linux__) && !defined(ANDROID) && !defined(KOBO)
++/* src/OpenVario/System.cpp is built for these targets (build/main.mk) */
++#include "OpenVario/System.hpp"
++#define HAVE_OPENVARIO_EXIT_CODE
++#endif
+ #include "Startup.hpp"
+ #include "LocalPath.hpp"
+ #include "Version.hpp"
+@@ -82,9 +87,15 @@ Main()
+ 
+   // Perform application initialization and run loop
+   int ret = EXIT_FAILURE;
+-  if (Startup(screen_init.GetDisplay()))
++  if (Startup(screen_init.GetDisplay())) {
+     ret = CommonInterface::main_window->RunEventLoop();
+-  else if (WasStartupCancelledByUser())
++#ifdef HAVE_OPENVARIO_EXIT_CODE
++    /* the OpenVario system page asks the start script for the next
++       step (the firmware upgrade) through the exit code */
++    if (const int code = OpenvarioGetExitCode(); code != 0)
++      ret = code;
++#endif
++  } else if (WasStartupCancelledByUser())
+     /* quitting from the startup dialogs is a deliberate user action,
+        not an error */
+     ret = EXIT_SUCCESS;

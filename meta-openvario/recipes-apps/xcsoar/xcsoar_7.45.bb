@@ -33,4 +33,8 @@ SRC_URI += " \
 	file://0016-OpenVario-remove-OpenVarioMenu-and-move-src-OV-to-sr.patch \
 "
 
+# Only for this image: XCSoar chooses the firmware image itself, puts
+# it into data/images and quits with exit code 205 for ovmenu-ng.sh.
+SRC_URI += "file://0017-OpenVario-choose-the-firmware-image-in-XCSoar-and-qu.patch"
+
 require xcsoar.inc
