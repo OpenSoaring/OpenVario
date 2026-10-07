@@ -50,7 +50,6 @@ BOOST_URL = "https://archives.boost.io/release/${BOOST_VERSION}/source/${BOOST_F
 BOOST_HASH = "${BOOST_SHA256HASH}"
 BOOST_FILE = "boost_${@'${BOOST_VERSION}'.replace('.','_')}.tar.bz2"
 SRC_URI += " \
-	file://0007-Disable-touch-screen-auto-detection.patch \
 	${BOOST_URL};sha256sum=${BOOST_HASH};unpack=0 \
 "
 # SRC_URI += " ${SQLITE_URL};sha256sum=${SQLITE_HASH};unpack=0 "
