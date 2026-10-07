@@ -37,6 +37,8 @@ SRC_URI += " \
 # it into data/images and quits with exit code 205 for ovmenu-ng.sh.
 SRC_URI += "file://0017-OpenVario-choose-the-firmware-image-in-XCSoar-and-qu.patch \
 	file://0018-OpenVarioSystemWidget-count-the-rows-without-the-upg.patch \
-	file://0019-OpenVarioSystemWidget-let-the-cursor-keys-reach-the-.patch"
+	file://0019-OpenVarioSystemWidget-let-the-cursor-keys-reach-the-.patch \
+	file://0020-SystemdConfigPanel-say-why-a-service-could-not-be-st.patch \
+	file://0021-OpenVario-stop-a-touch-calibration-nobody-can-finish.patch"
 
 require xcsoar.inc
