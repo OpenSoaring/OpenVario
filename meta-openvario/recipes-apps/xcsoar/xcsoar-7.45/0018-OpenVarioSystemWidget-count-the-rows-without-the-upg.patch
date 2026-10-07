@@ -1,0 +1,32 @@
+From dca90e6391e513b5a1d49395f0c4beecd0a06c8a Mon Sep 17 00:00:00 2001
+From: Uwe Augustin <Info@FlapsOnline.de>
+Date: Wed, 7 Oct 2026 18:53:19 +0200
+Subject: [PATCH] OpenVarioSystemWidget: count the rows without the upgrade
+ button
+
+When the firmware row took over the upgrade, the button below it went
+away, but the row indices still counted it.  Save() therefore read the
+"Start after boot" choice from the row of the calibration button: a
+debug build stops at the assertion in RowFormWidget, a release build
+on the OpenVario crashed with a segmentation fault (exit code 139) as
+soon as the configuration dialog was closed.
+---
+ src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
+index cd159dcbb9..2dc4a52514 100644
+--- a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
++++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
+@@ -29,9 +29,10 @@
+ #include <string>
+ #include <string_view>
+ 
++/* the order of the rows Prepare() adds; the firmware row starts the
++   upgrade itself, there is no button of its own any more */
+ enum ControlIndex {
+   IMAGE,
+-  UPGRADE,
+   MAIN_APP,
+   CALIBRATE_SENSORS,
+   SYSTEM_BACKUP,
