@@ -1,0 +1,37 @@
+From 79807f05fd9e96bab7ae5d74780a5a043d02d269 Mon Sep 17 00:00:00 2001
+From: Uwe Augustin <Info@FlapsOnline.de>
+Date: Wed, 7 Oct 2026 19:33:27 +0200
+Subject: [PATCH] OpenVarioSystemWidget: let the cursor keys reach the system
+ rows
+
+Below the service list, the system rows of the OpenVario sat in a panel
+that TwoWidgets creates in Initialise(), while the list and its buttons
+come into being only in Prepare().  The panel therefore came first
+among the sibling windows, and the cursor keys, which follow that
+order, skipped it: Down from the list left the page for the dialog's
+own buttons, and Up reached the rows only from the other end, the
+firmware row last.  Moving the panel behind the list on Prepare() makes
+Down go from the list over its buttons to the firmware row and on.
+---
+ src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
+index 2dc4a52514..f42cb80e77 100644
+--- a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
++++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
+@@ -295,6 +295,14 @@ OpenVarioSystemWidget::Prepare(ContainerWindow &parent,
+ {
+   RowFormWidget::Prepare(parent, rc);
+ 
++  /* Below the service list in TwoWidgets, this panel is created in
++     Initialise(), the list and its buttons only in Prepare(), so the
++     panel came first among the siblings.  The cursor keys follow that
++     order: Down from the list left the page and skipped these rows,
++     Up reached them only from the other end.  Moving the panel behind
++     the list makes the keys go list, buttons, these rows. */
++  GetWindow().BringToBottom();
++
+   /* a short caption leaves the row's width to the image name; a
+      click on it starts the upgrade */
+   const std::string image = OpenvarioGetImageName();
