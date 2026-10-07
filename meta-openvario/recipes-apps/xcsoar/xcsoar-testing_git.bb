@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR = "r7.45"
+PR = "r7.46"
 RCONFLICTS:${PN}="xcsoar xcsoar-preview"
 
 # xcsoar 7.45:
