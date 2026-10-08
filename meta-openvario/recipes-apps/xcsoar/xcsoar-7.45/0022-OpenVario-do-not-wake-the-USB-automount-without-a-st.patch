@@ -1,0 +1,91 @@
+From 890f899f4e44cee29e117b860b04833669f4a86b Mon Sep 17 00:00:00 2001
+From: Uwe Augustin <Info@FlapsOnline.de>
+Date: Thu, 8 Oct 2026 14:55:31 +0200
+Subject: [PATCH] OpenVario: do not wake the USB automount without a stick
+
+The image mounts the USB stick through a systemd automount unit on
+/usb/usbstick.  Looking into that directory without a stick plugged in
+makes systemd wait for /dev/sda1 until the device times out, and the
+thread that looked waits with it; the journal then shows "Timed out
+waiting for device USB stick".  The firmware row looked into two
+directories on the stick before showing its list, so a click on it
+took seconds, and the journal of an OpenVario showed these timeouts
+in pairs at exactly those moments.
+
+The stick is now only looked at when its device exists.
+---
+ src/OpenVario/FirmwareImage.cpp |  9 +++++++--
+ src/OpenVario/System.cpp        | 10 ++++++++++
+ src/OpenVario/System.hpp        |  4 +++-
+ 3 files changed, 20 insertions(+), 3 deletions(-)
+
+diff --git a/src/OpenVario/FirmwareImage.cpp b/src/OpenVario/FirmwareImage.cpp
+index 44b3e3c55a..32d8511f9f 100644
+--- a/src/OpenVario/FirmwareImage.cpp
++++ b/src/OpenVario/FirmwareImage.cpp
+@@ -2,6 +2,7 @@
+ // Copyright The XCSoar Project
+ 
+ #include "FirmwareImage.hpp"
++#include "System.hpp"
+ #include "Operation/Operation.hpp"
+ #include "Formatter/ByteSizeFormatter.hpp"
+ #include "Formatter/TimeFormatter.hpp"
+@@ -166,8 +167,12 @@ FindFirmwareImages() noexcept
+ 
+   CollectImages(images, GetFirmwareDownloadPath(), true);
+ 
+-  for (const char *usb : USB_IMAGE_DIRECTORIES)
+-    CollectImages(images, Path{usb}, false);
++  /* only with a stick: looking into the automount point without one
++     blocks until systemd gives up waiting for the device, which made
++     the firmware row take seconds to react */
++  if (OpenvarioIsUsbStickMounted())
++    for (const char *usb : USB_IMAGE_DIRECTORIES)
++      CollectImages(images, Path{usb}, false);
+ 
+   std::sort(images.begin(), images.end(),
+             [](const FirmwareImage &a, const FirmwareImage &b) {
+diff --git a/src/OpenVario/System.cpp b/src/OpenVario/System.cpp
+index 161b223fb1..7f63f24e41 100644
+--- a/src/OpenVario/System.cpp
++++ b/src/OpenVario/System.cpp
+@@ -14,6 +14,8 @@
+ 
+ #include <map>
+ 
++#include <unistd.h>
++
+ static constexpr const char *boot_config = "/boot/config.uEnv";
+ 
+ bool
+@@ -112,6 +114,14 @@ OpenvarioGetImageName()
+ bool
+ OpenvarioIsUsbStickMounted() noexcept
+ try {
++  /* Without a stick there is nothing to mount, and looking into the
++     directory would only make systemd wait for the device until its
++     timeout, while this thread hangs; the journal then shows "Timed
++     out waiting for device USB stick".  usb-usbstick.mount of the
++     image mounts this device. */
++  if (access("/dev/sda1", F_OK) != 0)
++    return false;
++
+   /* looking into the directory makes systemd mount a stick that has
+      been plugged in; the result does not matter */
+   File::Exists(AllocatedPath::Build(Path(openvario_usb_stick), Path(".")));
+diff --git a/src/OpenVario/System.hpp b/src/OpenVario/System.hpp
+index 1511a58101..d6f6da8b1f 100644
+--- a/src/OpenVario/System.hpp
++++ b/src/OpenVario/System.hpp
+@@ -118,7 +118,9 @@ HasRealMount(std::string_view mounts, std::string_view path) noexcept
+ /**
+  * Is a USB stick mounted where the scripts of the OpenVario image
+  * expect it?  Looking into the directory first lets the automount
+- * unit mount a stick that has just been plugged in.
++ * unit mount a stick that has just been plugged in.  Without a stick
++ * device the directory is not touched, because that would block until
++ * systemd gives up waiting for the device.
+  */
+ bool
+ OpenvarioIsUsbStickMounted() noexcept;

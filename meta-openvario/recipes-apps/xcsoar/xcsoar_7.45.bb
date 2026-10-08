@@ -50,6 +50,7 @@ SRC_URI += "file://0017-OpenVario-choose-the-firmware-image-in-XCSoar-and-qu.pat
 	file://0018-OpenVarioSystemWidget-count-the-rows-without-the-upg.patch \
 	file://0019-OpenVarioSystemWidget-let-the-cursor-keys-reach-the-.patch \
 	file://0020-SystemdConfigPanel-say-why-a-service-could-not-be-st.patch \
-	file://0021-OpenVario-stop-a-touch-calibration-nobody-can-finish.patch"
+	file://0021-OpenVario-stop-a-touch-calibration-nobody-can-finish.patch \
+	file://0022-OpenVario-do-not-wake-the-USB-automount-without-a-st.patch"
 
 require xcsoar.inc
