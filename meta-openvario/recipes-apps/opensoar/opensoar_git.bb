@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r25.25"
+PR="r25.26"
 
 # The version is set in VERSION.inc in the repository root, not by the
 # name of this file, so a new OpenSoar test build changes SRCREV here
@@ -11,7 +11,7 @@ PV = "${OPENSOAR_VERSION}"
 
 SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work-7.45.25 " 
 # SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work " 
-SRCREV = "89dacd98a69387e97427248fc033078935ce0aab"
+SRCREV = "3a1354788a46a84f926d0e9c63828361dddb6a1d"
 
 
 # dev branch is: boost 1.90:
