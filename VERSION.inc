@@ -6,5 +6,5 @@
 # same file to name and sort what they publish, which is why it uses
 # plain shell assignments without spaces.
 OV_VERSION="3.25.t20"
-OPENSOAR_VERSION="7.45.25.t04"
+OPENSOAR_VERSION="7.45.25.t05"
 XCSOAR_VERSION="7.45.3"
