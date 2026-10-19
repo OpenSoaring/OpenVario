@@ -19,6 +19,17 @@
 # backups are stored at USB stick at:
 # openvario/backup/<MAC address of eth0>/
 # So you can store backups from more than one OV on the same stick!
+#
+# Usage: transfer-system.sh backup|restore [--data FOLDER]... [MAIN_APP]
+#
+# The data partition (/home/root/data) holds maps, flights, caches and
+# firmware images and easily grows beyond a gigabyte, which takes hours
+# on a stick mounted with "sync".  A backup therefore copies only the
+# settings, plus each folder directly below the data partition that is
+# named with --data.  It always writes a list of all files on the data
+# partition to data-files.txt in the backup directory, so that it is at
+# least known what was there.  A restore copies back whatever the backup
+# holds.
 
 echo ' [==========] Starting'
 echo ' [#=========] Wait until "DONE !!" appears before you exit!'
@@ -27,7 +38,86 @@ echo ' [#=========] Wait until "DONE !!" appears before you exit!'
 sync&
 
 TRANSFER_OPTION=$1
-MAIN_APP=$2
+MAIN_APP=
+shift
+
+# Where the menu mounts the data partition
+DATA_PATH=/home/root/data
+
+# The folders below the data partition to back up as well, one rsync
+# filter rule per line; a name with a slash or a dot entry could reach
+# outside the data partition, so only plain existing folder names count.
+DATA_RULES=
+while [ $# -gt 0 ]
+do
+	case "$1" in
+	--data)
+		case "$2" in
+		''|.|..|*/*)
+			>&2 echo " Invalid data folder '$2' - nothing done."
+			exit 1;;
+		esac
+		if [ ! -d "$DATA_PATH/$2" ]; then
+			>&2 echo " There is no folder '$2' in $DATA_PATH - nothing done."
+			exit 1
+		fi
+		DATA_RULES="$DATA_RULES+ /home/root/data/$2/
+"
+		shift 2;;
+	*)
+		# the older calls pass the name of the main program here,
+		# which only appears in the messages
+		MAIN_APP=$1
+		shift;;
+	esac
+done
+
+# File for the exit status of rsync, which runs at the start of a pipe
+RSYNC_STATUS=/tmp/transfer-system.$$
+
+# Runs rsync with the given arguments and shows its overall progress.
+# rsync separates its progress updates with carriage returns, which awk
+# takes as the record separator; awk flushes each line, because output
+# into a pipe is otherwise held back until the end.
+# Blind waiting made a long transfer look as if it hung, so this prints
+# a short line whenever another 5 percent or another 5 MB are done, and
+# at least every 30 progress updates of rsync (about half a minute while
+# a large file is copied slowly), so that a slow copy still shows signs
+# of life.  The lines stay short because the program dialog that shows
+# them does not wrap them.  The exit status of rsync goes into a file,
+# because a call at the end of a pipe runs in a subshell, which cannot
+# set variables of the script; rsync_result reads it afterwards.
+run_rsync() {
+	{ rsync --info=progress2 --no-inc-recursive "$@"
+	  echo $? > "$RSYNC_STATUS"; } |
+	awk 'function size(b) {
+		return b < 1048576 ? sprintf("%.0f kB", b / 1024) \
+		                   : sprintf("%.1f MB", b / 1048576)
+	}
+	BEGIN { RS = "\r" }
+	$2 ~ /%$/ {
+		bytes = $1; gsub(/,/, "", bytes); bytes += 0
+		pct = $2; sub(/%/, "", pct); pct += 0
+		if (++updates >= 30 || pct >= last_pct + 5 ||
+		    (pct == 100 && last_pct < 100) ||
+		    bytes >= last_bytes + 5242880) {
+			printf " %3d%%  %10s  %s\n", pct, size(bytes), $3
+			fflush()
+			last_pct = pct; last_bytes = bytes; updates = 0
+		}
+		total = bytes
+	}
+	END { printf " %s copied.\n", size(total) }'
+}
+
+# Sets RSYNC_EXIT to the exit status of the last run_rsync and succeeds
+# if that was 0.
+rsync_result() {
+	RSYNC_EXIT=`cat "$RSYNC_STATUS" 2> /dev/null`
+	rm -f "$RSYNC_STATUS"
+	: ${RSYNC_EXIT:=1}
+	test "$RSYNC_EXIT" -eq 0
+}
 
 # Path where the USB stick is mounted
 USB_PATH=/usb/usbstick
@@ -115,35 +205,52 @@ backup)
 	# Copy brightness setting
 	cat /sys/class/backlight/lcd/brightness > /home/root/brightness
 
+	echo ' [###=======] Listing the files of the data partition ...'
+	# A list of everything on the data partition costs a few seconds and
+	# little space, and tells what was there even when the folders were
+	# not backed up.
+	mkdir -p "$USB_PATH/$BACKUP/$MAC"
+	{
+		echo "Files on the data partition $DATA_PATH, `date`"
+		echo
+		du -sh "$DATA_PATH"/* 2> /dev/null
+		echo
+		ls -lAR "$DATA_PATH"
+	} > "$USB_PATH/$BACKUP/$MAC/data-files.txt" 2>&1
+
 	echo ' [####======] Starting backup ...'
 	# Copy all directories and files from the list below to the backup
 	# directory recursively.  The touch screen files only exist after a
 	# calibration, and rsync reports a missing entry as an error, so they
 	# are listed only when present.
-	# We use --checksum here due to cubieboards not having an rtc clock.
-	# The data partition is mounted on /home/root/data and holds the maps,
-	# flights and downloaded images, often more than a gigabyte.  It is not
-	# part of the system settings (the program data has its own transfer in
-	# the menu), and on a stick mounted with "sync" copying it takes many
-	# hours, so that the backup seemed to hang; it is left out.
+	# We use --checksum here due to cubieboards not having an rtc clock;
+	# rsync then reads all files on both sides before it copies, which
+	# shows no progress for a while when large folders are included.
+	# The data partition below /home/root is left out except for the
+	# folders named with --data (see the top of this script).
 	OPTIONAL_FILES=
 	for FILE in /etc/udev/rules.d/libinput-ts.rules /etc/pointercal
 	do
 		if [ -e "$FILE" ]; then OPTIONAL_FILES="$OPTIONAL_FILES $FILE"; fi
 	done
-	if
-		printf '%s\n' /etc/dropbear /home/root /opt/conf /var/lib/connman \
-			/boot/config.uEnv $OPTIONAL_FILES |
-		rsync --files-from - --archive --recursive --quiet \
-			--relative --mkpath --checksum --safe-links --progress \
-			--exclude=/home/root/data/ \
-			/ "$USB_PATH/$BACKUP/$MAC"/
-		test ${RSYNC_EXIT:=$?} -eq 0
+	printf '%s' "$DATA_RULES" > "$RSYNC_STATUS.rules"
+	if [ -n "$DATA_RULES" ]; then
+		echo ' Comparing with the backup on the stick, this can take a while ...'
+	fi
+	printf '%s\n' /etc/dropbear /home/root /opt/conf /var/lib/connman \
+		/boot/config.uEnv $OPTIONAL_FILES |
+	run_rsync --files-from - --archive --recursive \
+		--relative --mkpath --checksum --safe-links \
+		--filter="merge $RSYNC_STATUS.rules" \
+		--exclude='/home/root/data/*' \
+		/ "$USB_PATH/$BACKUP/$MAC"/
+	if rsync_result
 	then
 		echo ' [######====] All files and settings have been backed up.'
 	else
 		>&2 echo " An rsync error $RSYNC_EXIT has occurred!"
-	fi;;
+	fi
+	rm -f "$RSYNC_STATUS.rules";;
 	
 restore)
 	echo ' [##========] Starting restore ...'
@@ -151,11 +258,11 @@ restore)
 	# Eliminate /etc/opkg backup in case it's present
 	rm -rf "$USB_PATH/$BACKUP/$MAC"/etc/opkg/
 
-	# Call Shell Function defined above
-    	if 
-		# We use --checksum here due to cubieboards not having an rtc clock
-		rsync --recursive --mkpath --checksum --quiet --progress "$USB_PATH/$BACKUP/$MAC/" "/"
-		test ${RSYNC_EXIT:=$?} -eq 0
+	# We use --checksum here due to cubieboards not having an rtc clock.
+	# The file list of the data partition is only for reading.
+	run_rsync --recursive --mkpath --checksum \
+		--exclude=/data-files.txt "$USB_PATH/$BACKUP/$MAC/" "/"
+	if rsync_result
 	then
 		echo " [####======] All Openvario and $MAIN_APP files have been restored."
 	else 
