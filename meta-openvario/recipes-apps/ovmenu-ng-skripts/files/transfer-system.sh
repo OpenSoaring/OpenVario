@@ -120,7 +120,12 @@ backup)
 	# directory recursively.  The touch screen files only exist after a
 	# calibration, and rsync reports a missing entry as an error, so they
 	# are listed only when present.
-	# We use --checksum here due to cubieboards not having an rtc clock
+	# We use --checksum here due to cubieboards not having an rtc clock.
+	# The data partition is mounted on /home/root/data and holds the maps,
+	# flights and downloaded images, often more than a gigabyte.  It is not
+	# part of the system settings (the program data has its own transfer in
+	# the menu), and on a stick mounted with "sync" copying it takes many
+	# hours, so that the backup seemed to hang; it is left out.
 	OPTIONAL_FILES=
 	for FILE in /etc/udev/rules.d/libinput-ts.rules /etc/pointercal
 	do
@@ -131,6 +136,7 @@ backup)
 			/boot/config.uEnv $OPTIONAL_FILES |
 		rsync --files-from - --archive --recursive --quiet \
 			--relative --mkpath --checksum --safe-links --progress \
+			--exclude=/home/root/data/ \
 			/ "$USB_PATH/$BACKUP/$MAC"/
 		test ${RSYNC_EXIT:=$?} -eq 0
 	then
