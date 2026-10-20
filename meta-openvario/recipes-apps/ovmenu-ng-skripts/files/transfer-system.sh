@@ -48,6 +48,7 @@ DATA_PATH=/home/root/data
 # filter rule per line; a name with a slash or a dot entry could reach
 # outside the data partition, so only plain existing folder names count.
 DATA_RULES=
+DATA_DIRS=
 while [ $# -gt 0 ]
 do
 	case "$1" in
@@ -62,6 +63,8 @@ do
 			exit 1
 		fi
 		DATA_RULES="$DATA_RULES+ /home/root/data/$2/
+"
+		DATA_DIRS="$DATA_DIRS$2
 "
 		shift 2;;
 	*)
@@ -108,6 +111,25 @@ run_rsync() {
 		total = bytes
 	}
 	END { printf " %s copied.\n", size(total) }'
+}
+
+# The size in kB of the given files and directories together, without
+# entering other file systems: /home/root on the device holds the data
+# partition as a mount of its own.  Missing entries count as nothing.
+size_kb() {
+	du -skx "$@" 2> /dev/null | awk '{ s += $1 } END { print s + 0 }'
+}
+
+# The stick is mounted with "sync", so that it can be pulled at any
+# time; but then every block goes to the stick on its own, and a backup
+# ran at about 40 kB/s, against about 425 kB/s with "async" on the same
+# stick.  The backup therefore remounts it with "async" while it copies,
+# and end_async writes everything out and mounts it with "sync" again.
+# It also runs when the script ends early, by an error or a signal, so
+# the stick never stays in "async".
+end_async() {
+	sync
+	mount -o remount,sync "$USB_PATH" 2> /dev/null
 }
 
 # Sets RSYNC_EXIT to the exit status of the last run_rsync and succeeds
@@ -205,6 +227,57 @@ backup)
 	# Copy brightness setting
 	cat /sys/class/backlight/lcd/brightness > /home/root/brightness
 
+	# The touch screen files only exist after a calibration, and rsync
+	# reports a missing entry as an error, so they are listed only when
+	# present.
+	OPTIONAL_FILES=
+	for FILE in /etc/udev/rules.d/libinput-ts.rules /etc/pointercal
+	do
+		if [ -e "$FILE" ]; then OPTIONAL_FILES="$OPTIONAL_FILES $FILE"; fi
+	done
+	SETTINGS="/etc/dropbear /home/root /opt/conf /var/lib/connman /boot/config.uEnv $OPTIONAL_FILES"
+
+	echo ' [###=======] Checking the space on the USB stick ...'
+	# A full stick stopped a backup only after it had copied for half an
+	# hour.  So estimate the space it needs first: everything it copies,
+	# less what an earlier backup on the stick already holds of it.  The
+	# file system of the stick rounds every file up to a whole cluster,
+	# hence the margin.  It is an estimate, but it stops a backup that
+	# cannot fit before anything is written.
+	TARGET="$USB_PATH/$BACKUP/$MAC"
+	NEED_KB=`size_kb $SETTINGS`
+	HAVE_KB=0
+	for SOURCE in $SETTINGS
+	do
+		HAVE_KB=$((HAVE_KB + `size_kb "$TARGET$SOURCE"`))
+	done
+	# the data folders of an earlier backup lie below home/root there
+	HAVE_KB=$((HAVE_KB - `size_kb "$TARGET/home/root/data"`))
+	while IFS= read -r DIR
+	do
+		[ -n "$DIR" ] || continue
+		NEED_KB=$((NEED_KB + `size_kb "$DATA_PATH/$DIR"`))
+		HAVE_KB=$((HAVE_KB + `size_kb "$TARGET/home/root/data/$DIR"`))
+	done <<EOF_DIRS
+$DATA_DIRS
+EOF_DIRS
+	NEED_KB=$((NEED_KB - HAVE_KB))
+	[ $NEED_KB -gt 0 ] || NEED_KB=0
+	NEED_KB=$((NEED_KB + NEED_KB / 10 + 1024))
+	FREE_KB=`df -Pk "$USB_PATH" | awk 'NR == 2 { print $4 }'`
+	echo " About $((NEED_KB / 1024)) MB needed, $((${FREE_KB:-0} / 1024)) MB free on the stick."
+	if [ "${FREE_KB:-0}" -lt $NEED_KB ]; then
+		>&2 echo " Not enough space on the USB stick - nothing done."
+		>&2 echo " Choose fewer folders, or make room on the stick."
+		exit 1
+	fi
+
+	if mount -o remount,async "$USB_PATH" 2> /dev/null; then
+		trap end_async EXIT
+		trap 'exit 143' TERM
+		trap 'exit 130' INT
+	fi
+
 	echo ' [###=======] Listing the files of the data partition ...'
 	# A list of everything on the data partition costs a few seconds and
 	# little space, and tells what was there even when the folders were
@@ -220,25 +293,17 @@ backup)
 
 	echo ' [####======] Starting backup ...'
 	# Copy all directories and files from the list below to the backup
-	# directory recursively.  The touch screen files only exist after a
-	# calibration, and rsync reports a missing entry as an error, so they
-	# are listed only when present.
+	# directory recursively.
 	# We use --checksum here due to cubieboards not having an rtc clock;
 	# rsync then reads all files on both sides before it copies, which
 	# shows no progress for a while when large folders are included.
 	# The data partition below /home/root is left out except for the
 	# folders named with --data (see the top of this script).
-	OPTIONAL_FILES=
-	for FILE in /etc/udev/rules.d/libinput-ts.rules /etc/pointercal
-	do
-		if [ -e "$FILE" ]; then OPTIONAL_FILES="$OPTIONAL_FILES $FILE"; fi
-	done
 	printf '%s' "$DATA_RULES" > "$RSYNC_STATUS.rules"
 	if [ -n "$DATA_RULES" ]; then
 		echo ' Comparing with the backup on the stick, this can take a while ...'
 	fi
-	printf '%s\n' /etc/dropbear /home/root /opt/conf /var/lib/connman \
-		/boot/config.uEnv $OPTIONAL_FILES |
+	printf '%s\n' $SETTINGS |
 	run_rsync --files-from - --archive --recursive \
 		--relative --mkpath --checksum --safe-links \
 		--filter="merge $RSYNC_STATUS.rules" \
@@ -250,7 +315,10 @@ backup)
 	else
 		>&2 echo " An rsync error $RSYNC_EXIT has occurred!"
 	fi
-	rm -f "$RSYNC_STATUS.rules";;
+	rm -f "$RSYNC_STATUS.rules"
+	echo ' [#######===] Writing everything out to the stick ...'
+	end_async
+	trap - EXIT TERM INT;;
 	
 restore)
 	echo ' [##========] Starting restore ...'
