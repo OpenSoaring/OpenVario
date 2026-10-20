@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r25.27"
+PR="r25.28"
 
 # The version is set in VERSION.inc in the repository root, not by the
 # name of this file, so a new OpenSoar test build changes SRCREV here
@@ -9,9 +9,13 @@ PR="r25.27"
 require VERSION.inc
 PV = "${OPENSOAR_VERSION}"
 
-SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=release-7.45.25 " 
+# Each test version is a single commit on top of work-7.45.25 that is
+# kept as a tag, and the next test version is built without it, so the
+# SRCREV of a test build leaves the branch later.  nobranch=1 lets the
+# fetcher take it from the tag then, which the full clone also fetches.
+SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work-7.45.25;nobranch=1 " 
 # SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work " 
-SRCREV = "be05cd03bee44e2f7b8fef6392d32bafc29d0c01"
+SRCREV = "6d914128fba204b57c659048fcd165d85d3c2505"
 
 
 # dev branch is: boost 1.90:
