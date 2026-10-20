@@ -239,8 +239,46 @@ function updateall(){
   sync
   echo "Upgrade with '${IMAGEFILE}'"  >> $DEBUG_LOG
   IMAGE_NAME="$(basename $IMAGEFILE .gz)"
-  (pv -n ${IMAGEFILE} | gunzip -c | dd of=$TARGET bs=16M) 2>&1 | \
+
+  # The first 2 MiB of the card, up to the boot partition, hold the
+  # partition table and SPL with U-Boot.  As long as they are intact,
+  # U-Boot starts this recovery again after a power failure, from the
+  # card or from openvario/ov-recovery.itb on a USB stick.  Written
+  # first, as the image used to be, a power failure in that moment left
+  # a card that does not start at all and had to be flashed on a PC.
+  # So the rest of the image is written first, while the old boot loader
+  # stays usable, and the first 2 MiB come last, which takes only a
+  # fraction of a second; they are not written when the rest failed.
+  # (the busybox of this initramfs has neither "head -c" nor the conv
+  # options of dd, so pv cuts the head, and sync writes it out)
+  HEAD_SIZE=$((2048 * 1024))
+  HEAD_FILE=/tmp/image-head.$$
+  gunzip -c ${IMAGEFILE} 2> /dev/null | pv -q -S -s $HEAD_SIZE > $HEAD_FILE
+  if [ "$(wc -c < $HEAD_FILE)" -ne $HEAD_SIZE ]; then
+    rm -f $HEAD_FILE
+    error_stop "'${IMAGEFILE}' is too short - nothing written"
+    return 1
+  fi
+  (set -o pipefail
+   pv -n ${IMAGEFILE} | gunzip -c | tail -c +$((HEAD_SIZE + 1)) | \
+     dd of=$TARGET bs=1M seek=2
+   echo $? > /tmp/image-rest.$$) 2>&1 | \
     dialog --gauge "Writing Image ...\nfile = ${IMAGE_NAME}  " 10 50 0
+  sync
+  if [ "$(cat /tmp/image-rest.$$ 2> /dev/null)" != "0" ]; then
+    rm -f $HEAD_FILE /tmp/image-rest.$$
+    echo "Writing '${IMAGEFILE}' failed, boot loader kept"  >> $DEBUG_LOG
+    error_stop "Writing the image failed - the old boot loader is kept"
+    return 1
+  fi
+  if ! dd if=$HEAD_FILE of=$TARGET bs=1M 2> /dev/null; then
+    rm -f $HEAD_FILE /tmp/image-rest.$$
+    echo "Writing the boot loader of '${IMAGEFILE}' failed"  >> $DEBUG_LOG
+    error_stop "Writing the boot loader failed"
+    return 1
+  fi
+  sync
+  rm -f $HEAD_FILE /tmp/image-rest.$$
   #########################################
   # remove the recovery file:
   echo "Upgrade '${IMAGEFILE}' finished"  >> $DEBUG_LOG
@@ -842,8 +880,13 @@ dmesg -n 1
 if [ -f "$IMAGEFILE" ]; then
   echo "Update $IMAGEFILE !!!!"
   save_old_system
-  updateall
-  recover_system
+  # restoring the settings onto a card that was not written completely
+  # makes no sense; the menu offers to write an image from the stick
+  if updateall; then
+    recover_system
+  else
+    main_menu
+  fi
 else
   clear
   if [ -z "$IMAGEFILE" ]; then
