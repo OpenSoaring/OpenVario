@@ -25,10 +25,11 @@ ln -sf /opt/bin/reboot.sh /sbin/reboot
 mkdir /mnt
 
 sleep 5
-mount /dev/sda1 /mnt
+# the first partition, or a stick formatted without a partition table
+mount /dev/sda1 /mnt || mount /dev/sda /mnt
 
 /opt/bin/ovmenu-recovery.sh
 
 #Unmount USB Stick if exited to shell
-umount /dev/sda1
+umount /mnt
 /bin/bash

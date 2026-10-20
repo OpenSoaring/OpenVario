@@ -1,0 +1,17 @@
+# /dev/usbstick is the USB stick that usb-usbstick.mount mounts: the
+# first partition of the first USB disk, or that disk itself when it
+# carries its file system without a partition table, as sticks
+# formatted as a whole do.  Such a stick has no /dev/sda1, so a mount of
+# /dev/sda1 alone never found it.  The rule runs after
+# 60-persistent-storage.rules, which sets ID_BUS and ID_FS_USAGE; a disk
+# with a partition table has no ID_FS_USAGE of its own.
+
+SUBSYSTEM!="block", GOTO="usbstick_end"
+ACTION=="remove", GOTO="usbstick_end"
+ENV{ID_BUS}!="usb", GOTO="usbstick_end"
+ENV{ID_FS_USAGE}!="filesystem", GOTO="usbstick_end"
+
+KERNEL=="sda1", ENV{DEVTYPE}=="partition", SYMLINK+="usbstick"
+KERNEL=="sda", ENV{DEVTYPE}=="disk", SYMLINK+="usbstick"
+
+LABEL="usbstick_end"

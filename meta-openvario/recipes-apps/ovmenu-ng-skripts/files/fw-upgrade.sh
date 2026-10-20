@@ -681,13 +681,18 @@ fi
 
 
 # check if usb dir exist and is mounted!
-if [ -b "/dev/sda1" ]; then
+# /dev/usbstick is the stick partitioned or not (udev rule of the image);
+# without it the first partition, or a stick without a partition table
+USB_DEVICE=
+for DEVICE in /dev/usbstick /dev/sda1 /dev/sda; do
+  if [ -b "$DEVICE" ]; then USB_DEVICE=$DEVICE; break; fi
+done
+if [ -n "$USB_DEVICE" ]; then
   if [ ! -d $USB_STICK ]; then
     USB_STICK=/mnt/usb
     echo "USB stick will be mounted on '$USB_STICK'"
     mkdir -p $USB_STICK
-    mount /dev/sda1 $USB_STICK
-    # or sdb1, sdc1, ...
+    mount $USB_DEVICE $USB_STICK
     if [ ! -d $USB_OPENVARIO ]; then
       error_stop "'$USB_OPENVARIO' don't exist!?!"
     fi
