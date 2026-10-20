@@ -237,6 +237,19 @@ backup)
 	done
 	SETTINGS="/etc/dropbear /home/root /opt/conf /var/lib/connman /boot/config.uEnv $OPTIONAL_FILES"
 
+	# A stick the image could only mount read-only, such as an NTFS
+	# stick that Windows did not close cleanly, would let rsync fail on
+	# every file; say why instead.
+	USB_OPTIONS=`awk -v p="$USB_PATH" '$2 == p && $3 != "autofs" { o = $4 }
+	                                    END { print o }' /proc/mounts`
+	case ",$USB_OPTIONS," in
+	*,ro,*)
+		>&2 echo " The USB stick is mounted read-only - nothing done."
+		>&2 echo " An NTFS stick that Windows did not close cleanly is only"
+		>&2 echo " readable here; check it on Windows with chkdsk /f."
+		exit 1;;
+	esac
+
 	echo ' [###=======] Checking the space on the USB stick ...'
 	# A full stick stopped a backup only after it had copied for half an
 	# hour.  So estimate the space it needs first: everything it copies,
@@ -324,7 +337,8 @@ restore)
 	echo ' [##========] Starting restore ...'
 
 	# Eliminate /etc/opkg backup in case it's present
-	rm -rf "$USB_PATH/$BACKUP/$MAC"/etc/opkg/
+	# (a read-only stick still allows a restore, so do not complain here)
+	rm -rf "$USB_PATH/$BACKUP/$MAC"/etc/opkg/ 2> /dev/null
 
 	# We use --checksum here due to cubieboards not having an rtc clock.
 	# The file list of the data partition is only for reading.

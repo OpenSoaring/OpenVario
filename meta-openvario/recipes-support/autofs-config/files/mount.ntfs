@@ -6,4 +6,14 @@
 # device, the mount point and the options; it mounts them with the
 # ntfs3 driver.  -i keeps mount from calling a helper again.
 
-exec /bin/mount -i -t ntfs3 "$@"
+/bin/mount -i -t ntfs3 "$@" && exit 0
+
+# Windows marks a volume as dirty while it uses it, and leaves the mark
+# when the stick is pulled without being ejected or the PC hibernates
+# with fast startup.  ntfs3 refuses to mount such a volume for writing
+# ("volume is dirty and "force" flag is not set"), but reading it is
+# safe, and enough for a restore, a firmware image or the data upload.
+# So mount it read-only then; the later -o ro overrides the rw of the
+# mount unit.  Forcing it writable could damage it further.
+echo "NTFS stick not clean (dirty) - mounted read-only; check it on Windows with chkdsk /f" >&2
+exec /bin/mount -i -t ntfs3 "$@" -o ro
