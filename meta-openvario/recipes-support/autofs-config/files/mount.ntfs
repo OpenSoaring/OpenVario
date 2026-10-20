@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# mount detects an NTFS stick as type "ntfs", but the driver of this
+# kernel registers itself only as "ntfs3" (the name "ntfs" came with
+# Linux 6.9).  mount then looks for this helper and passes it the
+# device, the mount point and the options; it mounts them with the
+# ntfs3 driver.  -i keeps mount from calling a helper again.
+
+exec /bin/mount -i -t ntfs3 "$@"
