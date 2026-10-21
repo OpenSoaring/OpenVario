@@ -9,11 +9,11 @@ PR="r25.35"
 require VERSION.inc
 PV = "${OPENSOAR_VERSION}"
 
-# Each test version is a single commit on top of work-7.45.25 that is
+# Each test version is a single commit on top of work25 that is
 # kept as a tag, and the next test version is built without it, so the
 # SRCREV of a test build leaves the branch later.  nobranch=1 lets the
 # fetcher take it from the tag then, which the full clone also fetches.
-SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work-7.45.25;nobranch=1 " 
+SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work25;nobranch=1 " 
 # SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work " 
 SRCREV = "7f6ab9805f46d2faaff17174a8d54602abb44d03"
 
