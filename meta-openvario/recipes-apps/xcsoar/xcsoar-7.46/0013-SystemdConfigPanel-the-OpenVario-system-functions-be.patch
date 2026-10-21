@@ -1,7 +1,7 @@
-From 8f279958de8ac5d8909ae3bf4df608a7ac9731b8 Mon Sep 17 00:00:00 2001
+From 9338ceae3f2cc68a99c79067aadadbbf156232f8 Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Tue, 6 Oct 2026 17:49:16 +0200
-Subject: [PATCH 13/16] SystemdConfigPanel: the OpenVario system functions
+Subject: [PATCH 13/22] SystemdConfigPanel: the OpenVario system functions
  below the services
 
 On an OpenVario, XCSoar is started from the menu of the image, and
@@ -32,10 +32,10 @@ ignores the case, as the start script does.
  create mode 100644 src/Dialogs/Settings/Panels/OpenVarioSystemWidget.hpp
 
 diff --git a/build/main.mk b/build/main.mk
-index 83a0fc64fd..30c6558998 100644
+index b8d35a56b..d363eb00b 100644
 --- a/build/main.mk
 +++ b/build/main.mk
-@@ -801,6 +801,7 @@ ifeq ($(TARGET_IS_LINUX)$(TARGET_IS_KOBO)$(TARGET_IS_ANDROID),ynn)
+@@ -840,6 +840,7 @@ ifeq ($(TARGET_IS_LINUX)$(TARGET_IS_KOBO)$(TARGET_IS_ANDROID),ynn)
  XCSOAR_SOURCES += \
  	$(SRC)/Dialogs/Settings/Panels/SystemdConfigPanel.cpp \
  	$(SRC)/Linux/SystemdServiceList.cpp \
@@ -44,10 +44,10 @@ index 83a0fc64fd..30c6558998 100644
  	$(SRC)/OV/System.cpp \
  	$(SRC)/OV/Calibrate.cpp
 diff --git a/doc/manual/en/ch11_configuration.tex b/doc/manual/en/ch11_configuration.tex
-index d2ab982c46..0978b9731e 100644
+index 917495500..d9a43f018 100644
 --- a/doc/manual/en/ch11_configuration.tex
 +++ b/doc/manual/en/ch11_configuration.tex
-@@ -929,6 +929,31 @@ will be referenced as `Custom' set and will also be stored in your profile.
+@@ -1178,6 +1178,31 @@ orientation, brightness, and (where drawn by XCSoar) the mouse cursor.
  \end{description}
  
  
@@ -81,7 +81,7 @@ index d2ab982c46..0978b9731e 100644
  
 diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 new file mode 100644
-index 0000000000..2e699c71a4
+index 000000000..2e699c71a
 --- /dev/null
 +++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 @@ -0,0 +1,133 @@
@@ -220,7 +220,7 @@ index 0000000000..2e699c71a4
 +}
 diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.hpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.hpp
 new file mode 100644
-index 0000000000..ab8a5c46f0
+index 000000000..ab8a5c46f
 --- /dev/null
 +++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.hpp
 @@ -0,0 +1,16 @@
@@ -241,7 +241,7 @@ index 0000000000..ab8a5c46f0
 +std::unique_ptr<Widget>
 +CreateOpenVarioSystemWidget() noexcept;
 diff --git a/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp b/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp
-index 534c2fe13f..6c98088c69 100644
+index 86781fd4c..121242dd6 100644
 --- a/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp
 +++ b/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp
 @@ -2,6 +2,9 @@
@@ -254,9 +254,9 @@ index 534c2fe13f..6c98088c69 100644
  #include "Dialogs/Error.hpp"
  #include "Dialogs/JobDialog.hpp"
  #include "Form/Button.hpp"
-@@ -337,5 +340,13 @@ CreateSystemdConfigPanel()
-   auto panel = std::make_unique<ButtonPanelWidget>(
+@@ -398,5 +401,13 @@ CreateSystemdConfigPanel()
      std::move(list), ButtonPanelWidget::Alignment::BOTTOM);
+   panel->HideInLandscape();
    static_cast<SystemdListWidget &>(panel->GetWidget()).SetButtonPanel(*panel);
 +
 +  /* on an OpenVario, the services sensord and variod belong together
@@ -268,3 +268,6 @@ index 534c2fe13f..6c98088c69 100644
 +
    return panel;
  }
+-- 
+2.43.0
+

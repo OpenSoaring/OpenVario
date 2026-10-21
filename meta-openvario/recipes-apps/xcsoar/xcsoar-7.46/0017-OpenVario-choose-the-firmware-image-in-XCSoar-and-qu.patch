@@ -1,8 +1,8 @@
-From f76bd65c20b10aa970691dc656fe0b759eb6d073 Mon Sep 17 00:00:00 2001
+From f454fb66c7b0aaa7ca06e3d58a006868a648e21d Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Wed, 7 Oct 2026 16:21:45 +0200
-Subject: [PATCH] OpenVario: choose the firmware image in XCSoar and quit for
- the upgrade
+Subject: [PATCH 17/22] OpenVario: choose the firmware image in XCSoar and quit
+ for the upgrade
 
 Started from within XCSoar, fw-upgrade.sh did not get the screen on the
 device: XCSoar stayed visible with the button pressed, and an Enter
@@ -29,18 +29,18 @@ for upstream; the image carries it as a patch.
  src/OpenVario/FirmwareImagePicker.hpp         |  18 +
  src/OpenVario/System.cpp                      |  14 +
  src/OpenVario/System.hpp                      |  16 +
- src/XCSoar.cpp                                |  15 +-
- 9 files changed, 643 insertions(+), 32 deletions(-)
+ src/XCSoar.cpp                                |  11 +
+ 9 files changed, 641 insertions(+), 30 deletions(-)
  create mode 100644 src/OpenVario/FirmwareImage.cpp
  create mode 100644 src/OpenVario/FirmwareImage.hpp
  create mode 100644 src/OpenVario/FirmwareImagePicker.cpp
  create mode 100644 src/OpenVario/FirmwareImagePicker.hpp
 
 diff --git a/build/main.mk b/build/main.mk
-index fab75a1835..e973382f94 100644
+index 2128cb428..99b1df334 100644
 --- a/build/main.mk
 +++ b/build/main.mk
-@@ -804,7 +804,9 @@ XCSOAR_SOURCES += \
+@@ -843,7 +843,9 @@ XCSOAR_SOURCES += \
  	$(SRC)/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp \
  	$(SRC)/Dialogs/ProcessDialog.cpp \
  	$(SRC)/OpenVario/System.cpp \
@@ -48,11 +48,11 @@ index fab75a1835..e973382f94 100644
 +	$(SRC)/OpenVario/Calibrate.cpp \
 +	$(SRC)/OpenVario/FirmwareImage.cpp \
 +	$(SRC)/OpenVario/FirmwareImagePicker.cpp
- endif
  
- include $(topdir)/build/net-wifi.mk
+ ifeq ($(USE_POLL_EVENT),y)
+ SYSTEM_TOOLS_DIRECTORY ?= /usr/libexec/xcsoar/system-tools
 diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
-index 49b0d87e96..cd159dcbb9 100644
+index 49b0d87e9..cd159dcbb 100644
 --- a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 +++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 @@ -3,13 +3,19 @@
@@ -216,7 +216,7 @@ index 49b0d87e96..cd159dcbb9 100644
    AddEnum(_("Start after boot"),
 diff --git a/src/OpenVario/FirmwareImage.cpp b/src/OpenVario/FirmwareImage.cpp
 new file mode 100644
-index 0000000000..44b3e3c55a
+index 000000000..44b3e3c55
 --- /dev/null
 +++ b/src/OpenVario/FirmwareImage.cpp
 @@ -0,0 +1,329 @@
@@ -551,7 +551,7 @@ index 0000000000..44b3e3c55a
 +}
 diff --git a/src/OpenVario/FirmwareImage.hpp b/src/OpenVario/FirmwareImage.hpp
 new file mode 100644
-index 0000000000..9f4b858827
+index 000000000..9f4b85882
 --- /dev/null
 +++ b/src/OpenVario/FirmwareImage.hpp
 @@ -0,0 +1,80 @@
@@ -637,7 +637,7 @@ index 0000000000..9f4b858827
 +StageFirmwareImage(Path image, OperationEnvironment &env);
 diff --git a/src/OpenVario/FirmwareImagePicker.cpp b/src/OpenVario/FirmwareImagePicker.cpp
 new file mode 100644
-index 0000000000..070db31615
+index 000000000..070db3161
 --- /dev/null
 +++ b/src/OpenVario/FirmwareImagePicker.cpp
 @@ -0,0 +1,83 @@
@@ -726,7 +726,7 @@ index 0000000000..070db31615
 +}
 diff --git a/src/OpenVario/FirmwareImagePicker.hpp b/src/OpenVario/FirmwareImagePicker.hpp
 new file mode 100644
-index 0000000000..135bf67705
+index 000000000..135bf6770
 --- /dev/null
 +++ b/src/OpenVario/FirmwareImagePicker.hpp
 @@ -0,0 +1,18 @@
@@ -749,7 +749,7 @@ index 0000000000..135bf67705
 +AllocatedPath
 +PickFirmwareImage(const char *caption) noexcept;
 diff --git a/src/OpenVario/System.cpp b/src/OpenVario/System.cpp
-index 6e14dbc3f5..161b223fb1 100644
+index 6e14dbc3f..161b223fb 100644
 --- a/src/OpenVario/System.cpp
 +++ b/src/OpenVario/System.cpp
 @@ -126,3 +126,17 @@ try {
@@ -771,7 +771,7 @@ index 6e14dbc3f5..161b223fb1 100644
 +  return openvario_exit_code;
 +}
 diff --git a/src/OpenVario/System.hpp b/src/OpenVario/System.hpp
-index ec3a00c19c..1511a58101 100644
+index ec3a00c19..1511a5810 100644
 --- a/src/OpenVario/System.hpp
 +++ b/src/OpenVario/System.hpp
 @@ -122,3 +122,19 @@ HasRealMount(std::string_view mounts, std::string_view path) noexcept
@@ -795,7 +795,7 @@ index ec3a00c19c..1511a58101 100644
 +int
 +OpenvarioGetExitCode() noexcept;
 diff --git a/src/XCSoar.cpp b/src/XCSoar.cpp
-index 8a23bdf97c..dda6d48dd3 100644
+index 5a166af2c..a251fb41a 100644
 --- a/src/XCSoar.cpp
 +++ b/src/XCSoar.cpp
 @@ -6,6 +6,11 @@
@@ -810,21 +810,19 @@ index 8a23bdf97c..dda6d48dd3 100644
  #include "Startup.hpp"
  #include "LocalPath.hpp"
  #include "Version.hpp"
-@@ -82,9 +87,15 @@ Main()
- 
-   // Perform application initialization and run loop
-   int ret = EXIT_FAILURE;
--  if (Startup(screen_init.GetDisplay()))
-+  if (Startup(screen_init.GetDisplay())) {
+@@ -95,6 +100,12 @@ Main()
+     ShowPendingSystemToolResult();
+ #endif
      ret = CommonInterface::main_window->RunEventLoop();
--  else if (WasStartupCancelledByUser())
 +#ifdef HAVE_OPENVARIO_EXIT_CODE
 +    /* the OpenVario system page asks the start script for the next
 +       step (the firmware upgrade) through the exit code */
 +    if (const int code = OpenvarioGetExitCode(); code != 0)
 +      ret = code;
 +#endif
-+  } else if (WasStartupCancelledByUser())
+   } else if (WasStartupCancelledByUser())
      /* quitting from the startup dialogs is a deliberate user action,
         not an error */
-     ret = EXIT_SUCCESS;
+-- 
+2.43.0
+

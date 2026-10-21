@@ -1,7 +1,7 @@
-From 88a807e50cb8c8f0f62dc27c51eb9460c8d960a9 Mon Sep 17 00:00:00 2001
+From e291bb3b9d56847c9ff5f107146fb1710ff7b9cd Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Tue, 6 Oct 2026 14:31:16 +0200
-Subject: [PATCH 10/16] OV/System: store the display rotation without rotating
+Subject: [PATCH 10/22] OV/System: store the display rotation without rotating
  again
 
 OpenvarioSetRotation() rotates the display, the console and stores the
@@ -15,7 +15,7 @@ number in config.uEnv moves into a helper that both use.
  2 files changed, 42 insertions(+), 18 deletions(-)
 
 diff --git a/src/OV/System.cpp b/src/OV/System.cpp
-index d9c822078c..f1726e6e49 100644
+index d9c822078..f1726e6e4 100644
 --- a/src/OV/System.cpp
 +++ b/src/OV/System.cpp
 @@ -78,7 +78,7 @@ DisplayOrientation
@@ -93,7 +93,7 @@ index d9c822078c..f1726e6e49 100644
  
  SSHStatus
 diff --git a/src/OV/System.hpp b/src/OV/System.hpp
-index b22e50a8d4..ac43367284 100644
+index b22e50a8d..ac4336728 100644
 --- a/src/OV/System.hpp
 +++ b/src/OV/System.hpp
 @@ -45,6 +45,17 @@ OpenvarioSetBrightness(uint_least8_t value) noexcept;
@@ -114,3 +114,6 @@ index b22e50a8d4..ac43367284 100644
  void
  OpenvarioSetRotation(DisplayOrientation orientation);
  
+-- 
+2.43.0
+

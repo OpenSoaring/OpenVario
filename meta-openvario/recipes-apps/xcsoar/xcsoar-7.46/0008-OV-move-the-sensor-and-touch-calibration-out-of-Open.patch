@@ -1,7 +1,7 @@
-From 98cb01668f267dd3ebf787b7eee6bfd1c99cb54e Mon Sep 17 00:00:00 2001
+From daa3a6ab883d7ff1f5addd69a935f7b915688727 Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Tue, 6 Oct 2026 14:18:12 +0200
-Subject: [PATCH 08/16] OV: move the sensor and touch calibration out of
+Subject: [PATCH 08/22] OV: move the sensor and touch calibration out of
  OpenVarioMenu
 
 XCSoar itself is going to offer both calibrations on an OpenVario, so
@@ -20,7 +20,7 @@ screen and the input devices to the script just as the menu does.
  create mode 100644 src/OV/Calibrate.hpp
 
 diff --git a/build/ov.mk b/build/ov.mk
-index 7566812004..3d32fe8a1e 100644
+index 756681200..3d32fe8a1 100644
 --- a/build/ov.mk
 +++ b/build/ov.mk
 @@ -35,6 +35,7 @@ OV_MENU_SOURCES = \
@@ -33,7 +33,7 @@ index 7566812004..3d32fe8a1e 100644
  OV_MENU_STRIP = y
 diff --git a/src/OV/Calibrate.cpp b/src/OV/Calibrate.cpp
 new file mode 100644
-index 0000000000..d9a5a4c0ab
+index 000000000..d9a5a4c0a
 --- /dev/null
 +++ b/src/OV/Calibrate.cpp
 @@ -0,0 +1,102 @@
@@ -141,7 +141,7 @@ index 0000000000..d9a5a4c0ab
 +}
 diff --git a/src/OV/Calibrate.hpp b/src/OV/Calibrate.hpp
 new file mode 100644
-index 0000000000..9650209ecc
+index 000000000..9650209ec
 --- /dev/null
 +++ b/src/OV/Calibrate.hpp
 @@ -0,0 +1,26 @@
@@ -172,7 +172,7 @@ index 0000000000..9650209ecc
 +void
 +CalibrateTouch(UI::Display &display, UI::EventQueue &event_queue) noexcept;
 diff --git a/src/OV/OpenVarioMenu.cpp b/src/OV/OpenVarioMenu.cpp
-index 9d2109834e..2a0e8033a0 100644
+index 9d2109834..2a0e8033a 100644
 --- a/src/OV/OpenVarioMenu.cpp
 +++ b/src/OV/OpenVarioMenu.cpp
 @@ -20,15 +20,13 @@
@@ -285,3 +285,6 @@ index 9d2109834e..2a0e8033a0 100644
    });
  
    AddButton("System Settings", [this](){
+-- 
+2.43.0
+

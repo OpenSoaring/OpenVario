@@ -1,7 +1,7 @@
-From aee1943bcf70c899b6e1d4f74d219287bbc87059 Mon Sep 17 00:00:00 2001
+From f8904e1f253d79c1dda6aaaf304223b0bb4541ea Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Tue, 6 Oct 2026 17:47:53 +0200
-Subject: [PATCH 11/16] DisplayConfigPanel: keep the orientation on an
+Subject: [PATCH 11/22] DisplayConfigPanel: keep the orientation on an
  OpenVario after a reboot
 
 XCSoar rotates its own display and the console, but the OpenVario
@@ -22,24 +22,24 @@ Linux build and the decision is taken at run time.
  2 files changed, 22 insertions(+), 1 deletion(-)
 
 diff --git a/build/main.mk b/build/main.mk
-index 1b35401113..78bc9595de 100644
+index 23c184c18..9e6eb0bf8 100644
 --- a/build/main.mk
 +++ b/build/main.mk
-@@ -800,7 +800,8 @@ endif
+@@ -839,7 +839,8 @@ endif
  ifeq ($(TARGET_IS_LINUX)$(TARGET_IS_KOBO)$(TARGET_IS_ANDROID),ynn)
  XCSOAR_SOURCES += \
  	$(SRC)/Dialogs/Settings/Panels/SystemdConfigPanel.cpp \
 -	$(SRC)/Linux/SystemdServiceList.cpp
 +	$(SRC)/Linux/SystemdServiceList.cpp \
 +	$(SRC)/OV/System.cpp
- endif
  
- include $(topdir)/build/net-wifi.mk
+ ifeq ($(USE_POLL_EVENT),y)
+ SYSTEM_TOOLS_DIRECTORY ?= /usr/libexec/xcsoar/system-tools
 diff --git a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
-index 09229a1698..4e811823f7 100644
+index c6e468dd8..4148f70ff 100644
 --- a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
 +++ b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
-@@ -28,6 +28,10 @@
+@@ -34,6 +34,10 @@
  #include "ui/event/Queue.hpp"
  #endif
  
@@ -48,11 +48,11 @@ index 09229a1698..4e811823f7 100644
 +#endif
 +
  #include <memory>
+ #include <string>
  
- #if defined(KOBO) || (defined(__linux__) && !defined(ANDROID))
-@@ -212,6 +216,22 @@ DisplayConfigPanel::Save(bool &_changed) noexcept
-     if (!Display::Rotate(ui_settings.display.orientation))
-       LogString("Display rotation failed");
+@@ -371,6 +375,22 @@ DisplayConfigPanel::Save(bool &_changed) noexcept
+         ui_settings.display.orientation);
+ #endif
  
 +#if defined(__linux__) && !defined(__ANDROID__) && !defined(KOBO)
 +    /* the OpenVario image rotates the console at boot, before
@@ -73,3 +73,6 @@ index 09229a1698..4e811823f7 100644
  #ifdef USE_POLL_EVENT
      UI::event_queue->SetDisplayOrientation(ui_settings.display.orientation);
  #endif
+-- 
+2.43.0
+

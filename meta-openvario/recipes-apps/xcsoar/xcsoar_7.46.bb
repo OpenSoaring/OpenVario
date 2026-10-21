@@ -1,35 +1,37 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r7.45.3"
+PR="r7.46"
 
-# The exact release (7.45.3) comes from VERSION.inc in the repository
-# root; the file name only names the 7.45 series.  It has to match the
+# The exact release (7.46) comes from VERSION.inc in the repository
+# root; the file name only names the 7.46 series.  It has to match the
 # SRCREV below.
 require VERSION.inc
 PV = "${XCSOAR_VERSION}"
 
-# With the full release as version, bitbake would look for the patches
-# in xcsoar-7.45.3/ instead of xcsoar-7.45/; name the directory, so it
-# keeps its precedence over files/ whatever the release is.
-FILESEXTRAPATHS:prepend := "${THISDIR}/xcsoar-7.45:"
+# bitbake looks for the patches in xcsoar-${PV}/, which would stop to
+# match with a release like 7.46.1; name the directory, so it keeps its
+# precedence over files/ whatever the release is.
+FILESEXTRAPATHS:prepend := "${THISDIR}/xcsoar-7.46:"
 RCONFLICTS:${PN}="xcsoar-testing"
 
 # SRC_URI = "git://github.com/XCSoar/XCSoar.git;protocol=https;branch=master "
-SRC_URI = "git://github.com/XCSoar/XCSoar.git;protocol=https;branch=v7.45.x "
+SRC_URI = "git://github.com/XCSoar/XCSoar.git;protocol=https;branch=v7.46.x "
 
-# Commit version for 7.45:
-# SRCREV = "5bbf804b54cb57416e9de6c3247ad637d4066710"  # -> 7.45
-# SRCREV = "7320db6256b91b112cb66220a8e4611b962dd949"  # -> 7.45.1
-# SRCREV = "a2449fdf1bb18ce57670734371a05e0ca10c7cdf"  # -> 7.45.2
-# -> 7.45.3
-SRCREV = "f18f5f0ca1055767e5fa215a2903d32085bbd321"
+# Commit version for 7.46:
+# SRCREV = "1998c3e492634ec056d3f01718c6c339a8e5b445"  # -> 7.46 (tag)
+# -> 7.46 with the two fixes that followed the tag on v7.46.x: the
+# MinGW build of the airspace warning test, and no multi-draw on
+# PowerVR Rogue graphics.
+SRCREV = "84898e40d417b6f6564d14e41cd85b53f10bb3fb"
 
-# dev branch is: boost 1.90:
-BOOST_VERSION = "1.90.0"
-BOOST_SHA256HASH = "49551aff3b22cbc5c5a9ed3dbc92f0e23ea50a0f7325b0d198b705e8ee3fc305"
+# The 7.46 sources use boost 1.92 (build/libboost.mk); the hash is the
+# one that file checks the tarball against.
+BOOST_VERSION = "1.92.0"
+BOOST_SHA256HASH = "5c1d40cb8e19adbf740a4ec2da35b3e58f3f5804b1dce44deb53df72193cbc6c"
 
-# The OpenVario settings inside XCSoar, as proposed for XCSoar 7.46:
+# The OpenVario settings inside XCSoar, which XCSoar 7.46 does not have
+# yet; the series of the 7.45 recipe, carried over to the 7.46 sources:
 # calibrations, firmware upgrade, system backup, the program to start
 # after boot and the display rotation kept across a reboot.
 SRC_URI += " \

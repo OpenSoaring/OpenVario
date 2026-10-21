@@ -1,7 +1,7 @@
-From ebd98faf970c16932f2f23079d4e0931a41e16d7 Mon Sep 17 00:00:00 2001
+From 072742fabdce3c103bbc1f101cdf71a09377b940 Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Wed, 7 Oct 2026 21:37:12 +0200
-Subject: [PATCH 20/21] SystemdConfigPanel: say why a service could not be
+Subject: [PATCH 20/22] SystemdConfigPanel: say why a service could not be
  started
 
 Turning on a service whose start failed only made its row go back to
@@ -33,11 +33,11 @@ boot.
  3 files changed, 367 insertions(+), 22 deletions(-)
 
 diff --git a/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp b/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp
-index 6325b50be5..ff2de90493 100644
+index eaf9cf583..cc1239a1a 100644
 --- a/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp
 +++ b/src/Dialogs/Settings/Panels/SystemdConfigPanel.cpp
-@@ -17,7 +17,13 @@
- #include "UIGlobals.hpp"
+@@ -19,7 +19,13 @@
+ #include "Screen/Layout.hpp"
  #include "Widget/ButtonPanelWidget.hpp"
  #include "Widget/ListWidget.hpp"
 +#include "lib/dbus/AppendIter.hxx"
@@ -50,7 +50,7 @@ index 6325b50be5..ff2de90493 100644
  #include "lib/dbus/ScopeMatch.hxx"
  #include "lib/dbus/Systemd.hxx"
  #include "ui/canvas/Canvas.hpp"
-@@ -25,10 +31,16 @@
+@@ -27,10 +33,16 @@
  #include "ui/event/KeyCode.hpp"
  #include "ui/event/PeriodicTimer.hpp"
  #include "util/ScopeExit.hxx"
@@ -67,7 +67,7 @@ index 6325b50be5..ff2de90493 100644
  #include <utility>
  #include <vector>
  
-@@ -43,13 +55,318 @@ enum class SystemdAction {
+@@ -45,13 +57,318 @@ enum class SystemdAction {
    RESTART,
  };
  
@@ -388,7 +388,7 @@ index 6325b50be5..ff2de90493 100644
  
    void Run([[maybe_unused]] OperationEnvironment &env) override {
      auto connection = ODBus::Connection::GetSystemPrivate();
-@@ -57,12 +374,23 @@ public:
+@@ -59,12 +376,23 @@ public:
  
      const ODBus::ScopeMatch match{connection, Systemd::job_removed_match};
  
@@ -415,7 +415,7 @@ index 6325b50be5..ff2de90493 100644
  
      case SystemdAction::STOP:
        Systemd::StopUnit(connection, unit_name.c_str(), "replace",
-@@ -70,11 +398,15 @@ public:
+@@ -72,11 +400,15 @@ public:
        Systemd::DisableUnitFile(connection, unit_name.c_str());
        break;
  
@@ -434,7 +434,7 @@ index 6325b50be5..ff2de90493 100644
    }
  };
  
-@@ -295,7 +627,7 @@ private:
+@@ -355,7 +687,7 @@ private:
        const auto action = statuses[index].state == Systemd::ActiveState::ACTIVE
          ? SystemdAction::STOP
          : SystemdAction::START;
@@ -443,7 +443,7 @@ index 6325b50be5..ff2de90493 100644
  
        if (!JobDialog(UIGlobals::GetMainWindow(), UIGlobals::GetDialogLook(),
                       _("System service"), job))
-@@ -317,7 +649,8 @@ private:
+@@ -377,7 +709,8 @@ private:
      refresh_timer.Cancel();
      try {
        SystemdActionJob job{SystemdAction::RESTART,
@@ -454,7 +454,7 @@ index 6325b50be5..ff2de90493 100644
                       _("System service"), job))
          throw std::runtime_error{"Failed to start system service job"};
 diff --git a/src/lib/dbus/Systemd.cxx b/src/lib/dbus/Systemd.cxx
-index e9d008d265..3c9dd1117d 100644
+index e9d008d26..3c9dd1117 100644
 --- a/src/lib/dbus/Systemd.cxx
 +++ b/src/lib/dbus/Systemd.cxx
 @@ -21,7 +21,7 @@
@@ -525,7 +525,7 @@ index e9d008d265..3c9dd1117d 100644
  
  void
 diff --git a/src/lib/dbus/Systemd.hxx b/src/lib/dbus/Systemd.hxx
-index 5ddf2fe9b5..5808238770 100644
+index 5ddf2fe9b..580823877 100644
 --- a/src/lib/dbus/Systemd.hxx
 +++ b/src/lib/dbus/Systemd.hxx
 @@ -4,6 +4,8 @@
@@ -587,3 +587,6 @@ index 5ddf2fe9b5..5808238770 100644
  RestartUnit(ODBus::Connection &connection,
  	    const char *name, const char *mode="replace", int timeout_ms=-1);
  
+-- 
+2.43.0
+

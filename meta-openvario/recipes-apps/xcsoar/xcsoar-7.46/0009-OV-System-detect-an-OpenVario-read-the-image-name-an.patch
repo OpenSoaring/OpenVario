@@ -1,7 +1,7 @@
-From 141f7a656ef45f5257607e56b0e258be7c7fe6bc Mon Sep 17 00:00:00 2001
+From d4a3eddd193603a2fbce41faef365c3da8852789 Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Tue, 6 Oct 2026 14:19:36 +0200
-Subject: [PATCH 09/16] OV/System: detect an OpenVario, read the image name and
+Subject: [PATCH 09/22] OV/System: detect an OpenVario, read the image name and
  the main app
 
 The OpenVario settings inside XCSoar need three facts about the system
@@ -23,10 +23,10 @@ last step is a pure string function and has its own test.
  create mode 100644 test/src/TestOpenVarioImageName.cpp
 
 diff --git a/build/test.mk b/build/test.mk
-index 26f62f5d66..b3cf5e9791 100644
+index 6efeaf106..01352e770 100644
 --- a/build/test.mk
 +++ b/build/test.mk
-@@ -245,6 +245,14 @@ TEST_METAR_PARSER_SOURCES = \
+@@ -361,6 +361,14 @@ TEST_METAR_PARSER_SOURCES = \
  TEST_METAR_PARSER_DEPENDS = MATH UTIL UNITS
  $(eval $(call link-program,TestMETARParser,TEST_METAR_PARSER))
  
@@ -42,7 +42,7 @@ index 26f62f5d66..b3cf5e9791 100644
  
  TEST_WEATHER_UI_STATE_SOURCES = \
 diff --git a/src/OV/System.cpp b/src/OV/System.cpp
-index eb8eb70b0d..d9c822078c 100644
+index eb8eb70b0..d9c822078 100644
 --- a/src/OV/System.cpp
 +++ b/src/OV/System.cpp
 @@ -21,6 +21,14 @@
@@ -97,7 +97,7 @@ index eb8eb70b0d..d9c822078c 100644
 +  return std::string{OpenvarioImageName(first_line)};
 +}
 diff --git a/src/OV/System.hpp b/src/OV/System.hpp
-index 070fcb800e..b22e50a8d4 100644
+index 070fcb800..b22e50a8d 100644
 --- a/src/OV/System.hpp
 +++ b/src/OV/System.hpp
 @@ -7,6 +7,7 @@
@@ -167,7 +167,7 @@ index 070fcb800e..b22e50a8d4 100644
 +OpenvarioGetImageName();
 diff --git a/test/src/TestOpenVarioImageName.cpp b/test/src/TestOpenVarioImageName.cpp
 new file mode 100644
-index 0000000000..afceb56e65
+index 000000000..afceb56e6
 --- /dev/null
 +++ b/test/src/TestOpenVarioImageName.cpp
 @@ -0,0 +1,35 @@
@@ -206,3 +206,6 @@ index 0000000000..afceb56e65
 +
 +  return exit_status();
 +}
+-- 
+2.43.0
+

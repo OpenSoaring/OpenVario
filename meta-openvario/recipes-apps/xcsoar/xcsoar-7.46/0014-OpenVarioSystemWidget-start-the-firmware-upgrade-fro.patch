@@ -1,7 +1,7 @@
-From 8c26e288fff1f00b6728707ec89892f7970c9991 Mon Sep 17 00:00:00 2001
+From b852a55ce82304a866ee52e9242923e1f297363a Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Tue, 6 Oct 2026 17:49:32 +0200
-Subject: [PATCH 14/16] OpenVarioSystemWidget: start the firmware upgrade from
+Subject: [PATCH 14/22] OpenVarioSystemWidget: start the firmware upgrade from
  XCSoar
 
 The OpenVario image upgrades itself with fw-upgrade.sh, which lists
@@ -18,10 +18,10 @@ refuses to work in flight.
  2 files changed, 61 insertions(+)
 
 diff --git a/doc/manual/en/ch11_configuration.tex b/doc/manual/en/ch11_configuration.tex
-index 0978b9731e..f119a199ab 100644
+index d9a43f018..9fb792e49 100644
 --- a/doc/manual/en/ch11_configuration.tex
 +++ b/doc/manual/en/ch11_configuration.tex
-@@ -943,6 +943,14 @@ below the list:
+@@ -1192,6 +1192,14 @@ below the list:
  \begin{description}
  \item[Firmware image]  The name of the OpenVario image the device is
    running.  Please quote it when reporting a problem.
@@ -37,7 +37,7 @@ index 0978b9731e..f119a199ab 100644
    switched on: XCSoar or OpenSoar.  The choice is stored when the
    configuration dialogue is closed and takes effect with the next start
 diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
-index 2e699c71a4..87ec9981a8 100644
+index 2e699c71a..87ec9981a 100644
 --- a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 +++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 @@ -3,13 +3,21 @@
@@ -128,3 +128,6 @@ index 2e699c71a4..87ec9981a8 100644
    main_app = LoadMainApp();
    AddEnum(_("Start after boot"),
            _("The program the OpenVario starts when it is switched on.  "
+-- 
+2.43.0
+

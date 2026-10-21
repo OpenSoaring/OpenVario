@@ -1,7 +1,7 @@
-From 21bdba139fa195ae88776ed5adb006cd7e7f58fe Mon Sep 17 00:00:00 2001
+From 6b58213711162b2b61b87d5fcc15d45bb17d3cfd Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Wed, 7 Oct 2026 21:37:13 +0200
-Subject: [PATCH 21/21] OpenVario: stop a touch calibration nobody can finish
+Subject: [PATCH 21/22] OpenVario: stop a touch calibration nobody can finish
 
 The calibration script runs ts_calibrate, which waits for touches on
 the crosses it draws.  While it runs, this program has given up the
@@ -24,10 +24,10 @@ disabled if there is no touch input device at all.
  3 files changed, 194 insertions(+), 5 deletions(-)
 
 diff --git a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
-index e64c81070f..5f3c9ab60c 100644
+index c0c87266e..65cfccfd0 100644
 --- a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
 +++ b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
-@@ -197,11 +197,15 @@ DisplayConfigPanel::Prepare(ContainerWindow &parent,
+@@ -348,11 +348,15 @@ DisplayConfigPanel::Prepare(ContainerWindow &parent,
       image; the button sits here because the calibration belongs to
       the screen, and it is the last row so that the indices above do
       not depend on it */
@@ -46,7 +46,7 @@ index e64c81070f..5f3c9ab60c 100644
  }
  
 diff --git a/src/OpenVario/Calibrate.cpp b/src/OpenVario/Calibrate.cpp
-index d9a5a4c0ab..fbc6cdcc3a 100644
+index d9a5a4c0a..fbc6cdcc3 100644
 --- a/src/OpenVario/Calibrate.cpp
 +++ b/src/OpenVario/Calibrate.cpp
 @@ -6,6 +6,8 @@
@@ -252,7 +252,7 @@ index d9a5a4c0ab..fbc6cdcc3a 100644
 +                 MB_OK | MB_ICONEXCLAMATION);
  }
 diff --git a/src/OpenVario/Calibrate.hpp b/src/OpenVario/Calibrate.hpp
-index 9650209ecc..562ec455a6 100644
+index 9650209ec..562ec455a 100644
 --- a/src/OpenVario/Calibrate.hpp
 +++ b/src/OpenVario/Calibrate.hpp
 @@ -17,10 +17,25 @@ class EventQueue;
@@ -281,3 +281,6 @@ index 9650209ecc..562ec455a6 100644
   */
  void
  CalibrateTouch(UI::Display &display, UI::EventQueue &event_queue) noexcept;
+-- 
+2.43.0
+

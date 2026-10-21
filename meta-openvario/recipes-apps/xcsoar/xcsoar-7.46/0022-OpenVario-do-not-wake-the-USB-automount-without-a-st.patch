@@ -1,7 +1,8 @@
-From 890f899f4e44cee29e117b860b04833669f4a86b Mon Sep 17 00:00:00 2001
+From 67e77a3a7197aa71064f05f72111d3b278596821 Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Thu, 8 Oct 2026 14:55:31 +0200
-Subject: [PATCH] OpenVario: do not wake the USB automount without a stick
+Subject: [PATCH 22/22] OpenVario: do not wake the USB automount without a
+ stick
 
 The image mounts the USB stick through a systemd automount unit on
 /usb/usbstick.  Looking into that directory without a stick plugged in
@@ -20,7 +21,7 @@ The stick is now only looked at when its device exists.
  3 files changed, 20 insertions(+), 3 deletions(-)
 
 diff --git a/src/OpenVario/FirmwareImage.cpp b/src/OpenVario/FirmwareImage.cpp
-index 44b3e3c55a..32d8511f9f 100644
+index 44b3e3c55..32d8511f9 100644
 --- a/src/OpenVario/FirmwareImage.cpp
 +++ b/src/OpenVario/FirmwareImage.cpp
 @@ -2,6 +2,7 @@
@@ -47,7 +48,7 @@ index 44b3e3c55a..32d8511f9f 100644
    std::sort(images.begin(), images.end(),
              [](const FirmwareImage &a, const FirmwareImage &b) {
 diff --git a/src/OpenVario/System.cpp b/src/OpenVario/System.cpp
-index 161b223fb1..7f63f24e41 100644
+index 161b223fb..f83cbc620 100644
 --- a/src/OpenVario/System.cpp
 +++ b/src/OpenVario/System.cpp
 @@ -14,6 +14,8 @@
@@ -75,7 +76,7 @@ index 161b223fb1..7f63f24e41 100644
       been plugged in; the result does not matter */
    File::Exists(AllocatedPath::Build(Path(openvario_usb_stick), Path(".")));
 diff --git a/src/OpenVario/System.hpp b/src/OpenVario/System.hpp
-index 1511a58101..d6f6da8b1f 100644
+index 1511a5810..d6f6da8b1 100644
 --- a/src/OpenVario/System.hpp
 +++ b/src/OpenVario/System.hpp
 @@ -118,7 +118,9 @@ HasRealMount(std::string_view mounts, std::string_view path) noexcept
@@ -89,3 +90,6 @@ index 1511a58101..d6f6da8b1f 100644
   */
  bool
  OpenvarioIsUsbStickMounted() noexcept;
+-- 
+2.43.0
+

@@ -65,7 +65,14 @@ EXTRA_OEMAKE = " \
 	DEBUG=n DEBUG_GLIBCXX=n \
 	ENABLE_MESA_KMS=y GLES2=y \
 	GEOTIFF=n \
+	ZXING=n \
 "
+
+# Since 7.46 a Linux build draws task QR codes with zxing-cpp, which
+# build/zxing.mk downloads and builds with a host CMake call during
+# do_compile.  That cannot work inside bitbake (no network there, and a
+# CMake call that knows nothing of the cross toolchain), so the feature
+# stays off, as in the opensoar recipe.
 
 do_configure() {
 	install -d ${B}/output/download

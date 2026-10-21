@@ -2,9 +2,9 @@
 # build needs only one place to be raised.  bitbake reads it through
 # BBPATH (the repository root): the image name takes OV_VERSION, the
 # opensoar recipe takes its package version from OPENSOAR_VERSION and
-# the xcsoar 7.45 recipe from XCSOAR_VERSION.  The ov-scripts read the
+# the xcsoar 7.46 recipe from XCSOAR_VERSION.  The ov-scripts read the
 # same file to name and sort what they publish, which is why it uses
 # plain shell assignments without spaces.
-OV_VERSION="3.26.t01"
+OV_VERSION="3.26.t02"
 OPENSOAR_VERSION="7.46.26.t01"
-XCSOAR_VERSION="7.45.3"
+XCSOAR_VERSION="7.46"

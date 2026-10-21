@@ -1,7 +1,7 @@
-From 76635a24b5a607064cae543ae1836300b8ad8b19 Mon Sep 17 00:00:00 2001
+From 9f0e71b308d0bd3d9f5319015fd406d23c0ef56a Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Tue, 6 Oct 2026 17:48:15 +0200
-Subject: [PATCH 12/16] DisplayConfigPanel: calibrate the touch screen on an
+Subject: [PATCH 12/22] DisplayConfigPanel: calibrate the touch screen on an
  OpenVario
 
 On an OpenVario, the touch screen is calibrated by a script of the
@@ -12,15 +12,15 @@ there instead of a page of its own.  The button is only added when
 the program runs on an OpenVario, and it is the last row, so that the
 row indices of the other settings do not depend on it.
 ---
- build/main.mk                                      |  4 +++-
+ build/main.mk                                      |  5 +++--
  src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp | 14 ++++++++++++++
- 2 files changed, 17 insertions(+), 1 deletion(-)
+ 2 files changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/build/main.mk b/build/main.mk
-index 78bc9595de..83a0fc64fd 100644
+index 9e6eb0bf8..b8d35a56b 100644
 --- a/build/main.mk
 +++ b/build/main.mk
-@@ -801,7 +801,9 @@ ifeq ($(TARGET_IS_LINUX)$(TARGET_IS_KOBO)$(TARGET_IS_ANDROID),ynn)
+@@ -840,7 +840,9 @@ ifeq ($(TARGET_IS_LINUX)$(TARGET_IS_KOBO)$(TARGET_IS_ANDROID),ynn)
  XCSOAR_SOURCES += \
  	$(SRC)/Dialogs/Settings/Panels/SystemdConfigPanel.cpp \
  	$(SRC)/Linux/SystemdServiceList.cpp \
@@ -28,14 +28,22 @@ index 78bc9595de..83a0fc64fd 100644
 +	$(SRC)/Dialogs/ProcessDialog.cpp \
 +	$(SRC)/OV/System.cpp \
 +	$(SRC)/OV/Calibrate.cpp
- endif
  
- include $(topdir)/build/net-wifi.mk
+ ifeq ($(USE_POLL_EVENT),y)
+ SYSTEM_TOOLS_DIRECTORY ?= /usr/libexec/xcsoar/system-tools
+@@ -849,7 +851,6 @@ XCSOAR_CPPFLAGS += \
+ 	-DSYSTEM_TOOLS_DIRECTORY=\"$(SYSTEM_TOOLS_DIRECTORY)\" \
+ 	-DLOCAL_SYSTEM_TOOLS_DIRECTORY=\"$(LOCAL_SYSTEM_TOOLS_DIRECTORY)\"
+ XCSOAR_SOURCES += \
+-	$(SRC)/Dialogs/ProcessDialog.cpp \
+ 	$(SRC)/Dialogs/Settings/Panels/SystemToolsPanel.cpp \
+ 	$(SRC)/SystemTools.cpp
+ endif
 diff --git a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
-index 4e811823f7..5b9ebb7477 100644
+index 4148f70ff..edeb4ec48 100644
 --- a/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
 +++ b/src/Dialogs/Settings/Panels/DisplayConfigPanel.cpp
-@@ -29,7 +29,9 @@
+@@ -35,7 +35,9 @@
  #endif
  
  #if defined(__linux__) && !defined(__ANDROID__) && !defined(KOBO)
@@ -45,7 +53,7 @@ index 4e811823f7..5b9ebb7477 100644
  #endif
  
  #include <memory>
-@@ -189,6 +191,18 @@ DisplayConfigPanel::Prepare(ContainerWindow &parent,
+@@ -340,6 +342,18 @@ DisplayConfigPanel::Prepare(ContainerWindow &parent,
    AddBoolean(_("Invert cursor color"), _("Enable black cursor"),
               ui_settings.display.invert_cursor_colors);
  #endif
@@ -64,3 +72,6 @@ index 4e811823f7..5b9ebb7477 100644
  }
  
  bool
+-- 
+2.43.0
+

@@ -1,7 +1,7 @@
-From 95c51b6cba2a457dc0b5a355170c2b2dc64f729e Mon Sep 17 00:00:00 2001
+From 70a63450f6c6ef453cb0b56498318c9b9eab9624 Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Tue, 6 Oct 2026 17:49:42 +0200
-Subject: [PATCH 15/16] OpenVarioSystemWidget: back up and restore the whole
+Subject: [PATCH 15/22] OpenVarioSystemWidget: back up and restore the whole
  system
 
 The Data Management dialog backs up the data directory of XCSoar, but
@@ -35,10 +35,10 @@ counts.  That decision is a pure function and is covered by the test.
  5 files changed, 196 insertions(+), 1 deletion(-)
 
 diff --git a/doc/manual/en/ch11_configuration.tex b/doc/manual/en/ch11_configuration.tex
-index f119a199ab..e7cde68053 100644
+index 9fb792e49..945fc2927 100644
 --- a/doc/manual/en/ch11_configuration.tex
 +++ b/doc/manual/en/ch11_configuration.tex
-@@ -959,8 +959,19 @@ below the list:
+@@ -1208,8 +1208,19 @@ below the list:
    OpenVario sensor board.  The sensor daemon is stopped during the
    calibration.  A sensor board that has never been initialised is
    detected, and XCSoar offers to initialise it first.
@@ -59,7 +59,7 @@ index f119a199ab..e7cde68053 100644
  %%%%%%%%%%%%%%%%%%
  \section{Setup / Time}
 diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
-index 87ec9981a8..fefc0c733c 100644
+index 87ec9981a..fefc0c733 100644
 --- a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 +++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 @@ -4,12 +4,15 @@
@@ -200,7 +200,7 @@ index 87ec9981a8..fefc0c733c 100644
  
  bool
 diff --git a/src/OV/System.cpp b/src/OV/System.cpp
-index f1726e6e49..1425fc4cc0 100644
+index f1726e6e4..1425fc4cc 100644
 --- a/src/OV/System.cpp
 +++ b/src/OV/System.cpp
 @@ -204,3 +204,21 @@ OpenvarioGetImageName()
@@ -226,7 +226,7 @@ index f1726e6e49..1425fc4cc0 100644
 +  return false;
 +}
 diff --git a/src/OV/System.hpp b/src/OV/System.hpp
-index ac43367284..79feba6a3c 100644
+index ac4336728..79feba6a3 100644
 --- a/src/OV/System.hpp
 +++ b/src/OV/System.hpp
 @@ -104,3 +104,51 @@ OpenvarioImageName(std::string_view line) noexcept
@@ -282,7 +282,7 @@ index ac43367284..79feba6a3c 100644
 +bool
 +OpenvarioIsUsbStickMounted() noexcept;
 diff --git a/test/src/TestOpenVarioImageName.cpp b/test/src/TestOpenVarioImageName.cpp
-index afceb56e65..c94d38aeff 100644
+index afceb56e6..c94d38aef 100644
 --- a/test/src/TestOpenVarioImageName.cpp
 +++ b/test/src/TestOpenVarioImageName.cpp
 @@ -9,7 +9,7 @@ using std::string_view_literals::operator""sv;
@@ -322,3 +322,6 @@ index afceb56e65..c94d38aeff 100644
 +
    return exit_status();
  }
+-- 
+2.43.0
+

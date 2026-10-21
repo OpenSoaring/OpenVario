@@ -1,8 +1,8 @@
-From 79807f05fd9e96bab7ae5d74780a5a043d02d269 Mon Sep 17 00:00:00 2001
+From 80c0c23849c01f69996dc293957355af111420ad Mon Sep 17 00:00:00 2001
 From: Uwe Augustin <Info@FlapsOnline.de>
 Date: Wed, 7 Oct 2026 19:33:27 +0200
-Subject: [PATCH] OpenVarioSystemWidget: let the cursor keys reach the system
- rows
+Subject: [PATCH 19/22] OpenVarioSystemWidget: let the cursor keys reach the
+ system rows
 
 Below the service list, the system rows of the OpenVario sat in a panel
 that TwoWidgets creates in Initialise(), while the list and its buttons
@@ -17,7 +17,7 @@ Down go from the list over its buttons to the firmware row and on.
  1 file changed, 8 insertions(+)
 
 diff --git a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
-index 2dc4a52514..f42cb80e77 100644
+index 2dc4a5251..f42cb80e7 100644
 --- a/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 +++ b/src/Dialogs/Settings/Panels/OpenVarioSystemWidget.cpp
 @@ -295,6 +295,14 @@ OpenVarioSystemWidget::Prepare(ContainerWindow &parent,
@@ -35,3 +35,6 @@ index 2dc4a52514..f42cb80e77 100644
    /* a short caption leaves the row's width to the image name; a
       click on it starts the upgrade */
    const std::string image = OpenvarioGetImageName();
+-- 
+2.43.0
+
