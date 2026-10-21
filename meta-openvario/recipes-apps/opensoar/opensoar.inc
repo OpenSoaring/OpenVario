@@ -77,7 +77,16 @@ EXTRA_OEMAKE = " \
 	DEBUG=n DEBUG_GLIBCXX=n \
 	ENABLE_MESA_KMS=y GLES2=y \
 	GEOTIFF=y \
+	ZXING=n \
 "
+
+# Since 7.46 a Linux build draws task QR codes with zxing-cpp, which
+# build/zxing.mk downloads and builds with a host CMake call during
+# do_compile.  That fails here twice: bitbake allows no network access
+# in do_compile, and the CMake call knows nothing of the cross
+# toolchain.  The OpenVario has no camera and the QR dialog is not
+# needed for flying, so the feature stays off until a proper zxing-cpp
+# recipe exists.  On the 7.45 sources the variable is simply unused.
 
 do_configure() {
 	install -d ${B}/output/download
