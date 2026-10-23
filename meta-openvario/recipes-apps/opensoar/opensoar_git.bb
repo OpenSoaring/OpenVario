@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r26.5"
+PR="r26.6"
 
 # The version is set in VERSION.inc in the repository root, not by the
 # name of this file, so a new OpenSoar test build changes SRCREV here
@@ -24,7 +24,11 @@ SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work2
 # OpenSoar 7.46.26.t04 (firmware version in the device settings and
 # the plain version on the start screen; it replaces 95d192d553, which
 # never reached GitHub):
-SRCREV = "bd3f81e67914ecd0c978dd28c7a45ec6369a41f7"
+# SRCREV = "bd3f81e67914ecd0c978dd28c7a45ec6369a41f7"
+# OpenSoar 7.46.26.t04 with the Larus manage dialog, the OpenVario
+# settings under IS_OPENVARIO and one Android package per ABI in
+# MakeAll.sh:
+SRCREV = "e57fe342869394e0e483e5f0ed148d5263fc9a35"
 
 
 # The 7.46 sources use boost 1.92 (build/libboost.mk); the hash is the
