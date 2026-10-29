@@ -5,6 +5,6 @@
 # the xcsoar 7.46 recipe from XCSOAR_VERSION.  The ov-scripts read the
 # same file to name and sort what they publish, which is why it uses
 # plain shell assignments without spaces.
-OV_VERSION="3.27.t01"
-OPENSOAR_VERSION="7.47.27.t04"
+OV_VERSION="3.27.t02"
+OPENSOAR_VERSION="7.47.27.t05"
 XCSOAR_VERSION="7.46"
