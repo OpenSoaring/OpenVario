@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r26.8"
+PR="r27.1"
 
 # The version is set in VERSION.inc in the repository root, not by the
 # name of this file, so a new OpenSoar test build changes SRCREV here
@@ -9,31 +9,15 @@ PR="r26.8"
 require VERSION.inc
 PV = "${OPENSOAR_VERSION}"
 
-# Each test version is a single commit on top of work26 that is
-# kept as a tag, and the next test version is built without it, so the
-# SRCREV of a test build leaves the branch later.  nobranch=1 lets the
-# fetcher take it from the tag then, which the full clone also fetches.
-SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work26;nobranch=1 " 
-# SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work " 
-# OpenSoar 7.46.26.t01 (the first test version of the 7.46 line):
-# SRCREV = "13d2912327da13b77448eefecacf3b0163816ed9"
-# OpenSoar 7.46.26.t02 (the log book directly in the data directory):
-# SRCREV = "ed60dbcbc92ff274e57033d677f4e8f0301c09b6"
-# OpenSoar 7.46.26.t03 (cleaned history, news and add-on list):
-# SRCREV = "f76756a9b2aa2e40f1fd5c9ff2759f8b1f845d3f"
-# OpenSoar 7.46.26.t04 (firmware version in the device settings and
-# the plain version on the start screen; it replaces 95d192d553, which
-# never reached GitHub):
-# SRCREV = "bd3f81e67914ecd0c978dd28c7a45ec6369a41f7"
-# OpenSoar 7.46.26.t04 with the Larus manage dialog, the OpenVario
-# settings under IS_OPENVARIO and one Android package per ABI in
-# MakeAll.sh:
-# SRCREV = "e57fe342869394e0e483e5f0ed148d5263fc9a35"
-# the same, with MakeAll.sh collecting the packages in a folder of the
-# caller's choice:
-# SRCREV = "fe266d1b3099e9ea1e0bbaa50c23e0924fc8bde0"
-# OpenSoar 7.46.26, the release (tag v7.46.26):
-SRCREV = "b2e745cfddfe0150f6ed7db467ac18c321b38d01"
+# This branch (work-ov) builds the development line of OpenSoar, work,
+# which heads for 7.47.27.  Each test version is a single commit on top
+# of work that is kept as a tag, and the next test version is built
+# without it, so the SRCREV of a test build leaves the branch later.
+# nobranch=1 lets the fetcher take it from the tag then, which the full
+# clone also fetches.  The 7.46 line is built by work-ov26.
+SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work;nobranch=1 " 
+# OpenSoar 7.47.27.t04 (the state of 7.46.26 on the development line):
+SRCREV = "aeeb8a91ae00436e83d1d334aa65715287bc83eb"
 
 
 # The 7.46 sources use boost 1.92 (build/libboost.mk); the hash is the
