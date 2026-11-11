@@ -3,7 +3,7 @@
 
 PR="r7.46"
 
-# The exact release (7.46) comes from VERSION.inc in the repository
+# The exact release (7.46.1) comes from VERSION.inc in the repository
 # root; the file name only names the 7.46 series.  It has to match the
 # SRCREV below.
 require VERSION.inc
@@ -23,7 +23,10 @@ SRC_URI = "git://github.com/XCSoar/XCSoar.git;protocol=https;branch=v7.46.x "
 # -> 7.46 with the two fixes that followed the tag on v7.46.x: the
 # MinGW build of the airspace warning test, and no multi-draw on
 # PowerVR Rogue graphics.
-SRCREV = "84898e40d417b6f6564d14e41cd85b53f10bb3fb"
+# SRCREV = "84898e40d417b6f6564d14e41cd85b53f10bb3fb"
+# -> 7.46.1 (tag), the bugfix release of the 7.46 branch; the
+# OpenVario patches below apply to it unchanged.
+SRCREV = "d1576b969331124eea52eb74370d6f364cc7a0a8"
 
 # The 7.46 sources use boost 1.92 (build/libboost.mk); the hash is the
 # one that file checks the tarball against.

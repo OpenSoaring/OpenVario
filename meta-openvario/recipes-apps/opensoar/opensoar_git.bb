@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r27.2"
+PR="r27.3"
 
 # The version is set in VERSION.inc in the repository root, not by the
 # name of this file, so a new OpenSoar test build changes SRCREV here
@@ -9,7 +9,8 @@ PR="r27.2"
 require VERSION.inc
 PV = "${OPENSOAR_VERSION}"
 
-# This branch (work-ov) builds the development line of OpenSoar, work,
+# This branch (work-ov) builds the development line of OpenSoar, work
+# (and work27, which stays the same until XCSoar master leaves 7.47),
 # which heads for 7.47.27.  Each test version is a single commit on top
 # of work that is kept as a tag, and the next test version is built
 # without it, so the SRCREV of a test build leaves the branch later.
@@ -19,7 +20,10 @@ SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work;
 # OpenSoar 7.47.27.t04 (the state of 7.46.26 on the development line):
 # SRCREV = "aeeb8a91ae00436e83d1d334aa65715287bc83eb"
 # OpenSoar 7.47.27.t05 (the same state as a new test version):
-SRCREV = "a2eb6796cfd6d52b348ddfcbabaa21a2603ee4e0"
+# SRCREV = "a2eb6796cfd6d52b348ddfcbabaa21a2603ee4e0"
+# OpenSoar 7.47.27.t08 (on XCSoar master of 2026-11-11, tag
+# v7.47.27.t08):
+SRCREV = "2c9141d273091ade96c4d2bf9a5b0748e8a921ac"
 
 
 # The 7.46 sources use boost 1.92 (build/libboost.mk); the hash is the
