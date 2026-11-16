@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Unknow User <unknow@user.org>
 # Released under the MIT license (see COPYING.MIT for the terms)
 
-PR="r27.3"
+PR="r27.4"
 
 # The version is set in VERSION.inc in the repository root, not by the
 # name of this file, so a new OpenSoar test build changes SRCREV here
@@ -23,7 +23,9 @@ SRC_URI = "git://github.com/OpenSoaring/OpenSoar.git;protocol=https;branch=work;
 # SRCREV = "a2eb6796cfd6d52b348ddfcbabaa21a2603ee4e0"
 # OpenSoar 7.47.27.t08 (on XCSoar master of 2026-11-11, tag
 # v7.47.27.t08):
-SRCREV = "2c9141d273091ade96c4d2bf9a5b0748e8a921ac"
+# SRCREV = "2c9141d273091ade96c4d2bf9a5b0748e8a921ac"
+# OpenSoar 7.47.27.t09 (tag v7.47.27.t09):
+SRCREV = "d143b07e4ea217f70dea5c966d5291288398404c"
 
 
 # The 7.46 sources use boost 1.92 (build/libboost.mk); the hash is the
